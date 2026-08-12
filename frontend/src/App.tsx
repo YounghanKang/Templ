@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-
+import AuthScreen from './AuthScreen'
 const INITIAL_TEAMS = [
   { id: 'T-001', name: 'Design System', members: 8, color: '#6b5cf6', mission: '모든 사용자가 직관적으로 제품을 사용할 수 있도록 일관된 디자인 언어를 구축한다.' },
   { id: 'T-002', name: 'Platform Engineering', members: 14, color: '#10b981', mission: '개발자 경험을 최우선으로, 확장 가능하고 안정적인 인프라 기반을 마련한다.' },
@@ -2169,6 +2169,7 @@ function PersonalSettings({ profile, onChange, onClose }: {
 
 // ── App ───────────────────────────────────────────────────────────────────────
 export default function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [teams, setTeams] = useState<TeamType[]>(INITIAL_TEAMS)
   const [view, setView] = useState<View>({ kind: 'team', id: INITIAL_TEAMS[INITIAL_TEAMS.length - 1].id })
   const [tab, setTab] = useState<TabId>('mission')
@@ -2195,6 +2196,10 @@ export default function App() {
   const topbarTitle = view.kind === 'create'
     ? 'New team'
     : teams.find(t => t.id === activeTeamId)?.name ?? ''
+
+  if (!isAuthenticated) {
+    return <AuthScreen onSuccess={() => setIsAuthenticated(true)} />
+  }
 
   return (
     <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', fontFamily: 'var(--font-body)' }}>
