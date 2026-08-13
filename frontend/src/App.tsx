@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import AuthScreen from './AuthScreen'
 const INITIAL_TEAMS = [
   { id: 'T-001', name: 'Design System', members: 8, color: '#6b5cf6', mission: '모든 사용자가 직관적으로 제품을 사용할 수 있도록 일관된 디자인 언어를 구축한다.' },
@@ -2169,6 +2170,7 @@ function PersonalSettings({ profile, onChange, onClose }: {
 
 // ── App ───────────────────────────────────────────────────────────────────────
 export default function App() {
+  const { t } = useTranslation()
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [teams, setTeams] = useState<TeamType[]>(INITIAL_TEAMS)
   const [view, setView] = useState<View>({ kind: 'team', id: INITIAL_TEAMS[INITIAL_TEAMS.length - 1].id })
@@ -2194,7 +2196,7 @@ export default function App() {
 
   const activeTeamId = view.kind === 'team' ? view.id : null
   const topbarTitle = view.kind === 'create'
-    ? 'New team'
+    ? t('header.newTeam')
     : teams.find(t => t.id === activeTeamId)?.name ?? ''
 
   if (!isAuthenticated) {
@@ -2291,7 +2293,7 @@ export default function App() {
         }}>
           {/* Left: toggle + title */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <button onClick={() => setSidebarOpen(o => !o)} title={sidebarOpen ? '사이드바 접기' : '사이드바 열기'}
+            <button onClick={() => setSidebarOpen(o => !o)} title={sidebarOpen ? t('header.collapseSidebar') : t('header.expandSidebar')}
               style={{
                 width: 30, height: 30, borderRadius: 8, border: '1px solid var(--color-border)',
                 background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -2312,11 +2314,11 @@ export default function App() {
           {/* Center: tabs (only when viewing a team) */}
           {view.kind === 'team' ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: 2, background: '#f0efe9', borderRadius: 10, padding: '3px' }}>
-              {([{ id: 'mission', label: '최종 목표' }, { id: 'info', label: '팀 설명 보기' }, { id: 'integrations', label: '채팅방 연동 설정' }] as const).map(t => {
+              {([{ id: 'mission', label: t('tabs.mission') }, { id: 'info', label: t('tabs.info') }, { id: 'integrations', label: t('tabs.integrations') }] as const).map(t2 => {
                 const activeTeam = teams.find(tm => tm.id === view.id)
-                const isActive = tab === t.id
+                const isActive = tab === t2.id
                 return (
-                  <button key={t.id} onClick={() => setTab(t.id)}
+                  <button key={t2.id} onClick={() => setTab(t2.id)}
                     style={{
                       padding: '6px 14px', borderRadius: 7, border: 'none',
                       background: isActive ? '#ffffff' : 'transparent',
@@ -2327,19 +2329,19 @@ export default function App() {
                       transition: 'background 0.12s, color 0.12s, box-shadow 0.12s',
                       whiteSpace: 'nowrap',
                     }}>
-                    {t.id === 'integrations' ? (
+                    {t2.id === 'integrations' ? (
                       <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        {t.label}
+                        {t2.label}
                         {!accounts.slack.connected && (
                           <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#f59e0b', display: 'inline-block', flexShrink: 0 }} />
                         )}
                       </span>
-                    ) : t.id === 'info' && activeTeam ? (
+                    ) : t2.id === 'info' && activeTeam ? (
                       <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                         <span style={{ width: 6, height: 6, borderRadius: '50%', background: activeTeam.color, display: 'inline-block', flexShrink: 0 }} />
-                        {t.label}
+                        {t2.label}
                       </span>
-                    ) : t.label}
+                    ) : t2.label}
                   </button>
                 )
               })}
@@ -2368,8 +2370,8 @@ export default function App() {
                   <div style={{ fontSize: 12, color: 'var(--color-muted-foreground)', marginTop: 2 }}>jordan@acmecorp.io</div>
                 </div>
                 {([
-                  { label: '개인 설정', danger: false, onSelect: () => setSettingsOpen(true) },
-                  { label: '로그아웃', danger: true, onSelect: () => {} },
+                  { label: t('userMenu.personalSettings'), danger: false, onSelect: () => setSettingsOpen(true) },
+                  { label: t('userMenu.logout'), danger: true, onSelect: () => {} },
                 ]).map(item => (
                   <button key={item.label} onClick={() => { setProfileOpen(false); item.onSelect() }}
                     style={{ width: '100%', textAlign: 'left', padding: '10px 16px', fontSize: 13, fontWeight: 500, color: item.danger ? '#ef4444' : 'var(--color-foreground)', background: 'transparent', border: 'none', borderTop: item.danger ? '1px solid var(--color-border)' : 'none', cursor: 'pointer', transition: 'background 0.1s' }}

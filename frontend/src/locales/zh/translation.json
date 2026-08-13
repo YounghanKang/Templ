@@ -1,0 +1,207 @@
+{
+  "auth": {
+    "welcome": "欢迎回来",
+    "subtitle": "请登录您的账户\n继续使用我们的服务。",
+    "pageTitle": "账户登录",
+    "greeting": "很高兴再次见到您",
+    "mobileTitle": "登录",
+    "idLabel": "用户名",
+    "idPlaceholder": "请输入用户名",
+    "pwLabel": "密码",
+    "pwPlaceholder": "请输入密码",
+    "login": "登录",
+    "or": "或者",
+    "google": "使用 Google 登录",
+    "signup": "注册账户",
+    "forgot": "忘记用户名 · 密码",
+    "signupWelcome": "加入我们",
+    "signupSubtitle": "立即注册\n开始使用我们的服务。",
+    "signupTitle": "创建新账户",
+    "signupGreeting": "很高兴认识您",
+    "emailLabel": "电子邮件",
+    "emailPlaceholder": "请输入电子邮件",
+    "nicknameLabel": "昵称",
+    "nicknamePlaceholder": "请输入昵称",
+    "signupBtn": "立即注册",
+    "backToLogin": "已有账户？",
+    "backLogin": "登录",
+    "checkDup": "检查",
+    "sendCode": "发送验证码",
+    "codeLabel": "验证码",
+    "codePlaceholder": "请输入验证码",
+    "confirmCode": "确认",
+    "dupOk": "用户名可用",
+    "dupFail": "用户名已被使用",
+    "codeSent": "验证码已发送",
+    "codeOk": "验证成功",
+    "codeFail": "验证码不正确"
+  },
+  "status": {
+    "done": "已完成",
+    "active": "进行中",
+    "todo": "待处理"
+  },
+  "common": {
+    "add": "添加",
+    "close": "关闭",
+    "save": "保存",
+    "cancel": "取消",
+    "edit": "编辑",
+    "required": "必填",
+    "optional": "可选"
+  },
+  "header": {
+    "collapseSidebar": "折叠侧边栏",
+    "expandSidebar": "展开侧边栏",
+    "newTeam": "新团队"
+  },
+  "tabs": {
+    "mission": "最终目标",
+    "info": "查看团队说明",
+    "integrations": "聊天室关联设置"
+  },
+  "userMenu": {
+    "personalSettings": "个人设置",
+    "logout": "退出登录"
+  },
+  "sidebar": {
+    "teams": "团队",
+    "workspace": "工作区",
+    "totalMembers": "总成员",
+    "members": "成员",
+    "createTeamTooltip": "创建新团队"
+  },
+  "teamMission": {
+    "emptySubtitle": "请用一句话定义最终目标",
+    "placeholder": "例：构建统一的设计语言，使所有用户都能直观地使用产品。",
+    "cmdEnterToSave": "按 ⌘Enter 保存"
+  },
+  "teamInfo": {
+    "missionPlaceholder": "请用一句话定义团队最终要达成的目标。",
+    "noMission": "暂无团队使命。点击编辑按钮进行添加。"
+  },
+  "roadmap": {
+    "toolbar": {
+      "title": "目标达成路线图",
+      "addNode": "添加节点",
+      "specViewAndReset": "查看并重置规范",
+      "finishEditing": "完成编辑",
+      "editRoadmap": "编辑路线图",
+      "connectingHelp": "点击目标节点进行连接 · 再次点击起始节点的箭头按钮取消",
+      "editingHelp": "拖动节点移动 · 点击下方箭头开始连接 · × 删除节点 · 点击箭头删除连接"
+    },
+    "node": {
+      "warnTooltipPrefix": "下级任务存在问题 — ",
+      "deleteTooltip": "删除节点",
+      "startLinkTooltip": "从此处开始箭头连接"
+    },
+    "canvas": {
+      "deleteEdgeTooltip": "点击删除此箭头",
+      "resetZoom": "重置"
+    },
+    "detail": {
+      "comments": "评论",
+      "noCommentsLine1": "暂无评论。",
+      "noCommentsLine2": "留下关于此任务的意见吧。",
+      "commentPlaceholder": "撰写评论… (按Enter提交)",
+      "issueTitle": "发生问题",
+      "resolvedButton": "已解决",
+      "issuePlaceholder": "请描述发生了什么问题",
+      "filesSectionTitle": "已提交的文件",
+      "noFilesMessage": "没有已提交的文件",
+      "deleteFileTooltip": "删除文件",
+      "submitFileButton": "+ 提交文件",
+      "statusSectionTitle": "进行状态",
+      "completedStatus": "✓ 已完成",
+      "markAsIssueButton": "! 标记为发生问题",
+      "goalSectionTitle": "目标",
+      "goalPlaceholder": "此任务需要达成的目标",
+      "deadlineSectionTitle": "时间限制",
+      "membersSectionTitle": "执行成员",
+      "memberPlaceholder": "输入成员姓名后按Enter",
+      "prerequisitesSectionTitle": "前置任务",
+      "noPrerequisites": "无前置任务 · 可立即开始",
+      "prerequisitePlaceholder": "输入前置任务后按Enter",
+      "aiSummarySectionTitle": "AI 摘要",
+      "aiSummaryPlaceholder": "AI 摘要将在此生成",
+      "nodeNamePlaceholder": "节点名称",
+      "downloadTooltipSuffix": " 下载"
+    },
+    "spec": {
+      "finalGoal": "最终目标",
+      "resetButton": "重新设置",
+      "nodeCountLabel": "节点",
+      "linkCountLabel": "连接",
+      "doneCountLabel": "完成"
+    },
+    "footer": {
+      "clickHint": "点击节点打开详细信息"
+    },
+    "alert": {
+      "title": "发生问题",
+      "viewNode": "查看该节点"
+    },
+    "editor": {
+      "defaultTaskName": "新任务"
+    },
+    "file": {
+      "authorLabel": "提交者: ",
+      "dateLabel": "提交日期: ",
+      "sampleNotice": "（这是示例文件）"
+    }
+  },
+  "time": {
+    "justNow": "刚刚"
+  },
+  "integrations": {
+    "title": "聊天室关联设置",
+    "subtitle": "选择用于接收 AI 摘要和项目通知的外部聊天室，并输入连接链接。",
+    "myAccountSection": "关联我的账号",
+    "teamChannelSection": "团队聊天室",
+    "notConnected": "未连接",
+    "statusConnected": "已连接",
+    "disconnect": "取消关联",
+    "connect": "关联",
+    "connectButton": "连接",
+    "slackHint": "@handle 或 Slack 邮箱",
+    "slackWarningPrefix": "关联 Slack 账号是 ",
+    "slackWarningSuffix": "。关联前将无法接收团队通知和 AI 摘要。",
+    "saveSettingsButton": "保存设置",
+    "savedAtSuffix": "已保存",
+    "noChanges": "无变更",
+    "connectSlackToSaveHint": "关联 Slack 账号后方可保存",
+    "memberStatusSection": "成员关联状态",
+    "slackNotConnected": "Slack 未连接",
+    "githubNotConnected": "GitHub 未连接"
+  },
+  "createTeam": {
+    "subtitle": "创建团队后，可以在首屏直接输入团队使命。",
+    "slackHandlePlaceholder": "@handle 或 Slack 邮箱",
+    "slackNotice": "需要关联 Slack 账号才能接收团队通知和 AI 摘要。创建团队时将自动关联。",
+    "inviteHintPrefix": "输入邮箱后按 ",
+    "inviteHintSuffix": " 或点击 Add。",
+    "successMessage": "✓ 团队已创建",
+    "footerNotice": "创建后可立即输入使命"
+  },
+  "settings": {
+    "title": "个人设置",
+    "regionLabel": "居住地区",
+    "languageLabel": "首选语言",
+    "companyLabel": "当前公司",
+    "companyPlaceholder": "请输入公司名称",
+    "regions": {
+      "seoul": "韩国 · 首尔",
+      "busan": "韩国 · 釜山",
+      "tokyo": "日本 · 东京",
+      "sanFrancisco": "美国 · 旧金山",
+      "berlin": "德国 · 柏林",
+      "singapore": "新加坡"
+    },
+    "languages": {
+      "ko": "韩语",
+      "en": "英语",
+      "ja": "日语",
+      "zh": "中文（简体）"
+    }
+  }
+}

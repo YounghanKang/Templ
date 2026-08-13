@@ -1,0 +1,207 @@
+{
+  "auth": {
+    "welcome": "Welcome back",
+    "subtitle": "Sign in to continue\nusing our service.",
+    "pageTitle": "Account Login",
+    "greeting": "Good to see you again",
+    "mobileTitle": "Sign In",
+    "idLabel": "Username",
+    "idPlaceholder": "Enter your username",
+    "pwLabel": "Password",
+    "pwPlaceholder": "Enter your password",
+    "login": "Sign In",
+    "or": "or",
+    "google": "Continue with Google",
+    "signup": "Sign Up",
+    "forgot": "Forgot ID · Password",
+    "signupWelcome": "Join us",
+    "signupSubtitle": "Create an account\nand get started today.",
+    "signupTitle": "Create Account",
+    "signupGreeting": "Great to have you here",
+    "emailLabel": "Email",
+    "emailPlaceholder": "Enter your email",
+    "nicknameLabel": "Nickname",
+    "nicknamePlaceholder": "Enter your nickname",
+    "signupBtn": "Create Account",
+    "backToLogin": "Already have an account?",
+    "backLogin": "Sign In",
+    "checkDup": "Check",
+    "sendCode": "Send Code",
+    "codeLabel": "Verification Code",
+    "codePlaceholder": "Enter code",
+    "confirmCode": "Verify",
+    "dupOk": "Username is available",
+    "dupFail": "Username already taken",
+    "codeSent": "Verification code sent",
+    "codeOk": "Verified",
+    "codeFail": "Incorrect code"
+  },
+  "status": {
+    "done": "Completed",
+    "active": "In Progress",
+    "todo": "To Do"
+  },
+  "common": {
+    "add": "Add",
+    "close": "Close",
+    "save": "Save",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "required": "Required",
+    "optional": "Optional"
+  },
+  "header": {
+    "collapseSidebar": "Collapse sidebar",
+    "expandSidebar": "Expand sidebar",
+    "newTeam": "New team"
+  },
+  "tabs": {
+    "mission": "Final Goal",
+    "info": "View Team Info",
+    "integrations": "Chat Room Integration"
+  },
+  "userMenu": {
+    "personalSettings": "Personal Settings",
+    "logout": "Log Out"
+  },
+  "sidebar": {
+    "teams": "Teams",
+    "workspace": "Workspace",
+    "totalMembers": "total members",
+    "members": "members",
+    "createTeamTooltip": "Create new team"
+  },
+  "teamMission": {
+    "emptySubtitle": "Please define the final goal in one sentence",
+    "placeholder": "e.g. Build a consistent design language so all users can use the product intuitively.",
+    "cmdEnterToSave": "Press ⌘Enter to save"
+  },
+  "teamInfo": {
+    "missionPlaceholder": "Please define the goal the team ultimately aims to achieve in one sentence.",
+    "noMission": "No team mission yet. Click edit to add one."
+  },
+  "roadmap": {
+    "toolbar": {
+      "title": "Goal Achievement Roadmap",
+      "addNode": "Add Node",
+      "specViewAndReset": "View Spec & Reset",
+      "finishEditing": "Finish Editing",
+      "editRoadmap": "Edit Roadmap",
+      "connectingHelp": "Click target node to connect · Press arrow button on start node again to cancel",
+      "editingHelp": "Drag nodes to move · Click bottom arrow to start linking · × to delete node · Click arrow to delete link"
+    },
+    "node": {
+      "warnTooltipPrefix": "There is an issue with child tasks — ",
+      "deleteTooltip": "Delete node",
+      "startLinkTooltip": "Start arrow connection from here"
+    },
+    "canvas": {
+      "deleteEdgeTooltip": "Click to delete this arrow",
+      "resetZoom": "Reset"
+    },
+    "detail": {
+      "comments": "Comments",
+      "noCommentsLine1": "No comments yet.",
+      "noCommentsLine2": "Leave a comment about this task.",
+      "commentPlaceholder": "Write a comment… (Enter to post)",
+      "issueTitle": "Issue Occurred",
+      "resolvedButton": "Resolved",
+      "issuePlaceholder": "Please describe the issue encountered",
+      "filesSectionTitle": "Submitted Files",
+      "noFilesMessage": "No files submitted",
+      "deleteFileTooltip": "Delete file",
+      "submitFileButton": "+ Submit File",
+      "statusSectionTitle": "Status",
+      "completedStatus": "✓ Completed",
+      "markAsIssueButton": "! Mark as Issue",
+      "goalSectionTitle": "Objective",
+      "goalPlaceholder": "What this task should achieve",
+      "deadlineSectionTitle": "Deadline",
+      "membersSectionTitle": "Assigned Members",
+      "memberPlaceholder": "Type member name and press Enter",
+      "prerequisitesSectionTitle": "Prerequisites",
+      "noPrerequisites": "No prerequisites · Can start immediately",
+      "prerequisitePlaceholder": "Type prerequisite task and press Enter",
+      "aiSummarySectionTitle": "AI Summary",
+      "aiSummaryPlaceholder": "AI summary will be generated here",
+      "nodeNamePlaceholder": "Node name",
+      "downloadTooltipSuffix": " Download"
+    },
+    "spec": {
+      "finalGoal": "Final Goal",
+      "resetButton": "Reset",
+      "nodeCountLabel": "Nodes",
+      "linkCountLabel": "Links",
+      "doneCountLabel": "Done"
+    },
+    "footer": {
+      "clickHint": "Click a node to open details"
+    },
+    "alert": {
+      "title": "An Issue Has Occurred",
+      "viewNode": "View Affected Node"
+    },
+    "editor": {
+      "defaultTaskName": "New Task"
+    },
+    "file": {
+      "authorLabel": "Author: ",
+      "dateLabel": "Date: ",
+      "sampleNotice": "(This is a sample file)"
+    }
+  },
+  "time": {
+    "justNow": "Just now"
+  },
+  "integrations": {
+    "title": "Chat Room Integration Settings",
+    "subtitle": "Select an external chat room to receive AI summaries and project notifications, then enter the connection link.",
+    "myAccountSection": "Connect My Account",
+    "teamChannelSection": "Team Chat Room",
+    "notConnected": "Not connected",
+    "statusConnected": "Connected",
+    "disconnect": "Disconnect",
+    "connect": "Connect",
+    "connectButton": "Connect",
+    "slackHint": "@handle or Slack email",
+    "slackWarningPrefix": "Connecting Slack account is ",
+    "slackWarningSuffix": ". Team notifications and AI summaries will not be delivered before connecting.",
+    "saveSettingsButton": "Save Settings",
+    "savedAtSuffix": " saved",
+    "noChanges": "No changes",
+    "connectSlackToSaveHint": "You can save after connecting your Slack account",
+    "memberStatusSection": "Member Integration Status",
+    "slackNotConnected": "Slack not connected",
+    "githubNotConnected": "GitHub not connected"
+  },
+  "createTeam": {
+    "subtitle": "Once you create a team, you can enter the team mission right away on the home screen.",
+    "slackHandlePlaceholder": "@handle or Slack email",
+    "slackNotice": "Connecting a Slack account is required to receive team notifications and AI summaries. It will automatically connect upon team creation.",
+    "inviteHintPrefix": "Enter email and press ",
+    "inviteHintSuffix": " or click Add.",
+    "successMessage": "✓ Team created",
+    "footerNotice": "You can enter the mission right away after creation"
+  },
+  "settings": {
+    "title": "Personal Settings",
+    "regionLabel": "Region",
+    "languageLabel": "Language",
+    "companyLabel": "Current Company",
+    "companyPlaceholder": "Enter company name",
+    "regions": {
+      "seoul": "South Korea · Seoul",
+      "busan": "South Korea · Busan",
+      "tokyo": "Japan · Tokyo",
+      "sanFrancisco": "USA · San Francisco",
+      "berlin": "Germany · Berlin",
+      "singapore": "Singapore"
+    },
+    "languages": {
+      "ko": "Korean",
+      "en": "English",
+      "ja": "Japanese",
+      "zh": "Chinese (Simplified)"
+    }
+  }
+}
