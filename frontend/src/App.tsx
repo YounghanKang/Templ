@@ -1427,113 +1427,121 @@ function TeamMissionInput({ team, onSave }: { team: TeamType; onSave: (mission: 
 function TeamInfo({ team }: { team: TeamType }) {
   const [mission, setMission] = useState(team.mission)
   const [editingMission, setEditingMission] = useState(!team.mission)
+  const [membersExpanded, setMembersExpanded] = useState(false)
 
-  const MOCK_MEMBERS = [
+  const allMockMembers = [
     { name: 'Alex Rivera', role: 'Lead', email: 'alex@acmecorp.io' },
     { name: 'Sam Chen', role: 'Member', email: 'sam@acmecorp.io' },
     { name: 'Jordan Park', role: 'Member', email: 'jordan@acmecorp.io' },
     { name: 'Morgan Lee', role: 'Viewer', email: 'morgan@acmecorp.io' },
-  ].slice(0, Math.min(team.members, 4))
+  ]
+  const mockMembers = membersExpanded
+    ? Array.from({ length: team.members }).map((_, i) => allMockMembers[i] || { name: `Member ${i + 1}`, role: 'Member', email: `member${i + 1}@acmecorp.io` })
+    : allMockMembers.slice(0, Math.min(team.members, 4))
 
   return (
-    <div style={{ maxWidth: 640, margin: '0 auto' }}>
-
-      {/* Mission card */}
-      <div style={{
-        background: '#ffffff', borderRadius: 16, border: `1.5px solid ${team.color}33`,
-        overflow: 'hidden', marginBottom: 20, boxShadow: `0 0 0 4px ${team.color}0a`,
-      }}>
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+      <div style={{ width: '100%', maxWidth: 640, margin: '0 auto', paddingTop: 40, paddingBottom: 40, paddingLeft: 32, paddingRight: 32, boxSizing: 'border-box' }}>
+        
+        {/* Mission card */}
         <div style={{
-          padding: '16px 24px', borderBottom: `1px solid ${team.color}22`,
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          background: `${team.color}08`,
+          background: '#f4f3ef', borderRadius: 16, border: `1.5px solid ${team.color}33`,
+          overflow: 'hidden', marginBottom: 20, boxShadow: `0 0 0 4px ${team.color}0a`,
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div style={{ width: 6, height: 6, borderRadius: '50%', background: team.color }} />
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: team.color, textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 500 }}>
-              Mission
-            </span>
+          <div style={{
+            padding: '16px 24px', borderBottom: `1px solid ${team.color}22`,
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            background: `${team.color}11`,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ width: 6, height: 6, borderRadius: '50%', background: team.color }} />
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: team.color, textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 500 }}>
+                Mission
+              </span>
+            </div>
+            <button onClick={() => setEditingMission(v => !v)}
+              style={{
+                padding: '4px 10px', borderRadius: 6, border: `1px solid ${team.color}33`,
+                background: 'transparent', color: team.color, fontSize: 11, fontWeight: 600,
+                fontFamily: 'var(--font-display)', cursor: 'pointer', transition: 'background 0.12s',
+              }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = `${team.color}14` }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}>
+              {editingMission ? '저장' : '편집'}
+            </button>
           </div>
-          <button onClick={() => setEditingMission(v => !v)}
-            style={{
-              padding: '4px 10px', borderRadius: 6, border: `1px solid ${team.color}33`,
-              background: 'transparent', color: team.color, fontSize: 11, fontWeight: 600,
-              fontFamily: 'var(--font-display)', cursor: 'pointer', transition: 'background 0.12s',
-            }}
-            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = `${team.color}14` }}
-            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}>
-            {editingMission ? '저장' : '편집'}
-          </button>
+          <div style={{ padding: '24px' }}>
+            {editingMission ? (
+              <>
+                <textarea autoFocus value={mission} onChange={e => setMission(e.target.value)}
+                  placeholder="팀이 궁극적으로 달성하려는 목표를 한 문장으로 정의해주세요." rows={3}
+                  style={{
+                    width: '100%', padding: '12px 16px', borderRadius: 10,
+                    border: `1.5px solid ${team.color}44`, fontSize: 15, fontWeight: 500, lineHeight: 1.7,
+                    color: 'var(--color-foreground)', background: `${team.color}08`,
+                    outline: 'none', fontFamily: 'var(--font-body)', resize: 'none',
+                    boxShadow: `0 0 0 3px ${team.color}18`, boxSizing: 'border-box',
+                  }} />
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 6 }}>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: mission.length > 200 ? '#ef4444' : 'var(--color-muted-foreground)' }}>
+                    {mission.length} / 200
+                  </span>
+                </div>
+              </>
+            ) : (
+              <p style={{ margin: 0, fontSize: 16, fontWeight: 500, lineHeight: 1.75, color: mission ? 'var(--color-foreground)' : 'var(--color-muted-foreground)', fontStyle: mission ? 'normal' : 'italic' }}>
+                {mission || '아직 팀 미션이 없습니다. 편집 버튼을 눌러 추가해보세요.'}
+              </p>
+            )}
+          </div>
         </div>
-        <div style={{ padding: '24px' }}>
-          {editingMission ? (
-            <>
-              <textarea autoFocus value={mission} onChange={e => setMission(e.target.value)}
-                placeholder="팀이 궁극적으로 달성하려는 목표를 한 문장으로 정의해주세요." rows={3}
-                style={{
-                  width: '100%', padding: '12px 16px', borderRadius: 10,
-                  border: `1.5px solid ${team.color}44`, fontSize: 15, fontWeight: 500, lineHeight: 1.7,
-                  color: 'var(--color-foreground)', background: `${team.color}05`,
-                  outline: 'none', fontFamily: 'var(--font-body)', resize: 'none',
-                  boxShadow: `0 0 0 3px ${team.color}18`, boxSizing: 'border-box',
-                }} />
-              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 6 }}>
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: mission.length > 200 ? '#ef4444' : 'var(--color-muted-foreground)' }}>
-                  {mission.length} / 200
-                </span>
+
+        {/* Stats */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 20 }}>
+          {[
+            { label: 'Members', value: team.members },
+            { label: 'Projects', value: Math.floor(team.members * 0.8) },
+            { label: 'Active this week', value: Math.floor(team.members * 0.6) },
+          ].map(stat => (
+            <div key={stat.label} style={{ background: '#f4f3ef', borderRadius: 12, border: '1px solid var(--color-border)', padding: '16px 20px' }}>
+              <div style={{ fontFamily: 'var(--font-display)', fontSize: 26, fontWeight: 700, color: 'var(--color-foreground)', letterSpacing: '-0.02em' }}>
+                {stat.value}
               </div>
-            </>
-          ) : (
-            <p style={{ margin: 0, fontSize: 16, fontWeight: 500, lineHeight: 1.75, color: mission ? 'var(--color-foreground)' : 'var(--color-muted-foreground)', fontStyle: mission ? 'normal' : 'italic' }}>
-              {mission || '아직 팀 미션이 없습니다. 편집 버튼을 눌러 추가해보세요.'}
-            </p>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--color-muted-foreground)', marginTop: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                {stat.label}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Members */}
+        <div style={{ background: '#f4f3ef', borderRadius: 16, border: '1px solid var(--color-border)', overflow: 'hidden' }}>
+          <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--color-muted-foreground)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Members</span>
+            <button style={{ padding: '6px 14px', borderRadius: 8, border: '1.5px solid var(--color-border)', background: 'transparent', fontSize: 12, fontWeight: 600, color: 'var(--color-foreground)', cursor: 'pointer', fontFamily: 'var(--font-display)' }}>
+              Invite
+            </button>
+          </div>
+          {mockMembers.map((m, i) => (
+            <div key={m.email} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 24px', borderBottom: i < mockMembers.length - 1 ? '1px solid var(--color-border)' : 'none' }}>
+              <Avatar name={m.name} size={34} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-foreground)' }}>{m.name}</div>
+                <div style={{ fontSize: 12, color: 'var(--color-muted-foreground)', marginTop: 1 }}>{m.email}</div>
+              </div>
+            </div>
+          ))}
+          {team.members > 4 && !membersExpanded && (
+            <button 
+              onClick={() => setMembersExpanded(true)}
+              style={{ width: '100%', padding: '12px 24px', background: '#eae9e4', border: 'none', borderTop: '1px solid var(--color-border)', textAlign: 'left', cursor: 'pointer', transition: 'background 0.15s' }}
+              onMouseEnter={e => e.currentTarget.style.background = '#e0dfd9'}
+              onMouseLeave={e => e.currentTarget.style.background = '#eae9e4'}
+            >
+              <span style={{ fontSize: 12, color: 'var(--color-muted-foreground)' }}>+{team.members - 4} more members</span>
+            </button>
           )}
         </div>
-      </div>
-
-      {/* Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 20 }}>
-        {[
-          { label: 'Members', value: team.members },
-          { label: 'Projects', value: Math.floor(team.members * 0.8) },
-          { label: 'Active this week', value: Math.floor(team.members * 0.6) },
-        ].map(stat => (
-          <div key={stat.label} style={{ background: '#fff', borderRadius: 12, border: '1px solid var(--color-border)', padding: '16px 20px' }}>
-            <div style={{ fontFamily: 'var(--font-display)', fontSize: 26, fontWeight: 700, color: 'var(--color-foreground)', letterSpacing: '-0.02em' }}>
-              {stat.value}
-            </div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--color-muted-foreground)', marginTop: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-              {stat.label}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Members */}
-      <div style={{ background: '#fff', borderRadius: 16, border: '1px solid var(--color-border)', overflow: 'hidden' }}>
-        <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--color-muted-foreground)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Members</span>
-          <button style={{ padding: '6px 14px', borderRadius: 8, border: '1.5px solid var(--color-border)', background: 'transparent', fontSize: 12, fontWeight: 600, color: 'var(--color-foreground)', cursor: 'pointer', fontFamily: 'var(--font-display)' }}>
-            Invite
-          </button>
-        </div>
-        {MOCK_MEMBERS.map((m, i) => (
-          <div key={m.email} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 24px', borderBottom: i < MOCK_MEMBERS.length - 1 ? '1px solid var(--color-border)' : 'none' }}>
-            <Avatar name={m.name} size={34} />
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-foreground)' }}>{m.name}</div>
-              <div style={{ fontSize: 12, color: 'var(--color-muted-foreground)', marginTop: 1 }}>{m.email}</div>
-            </div>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--color-muted-foreground)', background: '#f0efe9', borderRadius: 5, padding: '3px 8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              {m.role}
-            </span>
-          </div>
-        ))}
-        {team.members > 4 && (
-          <div style={{ padding: '12px 24px', background: '#fafaf8' }}>
-            <span style={{ fontSize: 12, color: 'var(--color-muted-foreground)' }}>+{team.members - 4} more members</span>
-          </div>
-        )}
       </div>
     </div>
   )
@@ -1572,10 +1580,11 @@ function ProviderMark({ id, size = 38 }: { id: string; size?: number }) {
   )
 }
 
-function AccountRow({ id, name, hint, required, account, color, onConnect, onDisconnect }: {
-  id: 'slack' | 'github'; name: string; hint: string; required: boolean
+function AccountRow({ id, name, hint, required, account, color, onConnect, onDisconnect, demo, isLast }: {
+  id: string; name: string; hint: string; required: boolean
   account: { connected: boolean; handle: string }; color: string
   onConnect: (handle: string) => void; onDisconnect: () => void
+  demo?: boolean; isLast?: boolean
 }) {
   const [editing, setEditing] = useState(false)
   const [specOpen, setSpecOpen] = useState(false)
@@ -1592,29 +1601,38 @@ function AccountRow({ id, name, hint, required, account, color, onConnect, onDis
 
   return (
     <div style={{
-      border: `1.5px solid ${account.connected ? '#10b98140' : required ? '#f59e0b40' : 'var(--color-border)'}`,
-      borderRadius: 14, background: '#ffffff', padding: '14px 16px',
+      padding: '18px 24px',
+      borderBottom: isLast ? 'none' : '1px solid var(--color-border)',
+      background: 'transparent',
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        <ProviderMark id={id} />
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+        <ProviderMark id={id as any} />
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 3 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 5 }}>
             <span style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 700, color: 'var(--color-foreground)' }}>
               {name}
             </span>
-            {required
-              ? chip('필수', '#b45309', '#f59e0b14', '#f59e0b33')
-              : chip('선택', 'var(--color-muted-foreground)', '#f0efe9', 'var(--color-border)')}
+            {demo && chip('DEMO', '#6b5cf6', '#6b5cf614', '#6b5cf633')}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <span style={{ width: 6, height: 6, borderRadius: '50%', background: account.connected ? '#10b981' : '#c9c8c2', flexShrink: 0 }} />
-            <span style={{
-              fontFamily: 'var(--font-mono)', fontSize: 11,
-              color: account.connected ? '#10b981' : 'var(--color-muted-foreground)',
-              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-            }}>
-              {account.connected ? account.handle : '미연결'}
-            </span>
+            {account.connected ? (
+              <div style={{
+                fontFamily: 'var(--font-mono)', fontSize: 11,
+                color: '#0f8f6c', background: '#10b98112', border: '1px solid #10b98130',
+                borderRadius: 6, padding: '3px 8px',
+                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                maxWidth: '100%',
+              }}>
+                {account.handle}
+              </div>
+            ) : (
+              <span style={{
+                fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--color-muted-foreground)',
+              }}>
+                미연결
+              </span>
+            )}
           </div>
         </div>
 
@@ -1627,25 +1645,26 @@ function AccountRow({ id, name, hint, required, account, color, onConnect, onDis
             연동 해제
           </button>
         ) : (
-          <button onClick={() => { setEditing(v => !v); setDraft('') }} style={{
-            padding: '7px 16px', borderRadius: 9, border: 'none', background: editing ? '#0f0f14' : color,
+          <button onClick={() => { if (!demo) { setEditing(v => !v); setDraft('') } }} style={{
+            padding: '7px 16px', borderRadius: 9, border: 'none', background: editing ? '#0f0f14' : demo ? '#a9a8ba' : color,
             fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 600, color: '#ffffff',
-            cursor: 'pointer', flexShrink: 0, transition: 'background 0.15s',
+            cursor: demo ? 'not-allowed' : 'pointer', flexShrink: 0, transition: 'background 0.15s',
+            opacity: demo ? 0.7 : 1,
           }}>
             {editing ? '취소' : '연동하기'}
           </button>
         )}
       </div>
 
-      {editing && !account.connected && (
-        <div style={{ display: 'flex', gap: 8, marginTop: 13, paddingTop: 13, borderTop: '1px solid var(--color-border)' }}>
+      {editing && !account.connected && !demo && (
+        <div style={{ display: 'flex', gap: 8, marginTop: 14, paddingTop: 14, borderTop: '1px dashed var(--color-border)' }}>
           <input
             autoFocus value={draft} onChange={e => setDraft(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter' && draft.trim()) { onConnect(draft.trim()); setEditing(false) } }}
             placeholder={hint}
             style={{
               flex: 1, padding: '9px 13px', borderRadius: 9, border: '1.5px solid var(--color-border)',
-              background: '#fafaf8', fontSize: 13, fontFamily: 'var(--font-mono)',
+              background: '#eae9e4', fontSize: 13, fontFamily: 'var(--font-mono)',
               color: 'var(--color-foreground)', outline: 'none',
             }}
           />
@@ -1664,26 +1683,14 @@ function AccountRow({ id, name, hint, required, account, color, onConnect, onDis
   )
 }
 
-const CHAT_CHANNELS = [
-  { id: 'slack', name: 'Slack', hint: 'https://hooks.slack.com/services/…' },
-]
-
 function TeamIntegrations({ team, accounts, onAccountsChange }: {
   team: TeamType; accounts: Accounts; onAccountsChange: (a: Accounts) => void
 }) {
-  const [channel, setChannel] = useState<string | null>('slack')
-  const [webhooks, setWebhooks] = useState<Record<string, string>>({})
+  const [teams_ms, setTeamsMs] = useState<{ connected: boolean; handle: string }>({ connected: false, handle: '' })
   const [savedAt, setSavedAt] = useState<string | null>(null)
 
-  const MEMBER_LINKS = [
-    { name: 'Alex Rivera', slack: '@alex', github: 'alex-rivera' },
-    { name: 'Sam Chen', slack: '@sam', github: null },
-    { name: 'Jordan Park', slack: '@jordan.park', github: 'jpark-dev' },
-    { name: 'Morgan Lee', slack: null, github: null },
-  ].slice(0, Math.min(team.members, 4))
-
   const label = (ko: string, en: string) => (
-    <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 12 }}>
+    <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 16 }}>
       <span style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 700, color: 'var(--color-foreground)', letterSpacing: '-0.01em' }}>
         {ko}
       </span>
@@ -1694,155 +1701,77 @@ function TeamIntegrations({ team, accounts, onAccountsChange }: {
   )
 
   return (
-    <div style={{ maxWidth: 640, margin: '0 auto', paddingBottom: 40 }}>
-      <div style={{ marginBottom: 28 }}>
-        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--color-muted-foreground)', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 6 }}>
-          Integrations
-        </div>
-        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 26, fontWeight: 700, color: 'var(--color-foreground)', margin: 0, letterSpacing: '-0.02em' }}>
-          채팅방 연동 설정
-        </h1>
-        <p style={{ fontSize: 13.5, color: 'var(--color-muted-foreground)', marginTop: 8, lineHeight: 1.65 }}>
-          AI 요약과 프로젝트 알림을 받을 외부 채팅방을 선택하고 연결 링크를 입력하세요.
-        </p>
-      </div>
-
-      {/* 내 계정 연결 */}
-      <div style={{ marginBottom: 28 }}>
-        {label('내 계정 연결', 'My account')}
-
-        {!accounts.slack.connected && (
-          <div style={{
-            display: 'flex', alignItems: 'flex-start', gap: 9, marginBottom: 12,
-            padding: '11px 14px', borderRadius: 11, background: '#f59e0b12', border: '1px solid #f59e0b33',
-          }}>
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ marginTop: 1, flexShrink: 0 }}>
-              <path d="M7 1.5 13 12H1L7 1.5Z" stroke="#b45309" strokeWidth="1.3" strokeLinejoin="round" />
-              <path d="M7 5.5V8.2M7 10.1v.1" stroke="#b45309" strokeWidth="1.4" strokeLinecap="round" />
-            </svg>
-            <span style={{ fontSize: 12.5, color: '#92400e', lineHeight: 1.6 }}>
-              Slack 계정 연동은 <strong style={{ fontWeight: 600 }}>필수</strong>입니다. 연동 전에는 팀 알림과 AI 요약이 전달되지 않습니다.
-            </span>
-          </div>
-        )}
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <AccountRow
-            id="slack" name="Slack" required hint="@handle 또는 slack 이메일" color={team.color}
-            account={accounts.slack}
-            onConnect={handle => onAccountsChange({ ...accounts, slack: { connected: true, handle } })}
-            onDisconnect={() => onAccountsChange({ ...accounts, slack: { connected: false, handle: '' } })}
-          />
-          <AccountRow
-            id="github" name="GitHub" required={false} hint="github username" color={team.color}
-            account={accounts.github}
-            onConnect={handle => onAccountsChange({ ...accounts, github: { connected: true, handle } })}
-            onDisconnect={() => onAccountsChange({ ...accounts, github: { connected: false, handle: '' } })}
-          />
-        </div>
-      </div>
-
-      {/* 팀 채팅방 */}
-      <div style={{ marginBottom: 28 }}>
-        {label('팀 채팅방', 'Channel')}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {CHAT_CHANNELS.map(ch => {
-            const on = channel === ch.id
-            return (
-              <div key={ch.id} style={{
-                border: `1.5px solid ${on ? team.color : 'var(--color-border)'}`,
-                borderRadius: 14, background: '#ffffff', overflow: 'hidden',
-                boxShadow: on ? `0 0 0 3px ${team.color}14` : 'none',
-                transition: 'border-color 0.15s, box-shadow 0.15s',
-              }}>
-                <button onClick={() => setChannel(on ? null : ch.id)}
-                  style={{
-                    width: '100%', display: 'flex', alignItems: 'center', gap: 12,
-                    padding: '14px 16px', background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left',
-                  }}>
-                  <ProviderMark id={ch.id} />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 700, color: 'var(--color-foreground)', marginBottom: 3 }}>
-                      {ch.name}
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span style={{ width: 6, height: 6, borderRadius: '50%', background: on && webhooks[ch.id] ? '#10b981' : '#c9c8c2' }} />
-                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: on && webhooks[ch.id] ? '#10b981' : 'var(--color-muted-foreground)' }}>
-                        {on && webhooks[ch.id] ? '연결됨' : '미연결'}
-                      </span>
-                    </div>
-                  </div>
-                  <span style={{
-                    width: 18, height: 18, borderRadius: '50%', flexShrink: 0,
-                    border: `2px solid ${on ? team.color : '#d6d5cf'}`,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  }}>
-                    {on && <span style={{ width: 8, height: 8, borderRadius: '50%', background: team.color }} />}
-                  </span>
-                </button>
-                {on && (
-                  <div style={{ padding: '0 16px 14px' }}>
-                    <input
-                      value={webhooks[ch.id] || ''}
-                      onChange={e => setWebhooks(prev => ({ ...prev, [ch.id]: e.target.value }))}
-                      placeholder={ch.hint}
-                      style={{
-                        width: '100%', padding: '9px 13px', borderRadius: 9,
-                        border: '1.5px solid var(--color-border)', background: '#fafaf8',
-                        fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--color-foreground)',
-                        outline: 'none', boxSizing: 'border-box',
-                      }}
-                    />
-                  </div>
-                )}
-              </div>
-            )
-          })}
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 16 }}>
-          <button onClick={() => setSavedAt(new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }))}
-            disabled={!accounts.slack.connected}
-            style={{
-              padding: '10px 22px', borderRadius: 10, border: 'none',
-              background: accounts.slack.connected ? team.color : '#d1d0cc', color: '#ffffff',
-              fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 600,
-              cursor: accounts.slack.connected ? 'pointer' : 'not-allowed', letterSpacing: '-0.01em',
-            }}>
-            설정 저장
-          </button>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: savedAt ? '#10b981' : 'var(--color-muted-foreground)' }}>
-            {savedAt ? `✓ ${savedAt}에 저장됨` : accounts.slack.connected ? '변경 사항 없음' : 'Slack 계정 연동 후 저장할 수 있어요'}
-          </span>
-        </div>
-      </div>
-
-      {/* Members */}
-      <div>
-        {label('멤버 연동 현황', 'Members')}
-        <div style={{ background: '#ffffff', borderRadius: 14, border: '1px solid var(--color-border)', overflow: 'hidden' }}>
-          {MEMBER_LINKS.map((m, i) => (
-            <div key={m.name} style={{
-              display: 'flex', alignItems: 'center', gap: 12, padding: '13px 16px',
-              borderBottom: i < MEMBER_LINKS.length - 1 ? '1px solid var(--color-border)' : 'none',
-            }}>
-              <Avatar name={m.name} size={30} />
-              <span style={{ flex: 1, fontSize: 13, fontWeight: 500, color: 'var(--color-foreground)' }}>{m.name}</span>
-              {(['slack', 'github'] as const).map(p => (
-                <span key={p} style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 9px', borderRadius: 100,
-                  background: m[p] ? '#10b98112' : '#f0efe9',
-                  border: `1px solid ${m[p] ? '#10b98130' : 'var(--color-border)'}`,
-                  fontFamily: 'var(--font-mono)', fontSize: 10,
-                  color: m[p] ? '#0f8f6c' : 'var(--color-muted-foreground)',
-                }}>
-                  <span style={{ width: 5, height: 5, borderRadius: '50%', background: m[p] ? '#10b981' : '#c9c8c2' }} />
-                  {m[p] || (p === 'slack' ? 'slack 미연결' : 'github 미연결')}
-                </span>
-              ))}
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+      <div style={{ width: '100%', maxWidth: 720, margin: '0 auto', paddingTop: 40, paddingBottom: 40, paddingLeft: 32, paddingRight: 32, boxSizing: 'border-box' }}>
+        
+        <div style={{ 
+          background: '#f4f3ef', 
+          borderRadius: 16, 
+          border: '1px solid var(--color-border)',
+          overflow: 'hidden',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.03)'
+        }}>
+          {/* Header section inside the card */}
+          <div style={{ padding: '32px 32px 24px', borderBottom: '1px solid var(--color-border)' }}>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--color-muted-foreground)', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 6 }}>
+              Integrations
             </div>
-          ))}
+            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 26, fontWeight: 700, color: 'var(--color-foreground)', margin: 0, letterSpacing: '-0.02em' }}>
+              연동 설정
+            </h1>
+            <p style={{ fontSize: 13.5, color: 'var(--color-muted-foreground)', marginTop: 8, lineHeight: 1.65, margin: '8px 0 0 0' }}>
+              팀에서 사용하는 외부 서비스를 연결하세요.
+            </p>
+          </div>
+
+          {/* Rows section */}
+          <div>
+            <div style={{ padding: '24px 32px 16px' }}>
+              {label('팀 연동', 'Team integrations')}
+            </div>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', borderTop: '1px solid var(--color-border)' }}>
+              <AccountRow
+                id="slack" name="Slack" required hint="팀 채팅방 링크를 입력하세요" color={team.color}
+                account={accounts.slack}
+                onConnect={handle => onAccountsChange({ ...accounts, slack: { connected: true, handle } })}
+                onDisconnect={() => onAccountsChange({ ...accounts, slack: { connected: false, handle: '' } })}
+              />
+              <AccountRow
+                id="github" name="GitHub" required={false} hint="팀 레포지토리 URL을 입력하세요" color={team.color}
+                account={accounts.github}
+                onConnect={handle => onAccountsChange({ ...accounts, github: { connected: true, handle } })}
+                onDisconnect={() => onAccountsChange({ ...accounts, github: { connected: false, handle: '' } })}
+              />
+              <AccountRow
+                id="slack" name="Microsoft Teams" required={false} hint="추후 지원 예정입니다" color={team.color}
+                account={teams_ms}
+                onConnect={() => {}}
+                onDisconnect={() => {}}
+                demo
+                isLast
+              />
+            </div>
+          </div>
+
+          {/* Footer section inside the card */}
+          <div style={{ padding: '24px 32px 32px', background: '#eae9e4', borderTop: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 14 }}>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: savedAt ? '#10b981' : 'var(--color-muted-foreground)' }}>
+              {savedAt ? `✓ ${savedAt}에 저장됨` : accounts.slack.connected ? '변경 사항 없음' : 'Slack 연동 후 저장할 수 있어요'}
+            </span>
+            <button onClick={() => setSavedAt(new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }))}
+              disabled={!accounts.slack.connected}
+              style={{
+                padding: '10px 22px', borderRadius: 10, border: 'none',
+                background: accounts.slack.connected ? team.color : '#d1d0cc', color: '#ffffff',
+                fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 600,
+                cursor: accounts.slack.connected ? 'pointer' : 'not-allowed', letterSpacing: '-0.01em',
+              }}>
+              설정 저장
+            </button>
+          </div>
         </div>
+
       </div>
     </div>
   )
@@ -2069,7 +1998,7 @@ function CreateTeamForm({ teams, onCreated, accounts, onAccountsChange }: {
 }
 
 // ── Personal settings ─────────────────────────────────────────────────────────
-type Profile = { region: string; language: string; company: string }
+type Profile = { region: string; language: string }
 
 const REGIONS = ['대한민국 · 서울', '대한민국 · 부산', '일본 · 도쿄', '미국 · 샌프란시스코', '독일 · 베를린', '싱가포르']
 const LANGUAGES = ['한국어', 'English', '日本語', '中文(简体)']
@@ -2138,11 +2067,6 @@ function PersonalSettings({ profile, onChange, onClose }: {
               {LANGUAGES.map(l => <option key={l} value={l}>{l}</option>)}
             </select>
           </div>
-          <div>
-            {label('현재 회사', 'Company')}
-            <input value={draft.company} onChange={e => setDraft({ ...draft, company: e.target.value })}
-              placeholder="회사명을 입력하세요" style={control} />
-          </div>
         </div>
 
         <div style={{
@@ -2181,7 +2105,7 @@ export default function App() {
   })
   const [profileOpen, setProfileOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
-  const [profile, setProfile] = useState({ region: '대한민국 · 서울', language: '한국어', company: 'Acme Corp' })
+  const [profile, setProfile] = useState({ region: '대한민국 · 서울', language: '한국어' })
   const [sidebarOpen, setSidebarOpen] = useState(true)
 
   function handleCreated(team: TeamType) {
@@ -2387,7 +2311,12 @@ export default function App() {
         </header>
 
         <main
-          style={{ flex: 1, overflow: 'hidden', padding: view.kind === 'team' && tab === 'mission' ? '0' : '22px 20px 18px', background: 'var(--color-background)', display: 'flex', flexDirection: 'column' }}
+          style={{ 
+            flex: 1, overflow: 'hidden', 
+            padding: (view.kind === 'team' && (tab === 'mission' || tab === 'integrations' || tab === 'info')) ? '0' : '22px 20px 18px', 
+            background: (view.kind === 'team' && (tab === 'integrations' || tab === 'info')) ? '#0f0f14' : 'var(--color-background)', 
+            display: 'flex', flexDirection: 'column' 
+          }}
           onClick={() => profileOpen && setProfileOpen(false)}
         >
           {view.kind === 'create' ? (
