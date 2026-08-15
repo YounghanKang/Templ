@@ -37,5 +37,19 @@ dependencies {
 
 tasks.named('test') {
 	useJUnitPlatform()
-	systemProperty 'openai.apiKey', 'test-key'
+
+	if (project.hasProperty('liveOpenAi')) {
+
+		if (!System.getenv('OPENAI_API_KEY')) {
+			throw new GradleException(
+					'OPENAI_API_KEY 환경변수가 필요합니다.'
+			)
+		}
+
+	} else {
+
+		systemProperty 'openai.apiKey', 'test-key'
+
+		exclude '**/*LiveTest.class'
+	}
 }
