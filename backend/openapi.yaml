@@ -1,0 +1,527 @@
+openapi: 3.0.3
+info:
+  title: Templ API
+  description: Team and roadmap collaboration backend API contract
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+paths:
+  /api/auth/login:
+    post:
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Invalid credentials
+  /api/auth/signup:
+    post:
+      summary: Signup
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignupRequest'
+      responses:
+        '200':
+          description: Signup success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignupResponse'
+  /api/auth/check-id:
+    post:
+      summary: Check username availability
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckUsernameRequest'
+      responses:
+        '200':
+          description: Availability result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckUsernameResponse'
+  /api/auth/send-code:
+    post:
+      summary: Send email verification code
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendCodeRequest'
+      responses:
+        '200':
+          description: Code sent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendCodeResponse'
+  /api/auth/confirm-code:
+    post:
+      summary: Confirm verification code
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConfirmCodeRequest'
+      responses:
+        '200':
+          description: Verification result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConfirmCodeResponse'
+  /api/teams:
+    get:
+      summary: Get all teams
+      responses:
+        '200':
+          description: Team list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Team'
+    post:
+      summary: Create team
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTeamRequest'
+      responses:
+        '200':
+          description: Created team
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Team'
+  /api/teams/{teamId}:
+    get:
+      summary: Get team by id
+      parameters:
+        - $ref: '#/components/parameters/TeamId'
+      responses:
+        '200':
+          description: Single team
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Team'
+    put:
+      summary: Update team
+      parameters:
+        - $ref: '#/components/parameters/TeamId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Team'
+      responses:
+        '200':
+          description: Updated team
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Team'
+    delete:
+      summary: Delete team
+      parameters:
+        - $ref: '#/components/parameters/TeamId'
+      responses:
+        '200':
+          description: Deleted
+  /api/teams/{teamId}/roadmap:
+    get:
+      summary: Get roadmap for team
+      parameters:
+        - $ref: '#/components/parameters/TeamId'
+      responses:
+        '200':
+          description: Roadmap response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoadmapResponse'
+  /api/teams/{teamId}/roadmap/nodes:
+    post:
+      summary: Create roadmap node
+      parameters:
+        - $ref: '#/components/parameters/TeamId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoadmapNode'
+      responses:
+        '200':
+          description: Created node
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoadmapNode'
+  /api/teams/{teamId}/roadmap/nodes/{nodeId}:
+    put:
+      summary: Update roadmap node
+      parameters:
+        - $ref: '#/components/parameters/TeamId'
+        - $ref: '#/components/parameters/NodeId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoadmapNode'
+      responses:
+        '200':
+          description: Updated node
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoadmapNode'
+    delete:
+      summary: Delete roadmap node
+      parameters:
+        - $ref: '#/components/parameters/TeamId'
+        - $ref: '#/components/parameters/NodeId'
+      responses:
+        '200':
+          description: Deleted
+  /api/teams/{teamId}/roadmap/edges:
+    post:
+      summary: Create roadmap edge
+      parameters:
+        - $ref: '#/components/parameters/TeamId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoadmapEdge'
+      responses:
+        '200':
+          description: Created edge
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoadmapEdge'
+  /api/teams/{teamId}/roadmap/edges/{edgeId}:
+    delete:
+      summary: Delete roadmap edge
+      parameters:
+        - $ref: '#/components/parameters/TeamId'
+        - $ref: '#/components/parameters/EdgeId'
+      responses:
+        '200':
+          description: Deleted
+  /api/users/profile:
+    get:
+      summary: Get user profile
+      responses:
+        '200':
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Profile'
+    put:
+      summary: Update user profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Profile'
+      responses:
+        '200':
+          description: Updated profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Profile'
+  /api/teams/{teamId}/integrations:
+    get:
+      summary: Get integration settings
+      parameters:
+        - $ref: '#/components/parameters/TeamId'
+      responses:
+        '200':
+          description: Integration settings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IntegrationSettings'
+    put:
+      summary: Update integration settings
+      parameters:
+        - $ref: '#/components/parameters/TeamId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IntegrationSettings'
+      responses:
+        '200':
+          description: Updated integration settings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IntegrationSettings'
+components:
+  parameters:
+    TeamId:
+      name: teamId
+      in: path
+      required: true
+      schema:
+        type: string
+    NodeId:
+      name: nodeId
+      in: path
+      required: true
+      schema:
+        type: string
+    EdgeId:
+      name: edgeId
+      in: path
+      required: true
+      schema:
+        type: string
+  schemas:
+    LoginRequest:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+      example:
+        username: admin
+        password: admin123
+    SignupRequest:
+      type: object
+      required:
+        - username
+        - password
+        - email
+        - nickname
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+        email:
+          type: string
+        nickname:
+          type: string
+      example:
+        username: newuser
+        password: 1234
+        email: new@example.com
+        nickname: 홍길동
+    CheckUsernameRequest:
+      type: object
+      required:
+        - username
+      properties:
+        username:
+          type: string
+    CheckUsernameResponse:
+      type: object
+      properties:
+        available:
+          type: boolean
+    SendCodeRequest:
+      type: object
+      required:
+        - email
+      properties:
+        email:
+          type: string
+    SendCodeResponse:
+      type: object
+      properties:
+        status:
+          type: string
+    ConfirmCodeRequest:
+      type: object
+      required:
+        - email
+        - code
+      properties:
+        email:
+          type: string
+        code:
+          type: string
+    ConfirmCodeResponse:
+      type: object
+      properties:
+        verified:
+          type: boolean
+    SignupResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+    AuthResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        userId:
+          type: integer
+          format: int64
+        username:
+          type: string
+        nickname:
+          type: string
+    Team:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        members:
+          type: integer
+        color:
+          type: string
+        mission:
+          type: string
+    CreateTeamRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        color:
+          type: string
+        mission:
+          type: string
+        slackHandle:
+          type: string
+    Profile:
+      type: object
+      properties:
+        region:
+          type: string
+        language:
+          type: string
+    IntegrationSettings:
+      type: object
+      properties:
+        slack:
+          $ref: '#/components/schemas/SlackIntegration'
+        github:
+          $ref: '#/components/schemas/GithubIntegration'
+        teamChannelUrl:
+          type: string
+    SlackIntegration:
+      type: object
+      properties:
+        connected:
+          type: boolean
+        handle:
+          type: string
+    GithubIntegration:
+      type: object
+      properties:
+        connected:
+          type: boolean
+        username:
+          type: string
+    RoadmapResponse:
+      type: object
+      properties:
+        nodes:
+          type: array
+          items:
+            $ref: '#/components/schemas/RoadmapNode'
+        edges:
+          type: array
+          items:
+            $ref: '#/components/schemas/RoadmapEdge'
+    RoadmapNode:
+      type: object
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+        code:
+          type: string
+        status:
+          type: string
+          enum: [done, active, todo]
+        progress:
+          type: integer
+        goal:
+          type: string
+        dueDate:
+          type: string
+        assignees:
+          type: array
+          items:
+            type: string
+        prerequisites:
+          type: array
+          items:
+            type: string
+        aiSummary:
+          type: string
+        issue:
+          type: string
+        files:
+          type: array
+          items:
+            $ref: '#/components/schemas/RoadmapFile'
+    RoadmapEdge:
+      type: object
+      properties:
+        id:
+          type: string
+        from:
+          type: string
+        to:
+          type: string
+    RoadmapFile:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        size:
+          type: string
+        author:
+          type: string
+        date:
+          type: string
+        url:
+          type: string
+          nullable: true
