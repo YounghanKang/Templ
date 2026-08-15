@@ -94,9 +94,11 @@ public class AnalyzeEventCore {
         /*
          * 5. AI 결과 검증
          *
+         *
+         * AI 분석 결과의
          * riskScore
          * confidence
-         * primaryNodeId
+         * taskId
          * 등을 검증합니다.
          */
         analysisResultValidator.validate(

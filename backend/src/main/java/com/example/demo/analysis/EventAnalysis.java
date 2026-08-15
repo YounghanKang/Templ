@@ -89,10 +89,17 @@ public class EventAnalysis {
     private double confidence;
 
 
+    /*
+     * Java/API 도메인에서는 PM 명세와 동일하게 taskId라는 이름을 사용합니다.
+     *
+     * DB 컬럼명은 기존 foundation과의 호환성을 위해
+     * 우선 primary_node_id를 유지합니다.
+     * 추후 DB migration을 진행할 때 task_id로 변경할 수 있습니다.
+     */
     @Column(
             name = "primary_node_id"
     )
-    private UUID primaryNodeId;
+    private UUID taskId;
 
 
     /*
@@ -138,7 +145,7 @@ public class EventAnalysis {
             String summary,
             int riskScore,
             double confidence,
-            UUID primaryNodeId,
+            UUID taskId,
             String modelName,
             String promptVersion,
             String schemaVersion
@@ -189,8 +196,8 @@ public class EventAnalysis {
         this.confidence =
                 confidence;
 
-        this.primaryNodeId =
-                primaryNodeId;
+        this.taskId =
+                taskId;
 
         this.modelName =
                 modelName;

@@ -54,21 +54,21 @@ public class OpenAiPromptBuilder {
                 - meaningfulChange = false
                 - changeType = null
                 - riskScore는 0~3 범위
-                - primaryNodeId는 null이어도 됩니다.
+                - taskId는 null이어도 됩니다.
 
                 의미 있는 변경이라면:
                 - meaningfulChange = true
                 - changeType은 반드시 위 7개 중 하나
                 - riskScore는 0~10
                 - confidence는 0.0~1.0
-                - primaryNodeId는 제공된 후보 노드 중 가장 직접적인 노드
+                - taskId는 제공된 후보 노드 중 가장 직접적인 노드
                 - impactedNodeIds는 추가로 영향받는 후보 노드 ID
                 - proposedActions에는 프로젝트 수정 제안만 작성
                 - 실제 프로젝트를 직접 변경했다고 표현하지 마세요.
                 - 확실하지 않은 내용은 openQuestions에 작성하세요.
 
                 중요:
-                primaryNodeId와 impactedNodeIds에는
+                taskId와 impactedNodeIds에는
                 아래 Candidate Nodes에 실제로 존재하는 UUID만 사용하세요.
 
                 응답은 설명이나 Markdown 없이
@@ -81,7 +81,7 @@ public class OpenAiPromptBuilder {
                   "summary": "변경 요약",
                   "riskScore": 7,
                   "confidence": 0.90,
-                  "primaryNodeId": "UUID 또는 null",
+                  "taskId": "UUID 또는 null",
                   "impactedNodeIds": [],
                   "proposedActions": [],
                   "openQuestions": []

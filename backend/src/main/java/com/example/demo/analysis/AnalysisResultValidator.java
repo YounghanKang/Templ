@@ -65,10 +65,10 @@ public class AnalysisResultValidator {
         }
 
 
-        if (result.primaryNodeId() == null) {
+        if (result.taskId() == null) {
 
             throw new IllegalArgumentException(
-                    "의미 있는 변경에는 primaryNodeId가 필요합니다."
+                    "의미 있는 변경에는 taskId가 필요합니다."
             );
         }
 
@@ -91,12 +91,12 @@ public class AnalysisResultValidator {
 
         if (
                 !allowedCandidateIds.contains(
-                        result.primaryNodeId()
+                        result.taskId()
                 )
         ) {
 
             throw new IllegalArgumentException(
-                    "primaryNodeId가 후보 Node에 존재하지 않습니다."
+                    "taskId가 후보 Node에 존재하지 않습니다."
             );
         }
     }

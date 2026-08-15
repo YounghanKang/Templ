@@ -194,7 +194,7 @@ class AnalysisResultValidatorTest {
 
 
         assertEquals(
-                "primaryNodeId가 후보 Node에 존재하지 않습니다.",
+                "taskId가 후보 Node에 존재하지 않습니다.",
                 exception.getMessage()
         );
     }

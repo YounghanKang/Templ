@@ -132,7 +132,7 @@ class AnalyzeEventCoreTest {
         assertEquals(
                 loginNodeId,
                 outcome.analysisResult()
-                        .primaryNodeId()
+                        .taskId()
         );
     }
 

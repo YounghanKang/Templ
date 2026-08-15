@@ -167,7 +167,7 @@ class AnalyzeJobCompletionServiceTest {
 
         assertEquals(
                 nodeId,
-                savedAnalysis.getPrimaryNodeId()
+                savedAnalysis.getTaskId()
         );
     }
 
@@ -398,7 +398,7 @@ class AnalyzeJobCompletionServiceTest {
 
 
         assertNull(
-                savedAnalysis.getPrimaryNodeId()
+                savedAnalysis.getTaskId()
         );
     }
 

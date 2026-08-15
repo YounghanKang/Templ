@@ -246,7 +246,7 @@ public class OpenAiContextAnalysisAdapter
                 response.summary(),
                 response.riskScore(),
                 response.confidence(),
-                response.primaryNodeId(),
+                response.taskId(),
                 safeUuidList(
                         response.impactedNodeIds()
                 ),

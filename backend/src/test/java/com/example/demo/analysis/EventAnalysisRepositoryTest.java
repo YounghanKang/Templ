@@ -106,7 +106,7 @@ class EventAnalysisRepositoryTest {
 
         assertEquals(
                 nodeId,
-                found.getPrimaryNodeId()
+                found.getTaskId()
         );
     }
 

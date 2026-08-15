@@ -9,7 +9,7 @@ public record OpenAiAnalysisResponse(
         String summary,
         int riskScore,
         double confidence,
-        UUID primaryNodeId,
+        UUID taskId,
         List<UUID> impactedNodeIds,
         List<String> proposedActions,
         List<String> openQuestions

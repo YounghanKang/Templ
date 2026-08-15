@@ -235,7 +235,7 @@ public class AnalyzeJobCompletionService {
                 result.summary(),
                 result.riskScore(),
                 result.confidence(),
-                result.primaryNodeId(),
+                result.taskId(),
                 null,
                 PROMPT_VERSION,
                 SCHEMA_VERSION
