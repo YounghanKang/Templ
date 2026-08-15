@@ -20,7 +20,13 @@ public class GitHubWebhookService {
 
     private static final int MAX_COMMITS_IN_CONTENT = 20;
 
+    private static final int MAX_COMPARE_FILES_IN_CONTENT = 10;
+
+    private static final int MAX_PATCH_CHARS_PER_FILE = 1200;
+
     private final JsonMapper jsonMapper;
+
+    private final GitHubCompareClient compareClient;
 
     private final CollaborationEventIngestionService ingestionService;
 
@@ -75,6 +81,16 @@ public class GitHubWebhookService {
                                 .path("full_name")
                 );
 
+        String before =
+                textOrNull(
+                        root.path("before")
+                );
+
+        String after =
+                textOrNull(
+                        root.path("after")
+                );
+
         String actorId =
                 scalarOrNull(
                         root.path("sender")
@@ -99,8 +115,11 @@ public class GitHubWebhookService {
                 );
 
         String content =
-                buildContent(
-                        root
+                buildPushContentWithCompare(
+                        root,
+                        repositoryName,
+                        before,
+                        after
                 );
 
         String sourceLocation =
@@ -696,6 +715,224 @@ public class GitHubWebhookService {
 
         return content.toString()
                 .trim();
+    }
+
+    private String buildPushContentWithCompare(
+            JsonNode root,
+            String repositoryName,
+            String before,
+            String after
+    ) {
+
+        String baseContent =
+                buildContent(
+                        root
+                );
+
+
+        if (
+                repositoryName == null
+                        ||
+                        repositoryName.isBlank()
+                        ||
+                        before == null
+                        ||
+                        before.isBlank()
+                        ||
+                        after == null
+                        ||
+                        after.isBlank()
+                        ||
+                        before.chars().allMatch(
+                                character ->
+                                        character == '0'
+                        )
+                        ||
+                        after.chars().allMatch(
+                                character ->
+                                        character == '0'
+                        )
+        ) {
+            return baseContent;
+        }
+
+
+        try {
+
+            GitHubCompareClient.CompareResult compareResult =
+                    compareClient.compare(
+                            repositoryName,
+                            before,
+                            after
+                    );
+
+
+            if (
+                    compareResult == null
+                            ||
+                            compareResult.files() == null
+                            ||
+                            compareResult.files().isEmpty()
+            ) {
+                return baseContent;
+            }
+
+
+            StringBuilder content =
+                    new StringBuilder(
+                            baseContent
+                    );
+
+
+            content.append(
+                    System.lineSeparator()
+            );
+
+            content.append(
+                    System.lineSeparator()
+            );
+
+            content.append(
+                    "changed files:"
+            );
+
+            content.append(
+                    System.lineSeparator()
+            );
+
+
+            int count = 0;
+
+
+            for (
+                    GitHubCompareClient.ChangedFile file
+                    : compareResult.files()
+            ) {
+
+                if (
+                        count
+                                >= MAX_COMPARE_FILES_IN_CONTENT
+                ) {
+
+                    content.append(
+                            "- ... additional changed files omitted"
+                    );
+
+                    content.append(
+                            System.lineSeparator()
+                    );
+
+                    break;
+                }
+
+
+                content.append(
+                        "- "
+                );
+
+                content.append(
+                        file.filename()
+                );
+
+                content.append(
+                        " ["
+                );
+
+                content.append(
+                        file.status()
+                );
+
+                content.append(
+                        "]"
+                );
+
+                content.append(
+                        " +"
+                );
+
+                content.append(
+                        file.additions()
+                );
+
+                content.append(
+                        " -"
+                );
+
+                content.append(
+                        file.deletions()
+                );
+
+                content.append(
+                        " ("
+                );
+
+                content.append(
+                        file.changes()
+                );
+
+                content.append(
+                        " changes)"
+                );
+
+                content.append(
+                        System.lineSeparator()
+                );
+
+
+                String patch =
+                        file.patch();
+
+
+                if (
+                        patch != null
+                                &&
+                                !patch.isBlank()
+                ) {
+
+                    if (
+                            patch.length()
+                                    > MAX_PATCH_CHARS_PER_FILE
+                    ) {
+
+                        patch =
+                                patch.substring(
+                                        0,
+                                        MAX_PATCH_CHARS_PER_FILE
+                                )
+                                        + System.lineSeparator()
+                                        + "... patch truncated";
+                    }
+
+
+                    content.append(
+                            "  patch:"
+                    );
+
+                    content.append(
+                            System.lineSeparator()
+                    );
+
+                    content.append(
+                            patch
+                    );
+
+                    content.append(
+                            System.lineSeparator()
+                    );
+                }
+
+
+                count++;
+            }
+
+
+            return content.toString()
+                    .trim();
+
+        } catch (RuntimeException exception) {
+
+            return baseContent;
+        }
     }
 
 

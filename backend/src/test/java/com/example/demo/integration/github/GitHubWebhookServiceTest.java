@@ -17,6 +17,12 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
+import java.util.List;
+
+import static org.mockito.Mockito.when;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+
 class GitHubWebhookServiceTest {
 
     @Test
@@ -37,6 +43,7 @@ class GitHubWebhookServiceTest {
         GitHubWebhookService service =
                 new GitHubWebhookService(
                         jsonMapper,
+                        org.mockito.Mockito.mock(GitHubCompareClient.class),
                         ingestionService
                 );
 
@@ -147,6 +154,319 @@ class GitHubWebhookServiceTest {
         );
     }
     @Test
+    void pushEventIncludesCompareChangedFiles() {
+
+        CollaborationEventIngestionService ingestionService =
+                mock(
+                        CollaborationEventIngestionService.class
+                );
+
+        GitHubCompareClient compareClient =
+                mock(
+                        GitHubCompareClient.class
+                );
+
+
+        JsonMapper jsonMapper =
+                JsonMapper
+                        .builder()
+                        .build();
+
+
+        GitHubWebhookService service =
+                new GitHubWebhookService(
+                        jsonMapper,
+                        compareClient,
+                        ingestionService
+                );
+
+
+        UUID projectId =
+                UUID.fromString(
+                        "11111111-1111-1111-1111-111111111111"
+                );
+
+        String deliveryId =
+                "github-delivery-compare-001";
+
+
+        when(
+                compareClient.compare(
+                        "YounghanKang/Templ",
+                        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                        "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+                )
+        ).thenReturn(
+                new GitHubCompareClient.CompareResult(
+                        List.of(
+                                new GitHubCompareClient.ChangedFile(
+                                        "src/main/java/com/example/demo/AuthService.java",
+                                        "modified",
+                                        12,
+                                        3,
+                                        15,
+                                        "@@ -1 +1 @@\n-old auth\n+new auth"
+                                )
+                        )
+                )
+        );
+
+
+        String payload =
+                """
+                {
+                  "ref": "refs/heads/main",
+                  "before": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                  "after": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                  "created": false,
+                  "deleted": false,
+                  "forced": false,
+                  "compare": "https://github.com/YounghanKang/Templ/compare/aaa...bbb",
+                  "repository": {
+                    "full_name": "YounghanKang/Templ"
+                  },
+                  "sender": {
+                    "id": 12345,
+                    "login": "octocat"
+                  },
+                  "head_commit": {
+                    "timestamp": "2026-08-15T14:30:00Z"
+                  },
+                  "commits": [
+                    {
+                      "id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                      "message": "feat: change authentication implementation"
+                    }
+                  ]
+                }
+                """;
+
+
+        service.handlePush(
+                projectId,
+                deliveryId,
+                payload.getBytes(
+                        StandardCharsets.UTF_8
+                )
+        );
+
+
+        ArgumentCaptor<String> contentCaptor =
+                ArgumentCaptor.forClass(
+                        String.class
+                );
+
+
+        verify(
+                ingestionService
+        ).ingest(
+                eq(projectId),
+                eq(SourceTool.GITHUB),
+                eq(CollaborationEventType.PUSH),
+                eq(EventAction.UPDATED),
+                eq(deliveryId),
+                eq("GitHub push: refs/heads/main"),
+                contentCaptor.capture(),
+                eq("12345"),
+                eq("octocat"),
+                eq("YounghanKang/Templ:refs/heads/main"),
+                eq("https://github.com/YounghanKang/Templ/compare/aaa...bbb"),
+                eq(false),
+                eq(
+                        Instant.parse(
+                                "2026-08-15T14:30:00Z"
+                        )
+                )
+        );
+
+
+        String content =
+                contentCaptor.getValue();
+
+
+        assertTrue(
+                content.contains(
+                        "changed files:"
+                )
+        );
+
+        assertTrue(
+                content.contains(
+                        "src/main/java/com/example/demo/AuthService.java"
+                )
+        );
+
+        assertTrue(
+                content.contains(
+                        "[modified] +12 -3 (15 changes)"
+                )
+        );
+
+        assertTrue(
+                content.contains(
+                        "-old auth"
+                )
+        );
+
+        assertTrue(
+                content.contains(
+                        "+new auth"
+                )
+        );
+
+
+        verify(
+                compareClient
+        ).compare(
+                "YounghanKang/Templ",
+                "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        );
+    }
+    @Test
+    void pushEventIsStillIngestedWhenCompareFails() {
+
+        CollaborationEventIngestionService ingestionService =
+                mock(
+                        CollaborationEventIngestionService.class
+                );
+
+        GitHubCompareClient compareClient =
+                mock(
+                        GitHubCompareClient.class
+                );
+
+
+        JsonMapper jsonMapper =
+                JsonMapper
+                        .builder()
+                        .build();
+
+
+        GitHubWebhookService service =
+                new GitHubWebhookService(
+                        jsonMapper,
+                        compareClient,
+                        ingestionService
+                );
+
+
+        UUID projectId =
+                UUID.fromString(
+                        "11111111-1111-1111-1111-111111111111"
+                );
+
+        String deliveryId =
+                "github-delivery-compare-fail-001";
+
+
+        when(
+                compareClient.compare(
+                        "YounghanKang/Templ",
+                        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                        "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+                )
+        ).thenThrow(
+                new RuntimeException(
+                        "GitHub Compare API failure"
+                )
+        );
+
+
+        String payload =
+                """
+                {
+                  "ref": "refs/heads/main",
+                  "before": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                  "after": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                  "created": false,
+                  "deleted": false,
+                  "forced": false,
+                  "compare": "https://github.com/YounghanKang/Templ/compare/aaa...bbb",
+                  "repository": {
+                    "full_name": "YounghanKang/Templ"
+                  },
+                  "sender": {
+                    "id": 12345,
+                    "login": "octocat"
+                  },
+                  "head_commit": {
+                    "timestamp": "2026-08-15T14:30:00Z"
+                  },
+                  "commits": [
+                    {
+                      "id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                      "message": "feat: update authentication"
+                    }
+                  ]
+                }
+                """;
+
+
+        service.handlePush(
+                projectId,
+                deliveryId,
+                payload.getBytes(
+                        StandardCharsets.UTF_8
+                )
+        );
+
+
+        ArgumentCaptor<String> contentCaptor =
+                ArgumentCaptor.forClass(
+                        String.class
+                );
+
+
+        verify(
+                ingestionService
+        ).ingest(
+                eq(projectId),
+                eq(SourceTool.GITHUB),
+                eq(CollaborationEventType.PUSH),
+                eq(EventAction.UPDATED),
+                eq(deliveryId),
+                eq("GitHub push: refs/heads/main"),
+                contentCaptor.capture(),
+                eq("12345"),
+                eq("octocat"),
+                eq("YounghanKang/Templ:refs/heads/main"),
+                eq("https://github.com/YounghanKang/Templ/compare/aaa...bbb"),
+                eq(false),
+                eq(
+                        Instant.parse(
+                                "2026-08-15T14:30:00Z"
+                        )
+                )
+        );
+
+
+        String content =
+                contentCaptor.getValue();
+
+
+        assertTrue(
+                content.contains(
+                        "feat: update authentication"
+                )
+        );
+
+        assertFalse(
+                content.contains(
+                        "changed files:"
+                )
+        );
+
+
+        verify(
+                compareClient
+        ).compare(
+                "YounghanKang/Templ",
+                "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        );
+    }
+    @Test
     void issueOpenedEventIsConvertedAndIngested() {
 
         CollaborationEventIngestionService ingestionService =
@@ -164,6 +484,7 @@ class GitHubWebhookServiceTest {
         GitHubWebhookService service =
                 new GitHubWebhookService(
                         jsonMapper,
+                        org.mockito.Mockito.mock(GitHubCompareClient.class),
                         ingestionService
                 );
 
@@ -278,6 +599,7 @@ class GitHubWebhookServiceTest {
         GitHubWebhookService service =
                 new GitHubWebhookService(
                         jsonMapper,
+                        org.mockito.Mockito.mock(GitHubCompareClient.class),
                         ingestionService
                 );
 
