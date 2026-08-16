@@ -82,5 +82,6 @@ public class AuthDto {
         private Long userId;
         private String username;
         private String nickname;
+        private String locale; // e.g. "ko-KR"
     }
 }

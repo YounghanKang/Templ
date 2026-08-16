@@ -40,4 +40,10 @@ public class RoadmapNode {
 
     @Column(length = 1000)
     private String prerequisitesJson;
+
+    @Column(length = 4000)
+    private String filesJson;
+
+    @Column(length = 4000)
+    private String commentsJson;
 }
