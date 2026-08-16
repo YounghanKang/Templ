@@ -103,11 +103,24 @@ export default function AuthScreen({ onSuccess }: { onSuccess: () => void }) {
   const [emailCodeFocused, setEmailCodeFocused] = useState(false)
 
   const loginWithGoogle = useGoogleLogin({
-    onSuccess: (codeResponse) => {
+    onSuccess: async (codeResponse) => {
       console.log('Google login success:', codeResponse)
-      // Here you would send codeResponse.access_token to your backend.
-      // For now, we simulate success by calling onSuccess immediately.
-      onSuccess()
+      try {
+        const res = await fetch('/api/auth/google', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ accessToken: codeResponse.access_token })
+        })
+        if (res.ok) {
+          const data = await res.json()
+          localStorage.setItem('templ_token', data.accessToken)
+          onSuccess()
+        } else {
+          console.error('Failed to authenticate with backend')
+        }
+      } catch (e) {
+        console.error('Google login error:', e)
+      }
     },
     onError: (error) => console.log('Google login error:', error),
   })

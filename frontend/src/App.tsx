@@ -1040,7 +1040,20 @@ function TeamMissionInput({ team, onSave }: { team: TeamType; onSave: (mission: 
   const [value, setValue] = useState(team.mission)
   const [saved, setSaved] = useState(!!team.mission)
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
-  const [graph, setGraph] = useState(buildInitialGraph)
+  const [graph, setGraph] = useState<{ nodes: RNode[]; edges: REdge[] }>({ nodes: [], edges: [] })
+  
+  useEffect(() => {
+    fetch(`/api/teams/${team.id}/roadmap`, {
+      headers: { 'Authorization': `Bearer ${localStorage.getItem('templ_token')}` }
+    })
+    .then(r => r.ok ? r.json() : null)
+    .then(data => {
+      if (data && data.nodes) setGraph(data)
+      else setGraph({ nodes: [], edges: [] })
+    })
+    .catch(console.error)
+  }, [team.id])
+
   const [editing, setEditing] = useState(false)
   const [specOpen, setSpecOpen] = useState(false)
   const [linkFrom, setLinkFrom] = useState<string | null>(null)
@@ -1049,15 +1062,12 @@ function TeamMissionInput({ team, onSave }: { team: TeamType; onSave: (mission: 
   const [alertNodeId, setAlertNodeId] = useState<string | null>(null)
   const announcedRef = useRef<Set<string>>(new Set())
 
-  // Guard against a malformed/stale graph value (e.g. hot-reload hook shuffling).
   const validGraph = !!graph && Array.isArray(graph.nodes) && Array.isArray(graph.edges)
-  useEffect(() => { if (!validGraph) setGraph(buildInitialGraph()) }, [validGraph])
   const safeGraph = validGraph ? graph : { nodes: [] as RNode[], edges: [] as REdge[] }
 
   const selectedNode = safeGraph.nodes.find(n => n.id === selectedNodeId) ?? null
   const alertNode = safeGraph.nodes.find(n => n.id === alertNodeId) ?? null
 
-  // Announce each problem node once with a popup so the issue isn't missed.
   useEffect(() => {
     const seen = announcedRef.current
     for (const n of safeGraph.nodes) {
@@ -1070,15 +1080,31 @@ function TeamMissionInput({ team, onSave }: { team: TeamType; onSave: (mission: 
     }
   }, [safeGraph.nodes])
 
-  function patchNode(id: string, patch: Partial<RNode>) {
+  async function patchNode(id: string, patch: Partial<RNode>) {
     setGraph(g => ({ ...g, nodes: g.nodes.map(n => n.id === id ? { ...n, ...patch } : n) }))
+    const node = safeGraph.nodes.find(n => n.id === id)
+    if (node) {
+      fetch(`/api/teams/${team.id}/roadmap/nodes/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('templ_token')}` },
+        body: JSON.stringify({ ...node, ...patch })
+      }).catch(console.error)
+    }
   }
 
-  function moveNode(id: string, x: number, y: number) {
+  async function moveNode(id: string, x: number, y: number) {
     setGraph(g => ({ ...g, nodes: g.nodes.map(n => n.id === id ? { ...n, x, y } : n) }))
+    const node = safeGraph.nodes.find(n => n.id === id)
+    if (node) {
+      fetch(`/api/teams/${team.id}/roadmap/nodes/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('templ_token')}` },
+        body: JSON.stringify({ ...node, x, y })
+      }).catch(console.error)
+    }
   }
 
-  function addNode() {
+  async function addNode() {
     const id = `n${Date.now()}${nextIdRef.current++}`
     const maxY = Math.max(0, ...safeGraph.nodes.map(n => n.y + n.h))
     const newNode: RNode = {
@@ -1088,29 +1114,49 @@ function TeamMissionInput({ team, onSave }: { team: TeamType; onSave: (mission: 
     }
     setGraph(g => ({ ...g, nodes: [...g.nodes, newNode] }))
     setSelectedNodeId(id)
+
+    fetch(`/api/teams/${team.id}/roadmap/nodes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('templ_token')}` },
+      body: JSON.stringify(newNode)
+    }).catch(console.error)
   }
 
-  function deleteNode(id: string) {
+  async function deleteNode(id: string) {
     setGraph(g => ({
       nodes: g.nodes.filter(n => n.id !== id),
       edges: g.edges.filter(e => e.from !== id && e.to !== id),
     }))
     setLinkFrom(f => (f === id ? null : f))
     setSelectedNodeId(p => (p === id ? null : p))
+
+    fetch(`/api/teams/${team.id}/roadmap/nodes/${id}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${localStorage.getItem('templ_token')}` }
+    }).catch(console.error)
   }
 
-  function deleteEdge(id: string) {
+  async function deleteEdge(id: string) {
     setGraph(g => ({ ...g, edges: g.edges.filter(e => e.id !== id) }))
+    fetch(`/api/teams/${team.id}/roadmap/edges/${id}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${localStorage.getItem('templ_token')}` }
+    }).catch(console.error)
   }
 
-  /** In edit mode a node click either starts or completes an arrow. */
-  function handleNodeSelect(id: string) {
+  async function handleNodeSelect(id: string) {
     if (editing && linkFrom) {
       if (linkFrom !== id) {
-        setGraph(g => {
-          const exists = g.edges.some(e => e.from === linkFrom && e.to === id)
-          return exists ? g : { ...g, edges: [...g.edges, { id: `e-${linkFrom}-${id}-${Date.now()}`, from: linkFrom, to: id }] }
-        })
+        const exists = safeGraph.edges.some(e => e.from === linkFrom && e.to === id)
+        if (!exists) {
+          const newEdge = { id: `e-${linkFrom}-${id}-${Date.now()}`, from: linkFrom, to: id }
+          setGraph(g => ({ ...g, edges: [...g.edges, newEdge] }))
+          fetch(`/api/teams/${team.id}/roadmap/edges`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('templ_token')}` },
+            body: JSON.stringify(newEdge)
+          }).catch(console.error)
+        }
       }
       setLinkFrom(null)
       return
@@ -1811,18 +1857,36 @@ function CreateTeamForm({ teams, onCreated, accounts, onAccountsChange }: {
     setInviteInput('')
   }
 
-  function handleCreate(e: React.FormEvent) {
+  async function handleCreate(e: React.FormEvent) {
     e.preventDefault()
     if (!teamName.trim() || !slackHandle.trim()) return
     onAccountsChange({ ...accounts, slack: { connected: true, handle: slackHandle.trim() } })
     setCreating(true)
-    setTimeout(() => {
-      const newId = `T-${String(teams.length + 1).padStart(3, '0')}`
-      const next: TeamType = { id: newId, name: teamName.trim(), members: 1 + invitees.length, color: selectedColor, mission: '' }
+
+    try {
+      const res = await fetch('/api/teams', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('templ_token')}`
+        },
+        body: JSON.stringify({
+          name: teamName.trim(),
+          color: selectedColor,
+          mission: teamDesc.trim(),
+          slackHandle: slackHandle.trim()
+        })
+      })
+      if (!res.ok) throw new Error('Failed to create team')
+      const createdTeam = await res.json()
+      
       setSuccess(true)
+      setTimeout(() => { setSuccess(false); onCreated(createdTeam) }, 800)
+    } catch (err) {
+      console.error(err)
+    } finally {
       setCreating(false)
-      setTimeout(() => { setSuccess(false); onCreated(next) }, 800)
-    }, 600)
+    }
   }
 
   const inputStyle: React.CSSProperties = {
@@ -2095,18 +2159,95 @@ function PersonalSettings({ profile, onChange, onClose }: {
 // ── App ───────────────────────────────────────────────────────────────────────
 export default function App() {
   const { t } = useTranslation()
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [teams, setTeams] = useState<TeamType[]>(INITIAL_TEAMS)
-  const [view, setView] = useState<View>({ kind: 'team', id: INITIAL_TEAMS[INITIAL_TEAMS.length - 1].id })
+  const [isAuthenticated, setIsAuthenticated] = useState(() => !!localStorage.getItem('templ_token'))
+  const [teams, setTeams] = useState<TeamType[]>([])
+  const [view, setView] = useState<View>({ kind: 'create' })
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (!isAuthenticated) return
+    const headers = { 'Authorization': `Bearer ${localStorage.getItem('templ_token')}` }
+
+    Promise.all([
+      fetch('/api/teams', { headers }).then(r => r.ok ? r.json() : []),
+      fetch('/api/users/profile', { headers }).then(r => r.ok ? r.json() : null)
+    ])
+      .then(([teamsData, profileData]) => {
+        setTeams(teamsData)
+        if (teamsData.length > 0) {
+          setView({ kind: 'team', id: teamsData[teamsData.length - 1].id })
+        } else {
+          setView({ kind: 'create' })
+        }
+        if (profileData) setProfile(profileData)
+        setLoading(false)
+      })
+      .catch(err => {
+        console.error('Failed to fetch initial data:', err)
+        setLoading(false)
+      })
+  }, [isAuthenticated])
+
   const [tab, setTab] = useState<TabId>('mission')
   const [accounts, setAccounts] = useState<Accounts>({
     slack: { connected: false, handle: '' },
     github: { connected: false, handle: '' },
   })
+
+  const activeTeamId = view.kind === 'team' ? view.id : null
+
+  useEffect(() => {
+    if (activeTeamId) {
+      fetch(`/api/teams/${activeTeamId}/integrations`, {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('templ_token')}` }
+      })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data) setAccounts(data)
+        else setAccounts({ slack: { connected: false, handle: '' }, github: { connected: false, handle: '' } })
+      })
+      .catch(console.error)
+    }
+  }, [activeTeamId])
+
+  async function handleAccountsChange(newAccounts: Accounts) {
+    setAccounts(newAccounts)
+    if (activeTeamId) {
+      try {
+        await fetch(`/api/teams/${activeTeamId}/integrations`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('templ_token')}`
+          },
+          body: JSON.stringify(newAccounts)
+        })
+      } catch (err) {
+        console.error('Failed to update integrations:', err)
+      }
+    }
+  }
+
   const [profileOpen, setProfileOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [profile, setProfile] = useState({ region: '대한민국 · 서울', language: '한국어' })
   const [sidebarOpen, setSidebarOpen] = useState(true)
+
+  async function handleProfileChange(newProfile: typeof profile) {
+    setProfile(newProfile)
+    try {
+      await fetch('/api/users/profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('templ_token')}`
+        },
+        body: JSON.stringify(newProfile)
+      })
+    } catch (err) {
+      console.error('Failed to update profile:', err)
+    }
+  }
 
   function handleCreated(team: TeamType) {
     setTeams(prev => [...prev, team])
@@ -2125,6 +2266,14 @@ export default function App() {
 
   if (!isAuthenticated) {
     return <AuthScreen onSuccess={() => setIsAuthenticated(true)} />
+  }
+
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center', background: 'var(--color-background)', color: 'var(--color-foreground)', fontFamily: 'var(--font-display)' }}>
+        Loading...
+      </div>
+    )
   }
 
   return (
@@ -2328,7 +2477,7 @@ export default function App() {
               const team = teams.find(t => t.id === view.id)
               return team ? (
                 <TeamView key={team.id} team={team} tab={tab} onMissionSave={handleMissionSave}
-                  accounts={accounts} onAccountsChange={setAccounts} />
+                  accounts={accounts} onAccountsChange={handleAccountsChange} />
               ) : null
             })()
           )}
@@ -2336,7 +2485,7 @@ export default function App() {
       </div>
 
       {settingsOpen && (
-        <PersonalSettings profile={profile} onChange={setProfile} onClose={() => setSettingsOpen(false)} />
+        <PersonalSettings profile={profile} onChange={handleProfileChange} onClose={() => setSettingsOpen(false)} />
       )}
 
       <style>{`
