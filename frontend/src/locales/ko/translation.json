@@ -78,7 +78,14 @@
   },
   "teamInfo": {
     "missionPlaceholder": "팀이 궁극적으로 달성하려는 목표를 한 문장으로 정의해주세요.",
-    "noMission": "아직 팀 미션이 없습니다. 편집 버튼을 눌러 추가해보세요."
+    "noMission": "아직 팀 미션이 없습니다. 편집 버튼을 눌러 추가해보세요.",
+    "mission": "MISSION",
+    "edit": "편집",
+    "members": "MEMBERS",
+    "projects": "PROJECTS",
+    "active_this_week": "ACTIVE THIS WEEK",
+    "invite": "Invite",
+    "more_members": "more members"
   },
   "roadmap": {
     "toolbar": {
@@ -148,13 +155,27 @@
       "authorLabel": "제출자: ",
       "dateLabel": "제출일: ",
       "sampleNotice": "(샘플 파일입니다)"
-    }
+    },
+    "title": "목표 달성 로드맵",
+    "status_done": "완료",
+    "status_in_progress": "진행중",
+    "status_pending": "대기",
+    "check_spec": "명세서 확인 및 재설정",
+    "edit_roadmap": "로드맵 편집",
+    "node_click_hint": "노드를 클릭하면 상세 정보가 열립니다",
+    "reset": "리셋",
+    "error_occurred": "문제가 발생했습니다",
+    "close": "닫기",
+    "view_node": "해당 노드 보기",
+    "canvas_help_edit": "노드를 드래그해 이동 · 아래 화살표 버튼으로 연결 시작 · × 로 노드 삭제 · 화살표를 클릭하면 삭제",
+    "delete_node": "노드 삭제",
+    "link_node": "링크 연결"
   },
   "time": {
     "justNow": "방금 전"
   },
   "integrations": {
-    "title": "채팅방 연동 설정",
+    "title": "연동 설정",
     "subtitle": "AI 요약과 프로젝트 알림을 받을 외부 채팅방을 선택하고 연결 링크를 입력하세요.",
     "myAccountSection": "내 계정 연결",
     "teamChannelSection": "팀 채팅방",
@@ -172,7 +193,14 @@
     "connectSlackToSaveHint": "Slack 계정 연동 후 저장할 수 있어요",
     "memberStatusSection": "멤버 연동 현황",
     "slackNotConnected": "slack 미연결",
-    "githubNotConnected": "github 미연결"
+    "githubNotConnected": "github 미연결",
+    "desc": "팀에서 사용하는 외부 서비스를 연결하세요.",
+    "team_integrations": "팀 연동",
+    "unconnected": "미연결",
+    "save_settings": "설정 저장",
+    "no_changes": "변경 사항 없음",
+    "save_after_slack": "Slack 연동 후 저장할 수 있어요",
+    "saved_at": "에 저장됨"
   },
   "createTeam": {
     "subtitle": "팀을 만들면 첫 화면에서 팀 미션을 바로 입력할 수 있어요.",
@@ -181,7 +209,24 @@
     "inviteHintPrefix": "이메일 입력 후 ",
     "inviteHintSuffix": " 또는 Add를 클릭하세요.",
     "successMessage": "✓ 팀이 생성됐습니다",
-    "footerNotice": "생성 후 미션을 바로 입력할 수 있어요"
+    "footerNotice": "생성 후 미션을 바로 입력할 수 있어요",
+    "newTeam": "새로운 팀",
+    "integrations": "연동 설정",
+    "mission": "최종 목표",
+    "generating": "로드맵 생성 중...",
+    "step1Desc": "팀 이름과 고유 색상을 설정하여 팀 생성을 시작하세요.",
+    "step2Desc": "팀 알림과 AI 요약을 받으려면 Slack 계정 연동이 필수입니다.",
+    "step3Desc": "AI가 방향을 잡을 수 있도록 명세서(최종 목표)를 입력해주세요.",
+    "step4Desc": "AI가 명세서를 분석하여 디렉토리 트리를 구성하고 있습니다.",
+    "teamName": "팀 이름",
+    "teamNamePlaceholder": "예) 디자인팀",
+    "next": "다음",
+    "slackConnection": "Slack 연결",
+    "writeSpec": "명세서 작성",
+    "specPlaceholder": "예) 모든 사용자가 직관적으로 제품을 사용할 수 있도록 일관된 디자인 언어를 구축한다.",
+    "generateRoadmap": "로드맵 생성",
+    "aiAnalyzing": "AI가 명세서를 분석중입니다...",
+    "aiWaitMsg": "잠시만 기다려주세요. 곧 디렉토리 트리가 생성됩니다."
   },
   "settings": {
     "title": "개인 설정",
@@ -202,6 +247,37 @@
       "en": "English",
       "ja": "日本語",
       "zh": "中文(简体)"
-    }
+    },
+    "titleKo": "개인 설정"
+  },
+  "node": {
+    "add": "추가",
+    "justNow": "방금 전",
+    "info": "정보",
+    "comments": "댓글",
+    "commentPlaceholder": "댓글 작성… (Enter로 등록)",
+    "issueOccurred": "문제 발생",
+    "resolved": "해결됨",
+    "issuePlaceholder": "어떤 문제가 발생했는지 적어주세요",
+    "noFiles": "제출된 파일이 없습니다",
+    "submitFile": "+ 파일 제출",
+    "done_checked": "✓ 완료",
+    "markAsIssue": "! 문제 발생으로 표시",
+    "objectivePlaceholder": "이 작업이 달성해야 하는 것",
+    "memberPlaceholder": "멤버 이름 입력 후 Enter",
+    "noPrerequisites": "선행 작업 없음 · 바로 시작 가능",
+    "prerequisitesPlaceholder": "선행 작업 입력 후 Enter",
+    "aiSummaryPlaceholder": "AI 요약이 여기에 생성됩니다",
+    "deleteFile": "파일 삭제",
+    "files": "제출된 파일",
+    "status": "진행 상태",
+    "objective": "목표",
+    "deadline": "시간 제한",
+    "members": "진행 멤버",
+    "prerequisites": "전 단계 할 일",
+    "aiSummary": "AI 요약",
+    "todo": "대기",
+    "active": "진행중",
+    "done": "완료"
   }
 }

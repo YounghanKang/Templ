@@ -78,7 +78,14 @@
   },
   "teamInfo": {
     "missionPlaceholder": "请用一句话定义团队最终要达成的目标。",
-    "noMission": "暂无团队使命。点击编辑按钮进行添加。"
+    "noMission": "暂无团队使命。点击编辑按钮进行添加。",
+    "mission": "任务",
+    "edit": "编辑",
+    "members": "成员",
+    "projects": "项目",
+    "active_this_week": "本周活跃",
+    "invite": "邀请",
+    "more_members": "更多成员"
   },
   "roadmap": {
     "toolbar": {
@@ -148,20 +155,34 @@
       "authorLabel": "提交者: ",
       "dateLabel": "提交日期: ",
       "sampleNotice": "（这是示例文件）"
-    }
+    },
+    "title": "目标达成路线图",
+    "status_done": "已完成",
+    "status_in_progress": "进行中",
+    "status_pending": "等待中",
+    "check_spec": "查看说明书并重置",
+    "edit_roadmap": "编辑路线图",
+    "node_click_hint": "点击节点查看详细信息",
+    "reset": "重置",
+    "error_occurred": "发生了问题",
+    "close": "关闭",
+    "view_node": "查看节点",
+    "canvas_help_edit": "拖动以移动 · 点击箭头以链接 · 点击×删除节点 · 点击箭头删除链接",
+    "delete_node": "删除节点",
+    "link_node": "链接节点"
   },
   "time": {
     "justNow": "刚刚"
   },
   "integrations": {
-    "title": "聊天室关联设置",
+    "title": "集成设置",
     "subtitle": "选择用于接收 AI 摘要和项目通知的外部聊天室，并输入连接链接。",
     "myAccountSection": "关联我的账号",
     "teamChannelSection": "团队聊天室",
     "notConnected": "未连接",
     "statusConnected": "已连接",
-    "disconnect": "取消关联",
-    "connect": "关联",
+    "disconnect": "断开连接",
+    "connect": "连接",
     "connectButton": "连接",
     "slackHint": "@handle 或 Slack 邮箱",
     "slackWarningPrefix": "关联 Slack 账号是 ",
@@ -172,7 +193,14 @@
     "connectSlackToSaveHint": "关联 Slack 账号后方可保存",
     "memberStatusSection": "成员关联状态",
     "slackNotConnected": "Slack 未连接",
-    "githubNotConnected": "GitHub 未连接"
+    "githubNotConnected": "GitHub 未连接",
+    "desc": "连接团队使用的外部服务。",
+    "team_integrations": "团队集成",
+    "unconnected": "未连接",
+    "save_settings": "保存设置",
+    "no_changes": "没有更改",
+    "save_after_slack": "连接Slack后即可保存",
+    "saved_at": "已保存于"
   },
   "createTeam": {
     "subtitle": "创建团队后，可以在首屏直接输入团队使命。",
@@ -181,7 +209,24 @@
     "inviteHintPrefix": "输入邮箱后按 ",
     "inviteHintSuffix": " 或点击 Add。",
     "successMessage": "✓ 团队已创建",
-    "footerNotice": "创建后可立即输入使命"
+    "footerNotice": "创建后可立即输入使命",
+    "newTeam": "新团队",
+    "integrations": "集成设置",
+    "mission": "最终目标",
+    "generating": "生成路线图中...",
+    "step1Desc": "设置团队名称和专属颜色以开始创建团队。",
+    "step2Desc": "需要连接Slack才能接收团队通知和AI摘要。",
+    "step3Desc": "请输入说明书（最终目标），以便AI确定方向。",
+    "step4Desc": "AI正在分析说明书并构建目录树。",
+    "teamName": "团队名称",
+    "teamNamePlaceholder": "例如) 设计团队",
+    "next": "下一步",
+    "slackConnection": "连接 Slack",
+    "writeSpec": "编写说明书",
+    "specPlaceholder": "例如) 构建一致的设计语言，以便所有用户都能直观地使用产品。",
+    "generateRoadmap": "生成路线图",
+    "aiAnalyzing": "AI正在分析说明书...",
+    "aiWaitMsg": "请稍等，目录树即将生成。"
   },
   "settings": {
     "title": "个人设置",
@@ -202,6 +247,37 @@
       "en": "英语",
       "ja": "日语",
       "zh": "中文（简体）"
-    }
+    },
+    "titleKo": "个人设置"
+  },
+  "node": {
+    "add": "添加",
+    "justNow": "刚刚",
+    "info": "信息",
+    "comments": "评论",
+    "commentPlaceholder": "写评论... (按Enter发表)",
+    "issueOccurred": "发生问题",
+    "resolved": "已解决",
+    "issuePlaceholder": "请在此描述问题",
+    "noFiles": "未提交文件",
+    "submitFile": "+ 提交文件",
+    "done_checked": "✓ 完成",
+    "markAsIssue": "! 标记为问题",
+    "objectivePlaceholder": "此任务旨在实现什么",
+    "memberPlaceholder": "输入成员名称并按Enter",
+    "noPrerequisites": "无先决条件 · 可立即开始",
+    "prerequisitesPlaceholder": "输入先决条件并按Enter",
+    "aiSummaryPlaceholder": "AI摘要将在此生成",
+    "deleteFile": "删除文件",
+    "files": "相关文件",
+    "status": "进度状况",
+    "objective": "目标",
+    "deadline": "截止时间",
+    "members": "成员",
+    "prerequisites": "前置任务",
+    "aiSummary": "AI摘要",
+    "todo": "待办",
+    "active": "进行中",
+    "done": "已完成"
   }
 }

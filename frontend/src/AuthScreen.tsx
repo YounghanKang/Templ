@@ -106,10 +106,14 @@ export default function AuthScreen({ onSuccess }: { onSuccess: () => void }) {
     onSuccess: async (codeResponse) => {
       console.log('Google login success:', codeResponse)
       try {
+        const langLabel = LANG_OPTIONS.find(l => l.code === i18n.language)?.label || '한국어'
         const res = await fetch('/api/auth/google', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ accessToken: codeResponse.access_token })
+          body: JSON.stringify({ 
+            accessToken: codeResponse.access_token,
+            language: langLabel 
+          })
         })
         if (res.ok) {
           const data = await res.json()
@@ -163,19 +167,48 @@ export default function AuthScreen({ onSuccess }: { onSuccess: () => void }) {
   // Login handler
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log('Login API call with:', { username: loginId, password: loginPw })
-    // Simulate API delay
-    await new Promise(r => setTimeout(r, 600))
-    onSuccess()
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: loginId, pw: loginPw })
+      })
+      if (res.ok) {
+        const data = await res.json()
+        localStorage.setItem('templ_token', data.accessToken)
+        onSuccess()
+      } else {
+        console.error('Login failed')
+      }
+    } catch (err) {
+      console.error(err)
+    }
   }
 
   // Signup handler
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log('Signup API call with:', { username: su.id, password: su.pw, email: su.email, nickname: su.nickname })
-    // Simulate API delay
-    await new Promise(r => setTimeout(r, 600))
-    setPage('login')
+    try {
+      const langLabel = LANG_OPTIONS.find(l => l.code === i18n.language)?.label || '한국어'
+      const res = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          id: su.id, 
+          pw: su.pw, 
+          email: su.email, 
+          nickname: su.nickname,
+          language: langLabel
+        })
+      })
+      if (res.ok) {
+        setPage('login')
+      } else {
+        console.error('Signup failed')
+      }
+    } catch (err) {
+      console.error(err)
+    }
   }
 
   const Background = () => (
@@ -375,6 +408,19 @@ export default function AuthScreen({ onSuccess }: { onSuccess: () => void }) {
                 onFocus={() => setSf(p => ({ ...p, nickname: true }))} onBlur={() => setSf(p => ({ ...p, nickname: false }))}
                 placeholder={t('auth.nicknamePlaceholder')}
                 style={inputBase(sf.nickname, font)} />
+            </div>
+
+            {/* ── Preferred Language ── */}
+            <div>
+              <label className="block text-[10px] tracking-[0.12em] uppercase mb-1.5" style={{ color: '#6b6760', fontFamily: font }}>Language</label>
+              <select 
+                value={i18n.language} 
+                onChange={e => i18n.changeLanguage(e.target.value)}
+                style={{ ...inputBase(false, font), cursor: 'pointer' }}>
+                {LANG_OPTIONS.map(l => (
+                  <option key={l.code} value={l.code}>{l.flag} {l.label}</option>
+                ))}
+              </select>
             </div>
 
             <button type="submit" className="w-full py-3 text-sm font-medium transition-all hover:opacity-90 active:scale-[0.98] mt-1"

@@ -78,7 +78,14 @@
   },
   "teamInfo": {
     "missionPlaceholder": "Please define the goal the team ultimately aims to achieve in one sentence.",
-    "noMission": "No team mission yet. Click edit to add one."
+    "noMission": "No team mission yet. Click edit to add one.",
+    "mission": "MISSION",
+    "edit": "Edit",
+    "members": "MEMBERS",
+    "projects": "PROJECTS",
+    "active_this_week": "ACTIVE THIS WEEK",
+    "invite": "Invite",
+    "more_members": "more members"
   },
   "roadmap": {
     "toolbar": {
@@ -148,13 +155,27 @@
       "authorLabel": "Author: ",
       "dateLabel": "Date: ",
       "sampleNotice": "(This is a sample file)"
-    }
+    },
+    "title": "Goal Achievement Roadmap",
+    "status_done": "Done",
+    "status_in_progress": "In Progress",
+    "status_pending": "Pending",
+    "check_spec": "Check Spec & Reset",
+    "edit_roadmap": "Edit Roadmap",
+    "node_click_hint": "Click a node to view details",
+    "reset": "Reset",
+    "error_occurred": "An error occurred",
+    "close": "Close",
+    "view_node": "View Node",
+    "canvas_help_edit": "Drag to move · Click arrow to link · Click × to delete node · Click arrow to delete link",
+    "delete_node": "Delete Node",
+    "link_node": "Link Node"
   },
   "time": {
     "justNow": "Just now"
   },
   "integrations": {
-    "title": "Chat Room Integration Settings",
+    "title": "Integrations",
     "subtitle": "Select an external chat room to receive AI summaries and project notifications, then enter the connection link.",
     "myAccountSection": "Connect My Account",
     "teamChannelSection": "Team Chat Room",
@@ -172,7 +193,14 @@
     "connectSlackToSaveHint": "You can save after connecting your Slack account",
     "memberStatusSection": "Member Integration Status",
     "slackNotConnected": "Slack not connected",
-    "githubNotConnected": "GitHub not connected"
+    "githubNotConnected": "GitHub not connected",
+    "desc": "Connect external services used by your team.",
+    "team_integrations": "Team Integrations",
+    "unconnected": "Not connected",
+    "save_settings": "Save Settings",
+    "no_changes": "No changes",
+    "save_after_slack": "Can save after connecting Slack",
+    "saved_at": "Saved at "
   },
   "createTeam": {
     "subtitle": "Once you create a team, you can enter the team mission right away on the home screen.",
@@ -181,7 +209,24 @@
     "inviteHintPrefix": "Enter email and press ",
     "inviteHintSuffix": " or click Add.",
     "successMessage": "✓ Team created",
-    "footerNotice": "You can enter the mission right away after creation"
+    "footerNotice": "You can enter the mission right away after creation",
+    "newTeam": "New team",
+    "integrations": "Integrations",
+    "mission": "Mission",
+    "generating": "Generating Roadmap...",
+    "step1Desc": "Set a team name and color to start creating your team.",
+    "step2Desc": "Slack connection is required to receive team notifications and AI summaries.",
+    "step3Desc": "Enter a specification (final goal) for AI to set the direction.",
+    "step4Desc": "AI is analyzing the specification and building the directory tree.",
+    "teamName": "Team Name",
+    "teamNamePlaceholder": "e.g. Design Team",
+    "next": "Next",
+    "slackConnection": "Connect Slack",
+    "writeSpec": "Write Specification",
+    "specPlaceholder": "e.g. Build a consistent design language so all users can intuitively use the product.",
+    "generateRoadmap": "Generate Roadmap",
+    "aiAnalyzing": "AI is analyzing the specification...",
+    "aiWaitMsg": "Please wait a moment. The directory tree will be generated soon."
   },
   "settings": {
     "title": "Personal Settings",
@@ -202,6 +247,37 @@
       "en": "English",
       "ja": "Japanese",
       "zh": "Chinese (Simplified)"
-    }
+    },
+    "titleKo": "Personal Settings"
+  },
+  "node": {
+    "add": "Add",
+    "justNow": "Just now",
+    "info": "Info",
+    "comments": "Comments",
+    "commentPlaceholder": "Write a comment... (Enter to post)",
+    "issueOccurred": "Issue Occurred",
+    "resolved": "Resolved",
+    "issuePlaceholder": "Describe the issue here",
+    "noFiles": "No files submitted",
+    "submitFile": "+ Submit File",
+    "done_checked": "✓ Done",
+    "markAsIssue": "! Mark as Issue",
+    "objectivePlaceholder": "What this task aims to achieve",
+    "memberPlaceholder": "Enter member name and press Enter",
+    "noPrerequisites": "No prerequisites · Can start immediately",
+    "prerequisitesPlaceholder": "Enter prerequisite and press Enter",
+    "aiSummaryPlaceholder": "AI summary will be generated here",
+    "deleteFile": "Delete file",
+    "files": "FILES",
+    "status": "STATUS",
+    "objective": "OBJECTIVE",
+    "deadline": "DEADLINE",
+    "members": "MEMBERS",
+    "prerequisites": "PREREQUISITES",
+    "aiSummary": "AI SUMMARY",
+    "todo": "To Do",
+    "active": "Active",
+    "done": "Done"
   }
 }

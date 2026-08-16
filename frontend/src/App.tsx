@@ -221,6 +221,7 @@ function RoadmapNode({ node, warn, selected, dimmed, editing, linking, scale, on
   onSelect: (id: string) => void; onDelete: (id: string) => void
   onStartLink: (id: string) => void; onMove: (id: string, x: number, y: number) => void
 }) {
+  const { t } = useTranslation()
   const st = STATUS_META[node.status]
   const isRoot = node.tier === 'root'
   // A node either has its own problem (red) or inherits one from a downstream node (amber).
@@ -329,7 +330,7 @@ function RoadmapNode({ node, warn, selected, dimmed, editing, linking, scale, on
             <button
               onPointerDown={e => e.stopPropagation()}
               onClick={e => { e.stopPropagation(); onDelete(node.id) }}
-              title="노드 삭제"
+              title={t("roadmap.delete_node")}
               style={{
                 position: 'absolute', top: -9, right: -9, width: 20, height: 20, borderRadius: '50%',
                 background: '#ef4444', border: '2px solid #0f0f14', color: '#fff', cursor: 'pointer',
@@ -364,6 +365,7 @@ function RoadmapCanvas({ nodes, edges, selectedId, editing, linkFrom, onSelect, 
   onSelect: (id: string) => void; onMove: (id: string, x: number, y: number) => void
   onDeleteNode: (id: string) => void; onStartLink: (id: string) => void; onDeleteEdge: (id: string) => void
 }) {
+  const { t } = useTranslation()
   const [hoverEdge, setHoverEdge] = useState<string | null>(null)
   const [panning, setPanning] = useState(false)
   const viewportRef = useRef<HTMLDivElement>(null)
@@ -581,6 +583,7 @@ const fieldStyle: React.CSSProperties = {
 function ChipEditor({ items, color, placeholder, onChange }: {
   items: string[]; color: string; placeholder: string; onChange: (next: string[]) => void
 }) {
+  const { t } = useTranslation()
   const [draft, setDraft] = useState('')
   function add() {
     const v = draft.trim()
@@ -628,6 +631,7 @@ function ChipEditor({ items, color, placeholder, onChange }: {
 function NodeDetailPanel({ node, color, onChange, onClose }: {
   node: RNode; color: string; onChange: (patch: Partial<RNode>) => void; onClose: () => void
 }) {
+  const { t } = useTranslation()
   const st = STATUS_META[node.status]
   const [view, setView] = useState<'info' | 'comments'>('info')
   const [draft, setDraft] = useState('')
@@ -637,7 +641,7 @@ function NodeDetailPanel({ node, color, onChange, onClose }: {
   function submitComment() {
     const text = draft.trim()
     if (!text) return
-    onChange({ comments: [...comments, { id: Date.now(), author: 'Jordan Kim', text, time: '방금 전' }] })
+    onChange({ comments: [...comments, { id: Date.now(), author: 'Jordan Kim', text, time: t('node.justNow') }] })
     setDraft('')
   }
 
@@ -707,7 +711,7 @@ function NodeDetailPanel({ node, color, onChange, onClose }: {
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
             <path d="M1.5 2.5h9v6h-5l-2.5 2v-2h-1.5v-6Z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" />
           </svg>
-          댓글{comments.length > 0 ? ` ${comments.length}` : ''}
+          {t('node.comments')}{comments.length > 0 ? ` ${comments.length}` : ''}
         </button>
         <button onClick={onClose} style={{
           width: 26, height: 26, borderRadius: 7, border: '1px solid #33333f', flexShrink: 0,
@@ -761,7 +765,7 @@ function NodeDetailPanel({ node, color, onChange, onClose }: {
             <textarea
               value={draft} onChange={e => setDraft(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitComment() } }}
-              placeholder="댓글 작성… (Enter로 등록)" rows={2}
+              placeholder={t('node.commentPlaceholder')} rows={2}
               style={{ ...fieldStyle, fontSize: 12.5, padding: '9px 12px' }}
             />
             <button onClick={submitComment} disabled={!draft.trim()} style={{
@@ -809,14 +813,14 @@ function NodeDetailPanel({ node, color, onChange, onClose }: {
               </button>
             </div>
             <textarea value={node.issue} onChange={e => onChange({ issue: e.target.value })} rows={4}
-              placeholder="어떤 문제가 발생했는지 적어주세요"
+              placeholder={t('node.issuePlaceholder')}
               style={{ ...fieldStyle, background: '#ffffff', border: '1.5px solid #ef444433', fontSize: 12.5 }} />
           </div>
         )}
 
         {/* 제출된 파일 */}
         <div>
-          {section('제출된 파일', 'Files')}
+          {section(t('node.files'), 'FILES')}
           {files.length === 0 ? (
             <p style={{
               margin: 0, padding: '14px 0', textAlign: 'center', borderRadius: 10,
@@ -860,7 +864,7 @@ function NodeDetailPanel({ node, color, onChange, onClose }: {
                     <path d="M6 1.5v6M6 7.5L3.6 5.1M6 7.5l2.4-2.4M1.8 9.6h8.4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                   <button onClick={e => { e.stopPropagation(); onChange({ files: files.filter(x => x.id !== f.id) }) }}
-                    title="파일 삭제"
+                    title={t('node.deleteFile')}
                     style={{
                       border: 'none', background: 'none', padding: 4, cursor: 'pointer',
                       color: 'var(--color-muted-foreground)', display: 'flex', flexShrink: 0,
@@ -900,7 +904,7 @@ function NodeDetailPanel({ node, color, onChange, onClose }: {
 
         {/* 진행 상태 */}
         <div>
-          {section('진행 상태', 'Status')}
+          {section(t('node.status'), 'STATUS')}
           <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
             {(['todo', 'active', 'done'] as const).map(k => {
               const on = node.status === k
@@ -916,7 +920,7 @@ function NodeDetailPanel({ node, color, onChange, onClose }: {
                     fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: on ? 700 : 500,
                     cursor: 'pointer', transition: 'all 0.12s',
                   }}>
-                  {k === 'done' ? '✓ 완료' : m.label}
+                  {k === 'done' ? t('node.done_checked') : t(`node.${k}`)}
                 </button>
               )
             })}
@@ -942,15 +946,15 @@ function NodeDetailPanel({ node, color, onChange, onClose }: {
 
         {/* 목표 */}
         <div>
-          {section('목표', 'Objective')}
+          {section(t('node.objective'), 'OBJECTIVE')}
           <textarea value={node.goal} onChange={e => onChange({ goal: e.target.value })} rows={3}
-            placeholder="이 작업이 달성해야 하는 것"
+            placeholder={t('node.objectivePlaceholder')}
             style={{ ...fieldStyle, fontWeight: 500, background: `${color}0a`, border: `1.5px solid ${color}33` }} />
         </div>
 
         {/* 시간 제한 */}
         <div>
-          {section('시간 제한', 'Deadline')}
+          {section(t('node.deadline'), 'DEADLINE')}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <input type="date" value={node.dueDate} onChange={e => onChange({ dueDate: e.target.value })}
               style={{ ...fieldStyle, fontFamily: 'var(--font-mono)', flex: 1 }} />
@@ -965,7 +969,7 @@ function NodeDetailPanel({ node, color, onChange, onClose }: {
 
         {/* 진행 멤버 */}
         <div>
-          {section('진행 멤버', 'Members')}
+          {section(t('node.members'), 'MEMBERS')}
           {node.assignees.length > 0 && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 10 }}>
               {node.assignees.map(name => (
@@ -985,13 +989,13 @@ function NodeDetailPanel({ node, color, onChange, onClose }: {
               ))}
             </div>
           )}
-          <ChipEditor items={[]} color={color} placeholder="멤버 이름 입력 후 Enter"
+          <ChipEditor items={[]} color={color} placeholder={t('node.memberPlaceholder')}
             onChange={next => { if (next[0]) onChange({ assignees: [...node.assignees, next[0]] }) }} />
         </div>
 
         {/* 전 단계 할 일 */}
         <div>
-          {section('전 단계 할 일', 'Prerequisites')}
+          {section(t('node.prerequisites'), 'PREREQUISITES')}
           {node.prerequisites.length === 0 && (
             <div style={{
               padding: '9px 12px', borderRadius: 9, border: '1px dashed var(--color-border)',
@@ -1000,13 +1004,13 @@ function NodeDetailPanel({ node, color, onChange, onClose }: {
               선행 작업 없음 · 바로 시작 가능
             </div>
           )}
-          <ChipEditor items={node.prerequisites} color={color} placeholder="선행 작업 입력 후 Enter"
+          <ChipEditor items={node.prerequisites} color={color} placeholder={t('node.prerequisitesPlaceholder')}
             onChange={next => onChange({ prerequisites: next })} />
         </div>
 
         {/* AI 요약 */}
         <div>
-          {section('AI 요약', 'AI Summary')}
+          {section(t('node.aiSummary'), 'AI SUMMARY')}
           <div style={{ padding: '14px 15px', borderRadius: 14, background: '#0f0f14', border: '1px solid #2a2a38' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 9 }}>
               <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
@@ -1017,7 +1021,7 @@ function NodeDetailPanel({ node, color, onChange, onClose }: {
               </span>
             </div>
             <textarea value={node.aiSummary} onChange={e => onChange({ aiSummary: e.target.value })} rows={5}
-              placeholder="AI 요약이 여기에 생성됩니다"
+              placeholder={t('node.aiSummaryPlaceholder')}
               style={{
                 width: '100%', background: 'transparent', border: '1.5px solid transparent', borderRadius: 8,
                 padding: '2px 4px', margin: '0 0 0 -4px', outline: 'none', resize: 'none',
@@ -1212,7 +1216,7 @@ function TeamMissionInput({ team, onSave }: { team: TeamType; onSave: (mission: 
                 {!editing && (['done', 'active', 'todo'] as const).map(k => (
                   <span key={k} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <span style={{ width: 6, height: 6, borderRadius: '50%', background: STATUS_META[k].color }} />
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#9998ad' }}>{STATUS_META[k].label}</span>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#9998ad' }}>{t(k === 'done' ? 'roadmap.status_done' : k === 'active' ? 'roadmap.status_in_progress' : 'roadmap.status_pending')}</span>
                   </span>
                 ))}
                 {editing && (
@@ -1244,7 +1248,7 @@ function TeamMissionInput({ team, onSave }: { team: TeamType; onSave: (mission: 
                   fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 600, cursor: 'pointer',
                   transition: 'background 0.15s',
                 }}>
-                  {editing ? '편집 완료' : '로드맵 편집'}
+                  {editing ? t('teamInfo.edit') : t('roadmap.edit_roadmap')}
                 </button>
               </div>
             </div>
@@ -1257,7 +1261,7 @@ function TeamMissionInput({ team, onSave }: { team: TeamType; onSave: (mission: 
                 <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: linkFrom ? '#f5b849' : '#9998ad', letterSpacing: '0.04em', lineHeight: 1.7 }}>
                   {linkFrom
                     ? '연결할 대상 노드를 클릭하세요 · ESC 대신 시작 노드의 화살표 버튼을 다시 눌러 취소'
-                    : '노드를 드래그해 이동 · 아래 화살표 버튼으로 연결 시작 · × 로 노드 삭제 · 화살표를 클릭하면 삭제'}
+                    : t('roadmap.canvas_help_edit')}
                 </span>
               </div>
             )}
@@ -1329,7 +1333,7 @@ function TeamMissionInput({ team, onSave }: { team: TeamType; onSave: (mission: 
             }}>
               {selectedNode
                 ? `SELECTED · ${selectedNode.code} — ${selectedNode.label}`
-                : `${safeGraph.nodes.length} NODES · ${safeGraph.edges.length} LINKS · 노드를 클릭하면 상세 정보가 열립니다`}
+                : `${safeGraph.nodes.length} NODES · ${safeGraph.edges.length} LINKS · ${t('roadmap.node_click_hint')}`}
             </div>
         </div>
 
@@ -1632,6 +1636,7 @@ function AccountRow({ id, name, hint, required, account, color, onConnect, onDis
   onConnect: (handle: string) => void; onDisconnect: () => void
   demo?: boolean; isLast?: boolean
 }) {
+  const { t } = useTranslation()
   const [editing, setEditing] = useState(false)
   const [specOpen, setSpecOpen] = useState(false)
   const [draft, setDraft] = useState('')
@@ -1676,7 +1681,7 @@ function AccountRow({ id, name, hint, required, account, color, onConnect, onDis
               <span style={{
                 fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--color-muted-foreground)',
               }}>
-                미연결
+                {t('integrations.unconnected')}
               </span>
             )}
           </div>
@@ -1732,6 +1737,7 @@ function AccountRow({ id, name, hint, required, account, color, onConnect, onDis
 function TeamIntegrations({ team, accounts, onAccountsChange }: {
   team: TeamType; accounts: Accounts; onAccountsChange: (a: Accounts) => void
 }) {
+  const { t } = useTranslation()
   const [teams_ms, setTeamsMs] = useState<{ connected: boolean; handle: string }>({ connected: false, handle: '' })
   const [savedAt, setSavedAt] = useState<string | null>(null)
 
@@ -1766,14 +1772,14 @@ function TeamIntegrations({ team, accounts, onAccountsChange }: {
               연동 설정
             </h1>
             <p style={{ fontSize: 13.5, color: 'var(--color-muted-foreground)', marginTop: 8, lineHeight: 1.65, margin: '8px 0 0 0' }}>
-              팀에서 사용하는 외부 서비스를 연결하세요.
+              {t('integrations.desc')}
             </p>
           </div>
 
           {/* Rows section */}
           <div>
             <div style={{ padding: '24px 32px 16px' }}>
-              {label('팀 연동', 'Team integrations')}
+              {label(t('integrations.team_integrations'), 'Team integrations')}
             </div>
             
             <div style={{ display: 'flex', flexDirection: 'column', borderTop: '1px solid var(--color-border)' }}>
@@ -1803,7 +1809,7 @@ function TeamIntegrations({ team, accounts, onAccountsChange }: {
           {/* Footer section inside the card */}
           <div style={{ padding: '24px 32px 32px', background: '#eae9e4', borderTop: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 14 }}>
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: savedAt ? '#10b981' : 'var(--color-muted-foreground)' }}>
-              {savedAt ? `✓ ${savedAt}에 저장됨` : accounts.slack.connected ? '변경 사항 없음' : 'Slack 연동 후 저장할 수 있어요'}
+              {savedAt ? `✓ ${savedAt}${t('integrations.saved_at')}` : accounts.slack.connected ? t('integrations.no_changes') : t('integrations.save_after_slack')}
             </span>
             <button onClick={() => setSavedAt(new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }))}
               disabled={!accounts.slack.connected}
@@ -2070,6 +2076,7 @@ const LANGUAGES = ['한국어', 'English', '日本語', '中文(简体)']
 function PersonalSettings({ profile, onChange, onClose }: {
   profile: Profile; onChange: (p: Profile) => void; onClose: () => void
 }) {
+  const { t } = useTranslation()
   const [draft, setDraft] = useState<Profile>(profile)
 
   const label = (ko: string, en: string) => (
@@ -2105,7 +2112,7 @@ function PersonalSettings({ profile, onChange, onClose }: {
               Personal settings
             </div>
             <div style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700, color: '#ffffff', letterSpacing: '-0.02em' }}>
-              개인 설정
+              {t('settings.titleKo')}
             </div>
           </div>
           <button onClick={onClose} style={{
@@ -2120,13 +2127,13 @@ function PersonalSettings({ profile, onChange, onClose }: {
 
         <div style={{ padding: '22px', display: 'flex', flexDirection: 'column', gap: 18 }}>
           <div>
-            {label('거주 지역', 'Region')}
+            {label(t('settings.regionLabel'), 'Region')}
             <select value={draft.region} onChange={e => setDraft({ ...draft, region: e.target.value })} style={control}>
               {REGIONS.map(r => <option key={r} value={r}>{r}</option>)}
             </select>
           </div>
           <div>
-            {label('선호 언어', 'Language')}
+            {label(t('settings.languageLabel'), 'Language')}
             <select value={draft.language} onChange={e => setDraft({ ...draft, language: e.target.value })} style={control}>
               {LANGUAGES.map(l => <option key={l} value={l}>{l}</option>)}
             </select>
@@ -2142,13 +2149,13 @@ function PersonalSettings({ profile, onChange, onClose }: {
             background: 'transparent', color: 'var(--color-muted-foreground)',
             fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 600, cursor: 'pointer',
           }}>
-            취소
+            {t('common.cancel')}
           </button>
           <button onClick={() => { onChange(draft); onClose() }} style={{
             padding: '9px 20px', borderRadius: 10, border: 'none', background: 'var(--color-primary)',
             color: '#ffffff', fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 600, cursor: 'pointer',
           }}>
-            저장
+            {t('common.save')}
           </button>
         </div>
       </div>
@@ -2158,7 +2165,7 @@ function PersonalSettings({ profile, onChange, onClose }: {
 
 // ── App ───────────────────────────────────────────────────────────────────────
 export default function App() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [isAuthenticated, setIsAuthenticated] = useState(() => !!localStorage.getItem('templ_token'))
   const [teams, setTeams] = useState<TeamType[]>([])
   const [view, setView] = useState<View>({ kind: 'create' })
@@ -2179,7 +2186,11 @@ export default function App() {
         } else {
           setView({ kind: 'create' })
         }
-        if (profileData) setProfile(profileData)
+        if (profileData) {
+          setProfile(profileData)
+          const langMap: Record<string, string> = { '한국어': 'ko', 'English': 'en', '日本語': 'ja', '中文(简体)': 'zh' }
+          if (langMap[profileData.language]) i18n.changeLanguage(langMap[profileData.language])
+        }
         setLoading(false)
       })
       .catch(err => {
@@ -2235,6 +2246,8 @@ export default function App() {
 
   async function handleProfileChange(newProfile: typeof profile) {
     setProfile(newProfile)
+    const langMap: Record<string, string> = { '한국어': 'ko', 'English': 'en', '日本語': 'ja', '中文(简体)': 'zh' }
+    if (langMap[newProfile.language]) i18n.changeLanguage(langMap[newProfile.language])
     try {
       await fetch('/api/users/profile', {
         method: 'PUT',
@@ -2259,7 +2272,6 @@ export default function App() {
     setTeams(prev => prev.map(t => t.id === id ? { ...t, mission } : t))
   }
 
-  const activeTeamId = view.kind === 'team' ? view.id : null
   const topbarTitle = view.kind === 'create'
     ? t('header.newTeam')
     : teams.find(t => t.id === activeTeamId)?.name ?? ''
@@ -2277,7 +2289,7 @@ export default function App() {
   }
 
   return (
-    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', fontFamily: 'var(--font-body)' }}>
+    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', fontFamily: 'var(--font-body)', background: view.kind === 'create' ? '#0f0f14' : 'var(--color-background)' }}>
 
       {/* ── Sidebar ── */}
       <aside style={{
@@ -2288,14 +2300,9 @@ export default function App() {
       }}>
         <div style={{ padding: '24px 20px 20px', borderBottom: '1px solid var(--color-border-sidebar)', flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ width: 30, height: 30, background: 'var(--color-primary)', borderRadius: 8, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <path d="M8 2L14 5.5V10.5L8 14L2 10.5V5.5L8 2Z" stroke="white" strokeWidth="1.5" fill="none" />
-                <circle cx="8" cy="8" r="2" fill="white" />
-              </svg>
-            </div>
-            <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 16, color: '#ffffff', letterSpacing: '-0.01em', whiteSpace: 'nowrap' }}>
-              Nexus
+            <img src="/favicon.png" alt="Orchestree" style={{ width: 30, height: 30, borderRadius: 8, objectFit: 'contain', flexShrink: 0 }} />
+            <span style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 700, color: 'var(--color-sidebar-foreground)', letterSpacing: '-0.02em', whiteSpace: 'nowrap' }}>
+              Orchestree
             </span>
           </div>
         </div>
@@ -2444,7 +2451,7 @@ export default function App() {
                 </div>
                 {([
                   { label: t('userMenu.personalSettings'), danger: false, onSelect: () => setSettingsOpen(true) },
-                  { label: t('userMenu.logout'), danger: true, onSelect: () => {} },
+                  { label: t('userMenu.logout'), danger: true, onSelect: () => { localStorage.removeItem('templ_token'); setIsAuthenticated(false); } },
                 ]).map(item => (
                   <button key={item.label} onClick={() => { setProfileOpen(false); item.onSelect() }}
                     style={{ width: '100%', textAlign: 'left', padding: '10px 16px', fontSize: 13, fontWeight: 500, color: item.danger ? '#ef4444' : 'var(--color-foreground)', background: 'transparent', border: 'none', borderTop: item.danger ? '1px solid var(--color-border)' : 'none', cursor: 'pointer', transition: 'background 0.1s' }}
