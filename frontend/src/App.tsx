@@ -1041,6 +1041,7 @@ function NodeDetailPanel({ node, color, onChange, onClose }: {
 
 // ── Mission input tab ─────────────────────────────────────────────────────────
 function TeamMissionInput({ team, onSave }: { team: TeamType; onSave: (mission: string) => void }) {
+  const { t } = useTranslation()
   const [value, setValue] = useState(team.mission)
   const [saved, setSaved] = useState(!!team.mission)
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
@@ -2189,7 +2190,8 @@ export default function App() {
         if (profileData) {
           setProfile(profileData)
           const langMap: Record<string, string> = { '한국어': 'ko', 'English': 'en', '日本語': 'ja', '中文(简体)': 'zh' }
-          if (langMap[profileData.language]) i18n.changeLanguage(langMap[profileData.language])
+          const mappedLang = langMap[profileData.language] || profileData.language;
+          if (mappedLang) i18n.changeLanguage(mappedLang)
         }
         setLoading(false)
       })
@@ -2247,7 +2249,8 @@ export default function App() {
   async function handleProfileChange(newProfile: typeof profile) {
     setProfile(newProfile)
     const langMap: Record<string, string> = { '한국어': 'ko', 'English': 'en', '日本語': 'ja', '中文(简体)': 'zh' }
-    if (langMap[newProfile.language]) i18n.changeLanguage(langMap[newProfile.language])
+    const mappedLang = langMap[newProfile.language] || newProfile.language;
+    if (mappedLang) i18n.changeLanguage(mappedLang)
     try {
       await fetch('/api/users/profile', {
         method: 'PUT',
@@ -2298,12 +2301,9 @@ export default function App() {
         borderRight: sidebarOpen ? '1px solid var(--color-border-sidebar)' : 'none',
         overflow: 'hidden', transition: 'width 0.22s cubic-bezier(0.4,0,0.2,1), min-width 0.22s cubic-bezier(0.4,0,0.2,1)',
       }}>
-        <div style={{ padding: '24px 20px 20px', borderBottom: '1px solid var(--color-border-sidebar)', flexShrink: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <img src="/favicon.png" alt="Orchestree" style={{ width: 30, height: 30, borderRadius: 8, objectFit: 'contain', flexShrink: 0 }} />
-            <span style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 700, color: 'var(--color-sidebar-foreground)', letterSpacing: '-0.02em', whiteSpace: 'nowrap' }}>
-              Orchestree
-            </span>
+        <div style={{ padding: '12px 4px', height: 74, borderBottom: '1px solid var(--color-border-sidebar)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+          <div style={{ display: 'flex', alignItems: 'center', width: '100%', height: '100%' }}>
+            <img src="/logo.png" alt="Orchestree" style={{ width: '100%', height: '100%', objectFit: 'contain', transform: 'scale(1.6)', flexShrink: 0 }} />
           </div>
         </div>
 
@@ -2469,8 +2469,8 @@ export default function App() {
         <main
           style={{ 
             flex: 1, overflow: 'hidden', 
-            padding: (view.kind === 'team' && (tab === 'mission' || tab === 'integrations' || tab === 'info')) ? '0' : '22px 20px 18px', 
-            background: (view.kind === 'team' && (tab === 'integrations' || tab === 'info')) ? '#0f0f14' : 'var(--color-background)', 
+            padding: ((view.kind === 'team' && (tab === 'mission' || tab === 'integrations' || tab === 'info')) || view.kind === 'create') ? '0' : '22px 20px 18px', 
+            background: ((view.kind === 'team' && (tab === 'integrations' || tab === 'info')) || view.kind === 'create') ? '#0f0f14' : 'var(--color-background)', 
             display: 'flex', flexDirection: 'column' 
           }}
           onClick={() => profileOpen && setProfileOpen(false)}
