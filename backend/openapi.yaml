@@ -1,15 +1,21 @@
 openapi: 3.0.3
 info:
   title: Templ API
-  description: Team and roadmap collaboration backend API contract
-  version: 1.0.0
+  description: |
+    Team and roadmap collaboration backend API contract.
+    Frontend uses camelCase response keys and JWT bearer authentication for protected endpoints.
+  version: 1.1.0
 servers:
   - url: http://localhost:8080
     description: Local development server
+security:
+  - bearerAuth: []
 paths:
   /api/auth/login:
     post:
-      summary: Login
+      summary: Login with username/password
+      tags: [Auth]
+      security: []
       requestBody:
         required: true
         content:
@@ -23,11 +29,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AuthResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '401':
-          description: Invalid credentials
+          $ref: '#/components/responses/Unauthorized'
+
   /api/auth/signup:
     post:
-      summary: Signup
+      summary: Signup a new user
+      tags: [Auth]
+      security: []
       requestBody:
         required: true
         content:
@@ -41,9 +52,115 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SignupResponse'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /api/auth/google:
+    post:
+      summary: Google login (id_token verification)
+      description: >
+        Accepts a Google ID token (credential) from Google Identity Services.
+        When the server environment variable GOOGLE_CLIENT_ID is set, the token's aud must match that value and the token is verified with Google's public keys.
+        If GOOGLE_CLIENT_ID is not set the server runs in a permissive dev fallback that accepts the token and creates/returns a demo user for local testing.
+      tags: [Auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GoogleLoginRequest'
+      responses:
+        '200':
+          description: OAuth-like login success — returns backend JWT and user info
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+              examples:
+                success:
+                  summary: Example success response
+                  value:
+                    accessToken: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+                    userId: 2
+                    username: google_user
+                    nickname: Google User
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          description: Invalid or expired Google id_token or aud mismatch
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              examples:
+                invalid_token:
+                  summary: Invalid token
+                  value:
+                    error: unauthorized
+                    message: invalid google id_token
+        '500':
+          description: Unexpected server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/auth/google/start:
+    get:
+      summary: Start Google OAuth authorization (redirect to Google)
+      tags: [Auth]
+      security: []
+      parameters:
+        - in: query
+          name: redirect
+          required: false
+          schema:
+            type: string
+          description: Optional frontend URL to return to after login (encoded in state)
+      responses:
+        '302':
+          description: Redirect to Google authorization endpoint
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /api/auth/google/callback:
+    get:
+      summary: OAuth callback — exchange code for tokens and return backend JWT
+      tags: [Auth]
+      security: []
+      parameters:
+        - in: query
+          name: code
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: state
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Returns AuthResponse when state not provided
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '302':
+          description: Redirects back to frontend URL provided in "state" with accessToken query param
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          description: Token exchange or server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
   /api/auth/check-id:
     post:
       summary: Check username availability
+      tags: [Auth]
+      security: []
       requestBody:
         required: true
         content:
@@ -57,9 +174,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CheckUsernameResponse'
+
   /api/auth/send-code:
     post:
       summary: Send email verification code
+      tags: [Auth]
+      security: []
       requestBody:
         required: true
         content:
@@ -73,9 +193,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SendCodeResponse'
+
   /api/auth/confirm-code:
     post:
-      summary: Confirm verification code
+      summary: Confirm email verification code
+      tags: [Auth]
+      security: []
       requestBody:
         required: true
         content:
@@ -89,9 +212,29 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ConfirmCodeResponse'
+
+  /api/profile/me:
+    get:
+      summary: Get current user profile
+      tags: [Profile]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Current user profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfileResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
   /api/teams:
     get:
-      summary: Get all teams
+      summary: List all teams
+      tags: [Teams]
+      security:
+        - bearerAuth: []
       responses:
         '200':
           description: Team list
@@ -101,8 +244,13 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Team'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
     post:
-      summary: Create team
+      summary: Create a team
+      tags: [Teams]
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -116,20 +264,33 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Team'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
   /api/teams/{teamId}:
     get:
-      summary: Get team by id
+      summary: Get a team by id
+      tags: [Teams]
+      security:
+        - bearerAuth: []
       parameters:
         - $ref: '#/components/parameters/TeamId'
       responses:
         '200':
-          description: Single team
+          description: Team data
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Team'
-    put:
-      summary: Update team
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      summary: Update a team
+      tags: [Teams]
+      security:
+        - bearerAuth: []
       parameters:
         - $ref: '#/components/parameters/TeamId'
       requestBody:
@@ -137,7 +298,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Team'
+              $ref: '#/components/schemas/UpdateTeamRequest'
       responses:
         '200':
           description: Updated team
@@ -145,28 +306,33 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Team'
-    delete:
-      summary: Delete team
-      parameters:
-        - $ref: '#/components/parameters/TeamId'
-      responses:
-        '200':
-          description: Deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
   /api/teams/{teamId}/roadmap:
     get:
-      summary: Get roadmap for team
+      summary: Get roadmap graph for a team
+      tags: [Roadmap]
+      security:
+        - bearerAuth: []
       parameters:
         - $ref: '#/components/parameters/TeamId'
       responses:
         '200':
-          description: Roadmap response
+          description: Roadmap graph
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RoadmapResponse'
-  /api/teams/{teamId}/roadmap/nodes:
+                $ref: '#/components/schemas/RoadmapGraph'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/teams/{teamId}/nodes:
     post:
       summary: Create roadmap node
+      tags: [Roadmap]
+      security:
+        - bearerAuth: []
       parameters:
         - $ref: '#/components/parameters/TeamId'
       requestBody:
@@ -182,9 +348,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RoadmapNode'
-  /api/teams/{teamId}/roadmap/nodes/{nodeId}:
-    put:
+
+  /api/teams/{teamId}/nodes/{nodeId}:
+    patch:
       summary: Update roadmap node
+      tags: [Roadmap]
+      security:
+        - bearerAuth: []
       parameters:
         - $ref: '#/components/parameters/TeamId'
         - $ref: '#/components/parameters/NodeId'
@@ -203,15 +373,22 @@ paths:
                 $ref: '#/components/schemas/RoadmapNode'
     delete:
       summary: Delete roadmap node
+      tags: [Roadmap]
+      security:
+        - bearerAuth: []
       parameters:
         - $ref: '#/components/parameters/TeamId'
         - $ref: '#/components/parameters/NodeId'
       responses:
-        '200':
+        '204':
           description: Deleted
-  /api/teams/{teamId}/roadmap/edges:
+
+  /api/teams/{teamId}/edges:
     post:
       summary: Create roadmap edge
+      tags: [Roadmap]
+      security:
+        - bearerAuth: []
       parameters:
         - $ref: '#/components/parameters/TeamId'
       requestBody:
@@ -227,70 +404,28 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RoadmapEdge'
-  /api/teams/{teamId}/roadmap/edges/{edgeId}:
+
+  /api/teams/{teamId}/edges/{edgeId}:
     delete:
       summary: Delete roadmap edge
+      tags: [Roadmap]
+      security:
+        - bearerAuth: []
       parameters:
         - $ref: '#/components/parameters/TeamId'
         - $ref: '#/components/parameters/EdgeId'
       responses:
-        '200':
+        '204':
           description: Deleted
-  /api/users/profile:
-    get:
-      summary: Get user profile
-      responses:
-        '200':
-          description: User profile
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Profile'
-    put:
-      summary: Update user profile
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Profile'
-      responses:
-        '200':
-          description: Updated profile
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Profile'
-  /api/teams/{teamId}/integrations:
-    get:
-      summary: Get integration settings
-      parameters:
-        - $ref: '#/components/parameters/TeamId'
-      responses:
-        '200':
-          description: Integration settings
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/IntegrationSettings'
-    put:
-      summary: Update integration settings
-      parameters:
-        - $ref: '#/components/parameters/TeamId'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/IntegrationSettings'
-      responses:
-        '200':
-          description: Updated integration settings
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/IntegrationSettings'
+
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT access token issued from /api/auth/login
+
   parameters:
     TeamId:
       name: teamId
@@ -298,19 +433,59 @@ components:
       required: true
       schema:
         type: string
+      example: T-001
     NodeId:
       name: nodeId
       in: path
       required: true
       schema:
         type: string
+      example: root
     EdgeId:
       name: edgeId
       in: path
       required: true
       schema:
         type: string
+      example: e-root-m1
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+    Conflict:
+      description: Conflict
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+
   schemas:
+    ApiError:
+      type: object
+      properties:
+        error:
+          type: string
+          example: unauthorized
+        message:
+          type: string
+          example: invalid or missing token
+
     LoginRequest:
       type: object
       required:
@@ -319,11 +494,13 @@ components:
       properties:
         username:
           type: string
+          example: admin
         password:
           type: string
-      example:
-        username: admin
-        password: admin123
+          example: admin123
+      description: |
+        Frontend may also send {"id":"admin","pw":"admin123"}; backend accepts both forms for compatibility.
+
     SignupRequest:
       type: object
       required:
@@ -345,6 +522,17 @@ components:
         password: 1234
         email: new@example.com
         nickname: 홍길동
+
+    GoogleLoginRequest:
+      type: object
+      required:
+        - accessToken
+      properties:
+        accessToken:
+          type: string
+      example:
+        accessToken: google-demo-token
+
     CheckUsernameRequest:
       type: object
       required:
@@ -352,11 +540,14 @@ components:
       properties:
         username:
           type: string
+
     CheckUsernameResponse:
       type: object
       properties:
         available:
           type: boolean
+          example: true
+
     SendCodeRequest:
       type: object
       required:
@@ -364,11 +555,14 @@ components:
       properties:
         email:
           type: string
+
     SendCodeResponse:
       type: object
       properties:
         status:
           type: string
+          example: "1234"
+
     ConfirmCodeRequest:
       type: object
       required:
@@ -379,83 +573,238 @@ components:
           type: string
         code:
           type: string
+
     ConfirmCodeResponse:
       type: object
       properties:
         verified:
           type: boolean
+          example: true
+
     SignupResponse:
       type: object
       properties:
         success:
           type: boolean
+          example: true
+
     AuthResponse:
       type: object
+      required:
+        - accessToken
+        - userId
+        - username
+        - nickname
       properties:
         accessToken:
           type: string
+          example: eyJhbGciOiJIUzI1NiJ9...
         userId:
           type: integer
           format: int64
+          example: 1
         username:
           type: string
+          example: admin
         nickname:
           type: string
+          example: Admin
+        locale:
+          type: string
+          example: ko-KR
+
+    UserProfileResponse:
+      type: object
+      properties:
+        userId:
+          type: integer
+          format: int64
+          example: 1
+        username:
+          type: string
+          example: admin
+        nickname:
+          type: string
+          example: Admin
+        email:
+          type: string
+          example: admin@example.com
+        locale:
+          type: string
+          example: ko-KR
+
     Team:
+      type: object
+      required:
+        - id
+        - name
+        - members
+        - color
+        - mission
+      properties:
+        id:
+          type: string
+          example: T-001
+        name:
+          type: string
+          example: Design System
+        members:
+          type: integer
+          example: 8
+        color:
+          type: string
+          example: '#6b5cf6'
+        mission:
+          type: string
+          example: 제품의 디자인 일관성을 유지한다.
+
+    CreateTeamRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          example: Design System
+        members:
+          type: integer
+          example: 8
+        color:
+          type: string
+          example: '#6b5cf6'
+        mission:
+          type: string
+          example: 제품의 디자인 일관성을 유지한다.
+
+    UpdateTeamRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        color:
+          type: string
+        mission:
+          type: string
+
+    RoadmapComment:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        author:
+          type: string
+          example: Alex
+        text:
+          type: string
+          example: UI 검토가 필요합니다.
+        time:
+          type: string
+          example: 2026-08-16T10:00:00Z
+
+    RoadmapFile:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: GDD_최종.docx
+        size:
+          type: string
+          example: 1.8 MB
+        author:
+          type: string
+          example: Sam Chen
+        date:
+          type: string
+          example: 2025-03-28
+        url:
+          type: string
+          nullable: true
+          example: null
+
+    RoadmapNode:
       type: object
       properties:
         id:
           type: string
-        name:
+          example: root
+        label:
           type: string
-        members:
+          example: 2D 게임 개발
+        code:
+          type: string
+          example: GOAL
+        status:
+          type: string
+          enum: [done, active, todo]
+          example: active
+        progress:
           type: integer
-        color:
+          example: 42
+        goal:
           type: string
-        mission:
+          example: 2D 액션 RPG 한 편을 기획부터 출시까지 완주한다.
+        dueDate:
           type: string
-    CreateTeamRequest:
+          example: 2025-12-31
+        assignees:
+          type: array
+          items:
+            type: string
+          example: ["Alex Rivera", "Jordan Kim"]
+        prerequisites:
+          type: array
+          items:
+            type: string
+          example: []
+        aiSummary:
+          type: string
+          example: 전체 로드맵은 4개 축으로 구성됩니다.
+        issue:
+          type: string
+          nullable: true
+          example: null
+        files:
+          type: array
+          items:
+            $ref: '#/components/schemas/RoadmapFile'
+        tier:
+          type: string
+          example: root
+        x:
+          type: integer
+          example: 280
+        y:
+          type: integer
+          example: 22
+        w:
+          type: integer
+          example: 240
+        h:
+          type: integer
+          example: 74
+        comments:
+          type: array
+          items:
+            $ref: '#/components/schemas/RoadmapComment'
+
+    RoadmapEdge:
       type: object
       properties:
-        name:
+        id:
           type: string
-        color:
+          example: e-root-m1
+        from:
           type: string
-        mission:
+          example: root
+        to:
           type: string
-        slackHandle:
-          type: string
-    Profile:
-      type: object
-      properties:
-        region:
-          type: string
-        language:
-          type: string
-    IntegrationSettings:
-      type: object
-      properties:
-        slack:
-          $ref: '#/components/schemas/SlackIntegration'
-        github:
-          $ref: '#/components/schemas/GithubIntegration'
-        teamChannelUrl:
-          type: string
-    SlackIntegration:
-      type: object
-      properties:
-        connected:
-          type: boolean
-        handle:
-          type: string
-    GithubIntegration:
-      type: object
-      properties:
-        connected:
-          type: boolean
-        username:
-          type: string
-    RoadmapResponse:
+          example: m1
+
+    RoadmapGraph:
       type: object
       properties:
         nodes:
@@ -466,62 +815,3 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/RoadmapEdge'
-    RoadmapNode:
-      type: object
-      properties:
-        id:
-          type: string
-        label:
-          type: string
-        code:
-          type: string
-        status:
-          type: string
-          enum: [done, active, todo]
-        progress:
-          type: integer
-        goal:
-          type: string
-        dueDate:
-          type: string
-        assignees:
-          type: array
-          items:
-            type: string
-        prerequisites:
-          type: array
-          items:
-            type: string
-        aiSummary:
-          type: string
-        issue:
-          type: string
-        files:
-          type: array
-          items:
-            $ref: '#/components/schemas/RoadmapFile'
-    RoadmapEdge:
-      type: object
-      properties:
-        id:
-          type: string
-        from:
-          type: string
-        to:
-          type: string
-    RoadmapFile:
-      type: object
-      properties:
-        id:
-          type: integer
-        name:
-          type: string
-        size:
-          type: string
-        author:
-          type: string
-        date:
-          type: string
-        url:
-          type: string
-          nullable: true
