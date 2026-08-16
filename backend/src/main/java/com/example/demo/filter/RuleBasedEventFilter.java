@@ -63,10 +63,22 @@ public class RuleBasedEventFilter {
             CollaborationEvent event
     ) {
 
+        return evaluate(
+                event.getContent(),
+                event.isGeneratedBySystem()
+        );
+    }
+
+
+    public FilterResult evaluate(
+            String content,
+            boolean generatedBySystem
+    ) {
+
         /*
          * 1. 우리 시스템/Bot이 만든 메시지
          */
-        if (event.isGeneratedBySystem()) {
+        if (generatedBySystem) {
 
             return FilterResult.filteredOut(
                     "GENERATED_BY_SYSTEM",
@@ -79,7 +91,7 @@ public class RuleBasedEventFilter {
          * 2. 빈 메시지
          */
         String text =
-                normalize(event.getContent());
+                normalize(content);
 
         if (text.isBlank()) {
 
