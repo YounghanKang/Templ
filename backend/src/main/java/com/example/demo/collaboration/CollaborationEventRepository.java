@@ -9,11 +9,11 @@ public interface CollaborationEventRepository
         extends JpaRepository<CollaborationEvent, UUID> {
 
     List<CollaborationEvent> findByProjectIdOrderByCreatedAtDesc(
-            UUID projectId
+            String projectId
     );
 
     boolean existsByProjectIdAndSourceToolAndExternalSourceId(
-            UUID projectId,
+            String projectId,
             SourceTool sourceTool,
             String externalSourceId
     );

@@ -1,7 +1,6 @@
 package com.example.demo.analysis;
 
 import java.util.List;
-import java.util.UUID;
 
 public record ContextAnalysisResult(
         boolean meaningfulChange,
@@ -9,8 +8,8 @@ public record ContextAnalysisResult(
         String summary,
         int riskScore,
         double confidence,
-        UUID taskId,
-        List<UUID> impactedNodeIds,
+        String taskId,
+        List<String> impactedNodeIds,
         List<String> proposedActions,
         List<String> openQuestions
 ) {

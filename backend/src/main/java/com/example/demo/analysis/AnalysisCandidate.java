@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.UUID;
 
 public record AnalysisCandidate(
-        UUID nodeId,
+        String nodeId,
         String title,
         int matchScore,
         List<String> matchedTerms

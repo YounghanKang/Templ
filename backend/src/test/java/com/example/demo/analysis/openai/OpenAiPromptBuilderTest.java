@@ -19,14 +19,14 @@ class OpenAiPromptBuilderTest {
     @Test
     void promptContainsEventAndCandidates() {
 
-        UUID projectId =
-                UUID.randomUUID();
+        String projectId =
+                UUID.randomUUID().toString().toString();
 
         UUID eventId =
                 UUID.randomUUID();
 
-        UUID nodeId =
-                UUID.randomUUID();
+        String nodeId =
+                UUID.randomUUID().toString().toString();
 
 
         AnalysisCandidate candidate =

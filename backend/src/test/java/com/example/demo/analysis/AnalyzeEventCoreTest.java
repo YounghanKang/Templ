@@ -23,9 +23,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class AnalyzeEventCoreTest {
 
-    private UUID projectId;
+    private String projectId;
 
-    private UUID loginNodeId;
+    private String loginNodeId;
 
     private FakeProjectContextReader
             projectContextReader;
@@ -41,11 +41,11 @@ class AnalyzeEventCoreTest {
     void setUp() {
 
         projectId =
-                UUID.randomUUID();
+                UUID.randomUUID().toString();
 
 
         loginNodeId =
-                UUID.randomUUID();
+                UUID.randomUUID().toString();
 
 
         NodeContext loginNode =
@@ -245,7 +245,7 @@ class AnalyzeEventCoreTest {
                         "테스트",
                         8,
                         0.9,
-                        UUID.randomUUID(),
+                        UUID.randomUUID().toString(),
                         List.of(),
                         List.of(),
                         List.of()
@@ -304,7 +304,7 @@ class AnalyzeEventCoreTest {
 
         @Override
         public ProjectContext getProjectContext(
-                UUID projectId
+                String projectId
         ) {
 
             return new ProjectContext(
@@ -319,7 +319,7 @@ class AnalyzeEventCoreTest {
 
         @Override
         public List<NodeContext> findCandidateNodes(
-                UUID projectId,
+                String projectId,
                 String channelId
         ) {
 
@@ -329,7 +329,7 @@ class AnalyzeEventCoreTest {
 
         @Override
         public List<NodeRelation> getRelatedNodes(
-                UUID nodeId
+                String nodeId
         ) {
 
             return List.of();

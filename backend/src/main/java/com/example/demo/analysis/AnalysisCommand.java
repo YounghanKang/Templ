@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.UUID;
 
 public record AnalysisCommand(
-        UUID projectId,
+        String projectId,
         UUID eventId,
         String sourceTool,
         String sourceLocation,

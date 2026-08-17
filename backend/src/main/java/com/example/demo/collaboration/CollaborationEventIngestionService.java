@@ -21,7 +21,7 @@ public class CollaborationEventIngestionService {
 
     @Transactional
     public IngestionResult ingest(
-            UUID projectId,
+            String projectId,
             SourceTool sourceTool,
             CollaborationEventType eventType,
             EventAction eventAction,

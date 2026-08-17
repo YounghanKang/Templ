@@ -17,10 +17,10 @@ public class OpenAiAnalysisResponse {
 
     public double confidence;
 
-    public Optional<UUID> taskId =
+    public Optional<String> taskId =
             Optional.empty();
 
-    public List<UUID> impactedNodeIds =
+    public List<String> impactedNodeIds =
             List.of();
 
     public List<String> proposedActions =
@@ -62,14 +62,14 @@ public class OpenAiAnalysisResponse {
     }
 
 
-    public UUID taskId() {
+    public String taskId() {
         return taskId == null
                 ? null
                 : taskId.orElse(null);
     }
 
 
-    public List<UUID> impactedNodeIds() {
+    public List<String> impactedNodeIds() {
         return impactedNodeIds;
     }
 

@@ -17,25 +17,19 @@ class OpenAiContextAnalysisAdapterLiveTest {
     @Test
     void realOpenAiStructuredOutputCanAnalyzeTaskConflict() {
 
-        UUID projectId =
-                UUID.fromString(
-                        "11111111-1111-1111-1111-111111111111"
-                );
+        String projectId =
+                "11111111-1111-1111-1111-111111111111";
 
         UUID eventId =
                 UUID.fromString(
                         "22222222-2222-2222-2222-222222222222"
                 );
 
-        UUID loginTaskId =
-                UUID.fromString(
-                        "33333333-3333-3333-3333-333333333333"
-                );
+        String loginTaskId =
+                "33333333-3333-3333-3333-333333333333";
 
-        UUID profileTaskId =
-                UUID.fromString(
-                        "44444444-4444-4444-4444-444444444444"
-                );
+        String profileTaskId =
+                "44444444-4444-4444-4444-444444444444";
 
 
         AnalysisCommand command =

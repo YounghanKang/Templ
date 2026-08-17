@@ -56,7 +56,7 @@ class FilterJobSchedulerIntegrationTest {
          */
         CollaborationEvent event =
                 new CollaborationEvent(
-                        UUID.randomUUID(),
+                        UUID.randomUUID().toString(),
                         SourceTool.SLACK,
                         CollaborationEventType.MESSAGE,
                         EventAction.CREATED,

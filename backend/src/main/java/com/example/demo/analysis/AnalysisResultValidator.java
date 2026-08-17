@@ -1,7 +1,6 @@
 package com.example.demo.analysis;
 
 import java.util.Set;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class AnalysisResultValidator {
@@ -74,10 +73,10 @@ public class AnalysisResultValidator {
 
 
         /*
-         * AI가 존재하지 않는 Node UUID를
+         *  * AI가 존재하지 않는 Node ID를
          * 만들어 내는 것을 방지합니다.
          */
-        Set<UUID> allowedCandidateIds =
+        Set<String> allowedCandidateIds =
                 command
                         .candidates()
                         .stream()

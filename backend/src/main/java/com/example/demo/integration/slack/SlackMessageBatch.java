@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.UUID;
 
 public record SlackMessageBatch(
-        UUID projectId,
+        String projectId,
         String channelId,
         String channelName,
         List<SlackMessage> messages

@@ -4,7 +4,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 public record SlackMessage(
-        UUID projectId,
+        String projectId,
         String eventId,
         String channelId,
         String channelName,

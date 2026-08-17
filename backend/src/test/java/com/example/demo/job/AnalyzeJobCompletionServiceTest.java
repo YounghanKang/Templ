@@ -77,8 +77,8 @@ class AnalyzeJobCompletionServiceTest {
                 );
 
 
-        UUID nodeId =
-                UUID.randomUUID();
+        String nodeId =
+                UUID.randomUUID().toString().toString();
 
 
         ContextAnalysisResult result =
@@ -196,7 +196,7 @@ class AnalyzeJobCompletionServiceTest {
                         "관련 작업 영향 확인이 필요합니다.",
                         7,
                         0.88,
-                        UUID.randomUUID(),
+                        UUID.randomUUID().toString(),
                         List.of(),
                         List.of(),
                         List.of()
@@ -438,7 +438,7 @@ class AnalyzeJobCompletionServiceTest {
     ) {
 
         return new CollaborationEvent(
-                UUID.randomUUID(),
+                UUID.randomUUID().toString(),
                 SourceTool.SLACK,
                 CollaborationEventType.MESSAGE,
                 EventAction.CREATED,

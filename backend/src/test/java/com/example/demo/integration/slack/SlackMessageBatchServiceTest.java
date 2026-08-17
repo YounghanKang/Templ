@@ -24,10 +24,8 @@ class SlackMessageBatchServiceTest {
                 );
 
 
-        UUID projectId =
-                UUID.fromString(
-                        "11111111-1111-1111-1111-111111111111"
-                );
+        String projectId =
+                "11111111-1111-1111-1111-111111111111";
 
 
         SlackMessage firstMessage =
@@ -101,10 +99,8 @@ class SlackMessageBatchServiceTest {
                 );
 
 
-        UUID projectId =
-                UUID.fromString(
-                        "11111111-1111-1111-1111-111111111111"
-                );
+        String projectId =
+                "11111111-1111-1111-1111-111111111111";
 
         String channelId =
                 "channel-a";
@@ -210,10 +206,8 @@ class SlackMessageBatchServiceTest {
                 );
 
 
-        UUID projectId =
-                UUID.fromString(
-                        "11111111-1111-1111-1111-111111111111"
-                );
+        String projectId =
+                "11111111-1111-1111-1111-111111111111";
 
         String channelId =
                 "channel-a";
@@ -270,10 +264,8 @@ class SlackMessageBatchServiceTest {
                 );
 
 
-        UUID projectId =
-                UUID.fromString(
-                        "11111111-1111-1111-1111-111111111111"
-                );
+        String projectId =
+                "11111111-1111-1111-1111-111111111111";
 
         String channelId =
                 "channel-a";
@@ -388,10 +380,8 @@ class SlackMessageBatchServiceTest {
                 );
 
 
-        UUID projectId =
-                UUID.fromString(
-                        "11111111-1111-1111-1111-111111111111"
-                );
+        String projectId =
+                "11111111-1111-1111-1111-111111111111";
 
         String channelId =
                 "channel-a";
@@ -454,10 +444,8 @@ class SlackMessageBatchServiceTest {
                 );
 
 
-        UUID projectId =
-                UUID.fromString(
-                        "11111111-1111-1111-1111-111111111111"
-                );
+        String projectId =
+                "11111111-1111-1111-1111-111111111111";
 
         String channelId =
                 "channel-a";

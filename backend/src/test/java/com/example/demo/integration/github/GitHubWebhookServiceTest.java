@@ -48,10 +48,8 @@ class GitHubWebhookServiceTest {
                 );
 
 
-        UUID projectId =
-                UUID.fromString(
-                        "11111111-1111-1111-1111-111111111111"
-                );
+        String projectId =
+                "11111111-1111-1111-1111-111111111111";
 
         String deliveryId =
                 "github-delivery-001";
@@ -181,10 +179,8 @@ class GitHubWebhookServiceTest {
                 );
 
 
-        UUID projectId =
-                UUID.fromString(
-                        "11111111-1111-1111-1111-111111111111"
-                );
+        String projectId =
+                "11111111-1111-1111-1111-111111111111";
 
         String deliveryId =
                 "github-delivery-compare-001";
@@ -351,10 +347,8 @@ class GitHubWebhookServiceTest {
                 );
 
 
-        UUID projectId =
-                UUID.fromString(
-                        "11111111-1111-1111-1111-111111111111"
-                );
+        String projectId =
+                "11111111-1111-1111-1111-111111111111";
 
         String deliveryId =
                 "github-delivery-compare-fail-001";
@@ -489,10 +483,8 @@ class GitHubWebhookServiceTest {
                 );
 
 
-        UUID projectId =
-                UUID.fromString(
-                        "11111111-1111-1111-1111-111111111111"
-                );
+        String projectId =
+                "11111111-1111-1111-1111-111111111111";
 
         String deliveryId =
                 "github-delivery-issue-001";
@@ -604,10 +596,8 @@ class GitHubWebhookServiceTest {
                 );
 
 
-        UUID projectId =
-                UUID.fromString(
-                        "11111111-1111-1111-1111-111111111111"
-                );
+        String projectId =
+                "11111111-1111-1111-1111-111111111111";
 
         String deliveryId =
                 "github-delivery-pr-001";

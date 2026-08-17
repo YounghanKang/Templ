@@ -12,11 +12,11 @@ class AnalysisResultValidatorTest {
 
     private AnalysisResultValidator validator;
 
-    private UUID projectId;
+    private String projectId;
 
     private UUID eventId;
 
-    private UUID candidateNodeId;
+    private String candidateNodeId;
 
     private AnalysisCommand command;
 
@@ -29,13 +29,13 @@ class AnalysisResultValidatorTest {
 
 
         projectId =
-                UUID.randomUUID();
+                UUID.randomUUID().toString();
 
         eventId =
                 UUID.randomUUID();
 
         candidateNodeId =
-                UUID.randomUUID();
+                UUID.randomUUID().toString();
 
 
         AnalysisCandidate candidate =
@@ -175,7 +175,7 @@ class AnalysisResultValidatorTest {
                         "테스트",
                         8,
                         0.9,
-                        UUID.randomUUID(),
+                        UUID.randomUUID().toString(),
                         List.of(),
                         List.of(),
                         List.of()

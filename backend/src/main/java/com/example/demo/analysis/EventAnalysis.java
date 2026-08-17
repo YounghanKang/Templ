@@ -99,7 +99,7 @@ public class EventAnalysis {
     @Column(
             name = "primary_node_id"
     )
-    private UUID taskId;
+    private String taskId;
 
 
     /*
@@ -145,7 +145,7 @@ public class EventAnalysis {
             String summary,
             int riskScore,
             double confidence,
-            UUID taskId,
+            String taskId,
             String modelName,
             String promptVersion,
             String schemaVersion

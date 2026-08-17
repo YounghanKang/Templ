@@ -213,7 +213,7 @@ class AnalyzeJobFailureServiceTest {
     ) {
 
         return new CollaborationEvent(
-                UUID.randomUUID(),
+                UUID.randomUUID().toString(),
                 SourceTool.SLACK,
                 CollaborationEventType.MESSAGE,
                 EventAction.CREATED,

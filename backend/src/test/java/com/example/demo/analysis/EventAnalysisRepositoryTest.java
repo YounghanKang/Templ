@@ -29,8 +29,8 @@ class EventAnalysisRepositoryTest {
         UUID eventId =
                 UUID.randomUUID();
 
-        UUID nodeId =
-                UUID.randomUUID();
+        String nodeId =
+                UUID.randomUUID().toString().toString();
 
 
         EventAnalysis analysis =
@@ -128,7 +128,7 @@ class EventAnalysisRepositoryTest {
                         "의존성 변경 확인이 필요합니다.",
                         7,
                         0.88,
-                        UUID.randomUUID(),
+                        UUID.randomUUID().toString(),
                         "fake-model",
                         "v1",
                         "v1"

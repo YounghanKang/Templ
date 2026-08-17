@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.UUID;
 
 public record ProjectContext(
-        UUID projectId,
+        String projectId,
         String projectName,
         String projectSummary,
         long projectVersion,

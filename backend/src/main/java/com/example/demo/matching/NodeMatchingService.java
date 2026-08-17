@@ -15,7 +15,7 @@ public class NodeMatchingService {
     private final CandidateNodeMatcher candidateNodeMatcher;
 
     public NodeMatchingResult match(
-            UUID projectId,
+            String projectId,
             String channelId,
             String eventText
     ) {

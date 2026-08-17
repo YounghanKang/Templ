@@ -26,7 +26,7 @@ class CandidateNodeMatcherTest {
 
         NodeContext loginNode =
                 new NodeContext(
-                        UUID.randomUUID(),
+                        UUID.randomUUID().toString(),
                         "로그인 API 구현",
                         "사용자 인증 API를 완성한다.",
                         "로그인과 JWT 인증을 구현한다.",
@@ -40,7 +40,7 @@ class CandidateNodeMatcherTest {
 
         NodeContext paymentNode =
                 new NodeContext(
-                        UUID.randomUUID(),
+                        UUID.randomUUID().toString(),
                         "결제 화면 디자인",
                         "결제 UI를 완성한다.",
                         "결제 화면과 버튼을 구현한다.",
@@ -53,7 +53,7 @@ class CandidateNodeMatcherTest {
 
         NodeContext databaseNode =
                 new NodeContext(
-                        UUID.randomUUID(),
+                        UUID.randomUUID().toString(),
                         "DB 스키마 설계",
                         "사용자 테이블 구조를 정의한다.",
                         "데이터베이스 구조를 설계한다.",
@@ -105,7 +105,7 @@ class CandidateNodeMatcherTest {
 
         NodeContext paymentNode =
                 new NodeContext(
-                        UUID.randomUUID(),
+                        UUID.randomUUID().toString(),
                         "결제 화면 디자인",
                         "결제 UI를 완성한다.",
                         "결제 화면을 구현한다.",
@@ -165,7 +165,7 @@ class CandidateNodeMatcherTest {
     ) {
 
         return new NodeContext(
-                UUID.randomUUID(),
+                UUID.randomUUID().toString(),
                 title,
                 "API 기능을 구현한다.",
                 "API 관련 작업",

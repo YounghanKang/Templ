@@ -31,7 +31,7 @@ class CollaborationEventIngestionServiceTest {
     @Test
     void eventAndProcessingJobAreStoredTogether() {
 
-        UUID projectId = UUID.randomUUID();
+        String projectId = UUID.randomUUID().toString().toString();
 
         var result = ingestionService.ingest(
                 projectId,
@@ -93,7 +93,7 @@ class CollaborationEventIngestionServiceTest {
     @Test
     void duplicatedExternalEventIsNotStoredTwice() {
 
-        UUID projectId = UUID.randomUUID();
+        String projectId = UUID.randomUUID().toString().toString();
 
         var first = ingestionService.ingest(
                 projectId,
@@ -149,8 +149,8 @@ class CollaborationEventIngestionServiceTest {
     @Test
     void sameExternalEventCanBeStoredForDifferentProjects() {
 
-        UUID projectAId = UUID.randomUUID();
-        UUID projectBId = UUID.randomUUID();
+        String projectAId = UUID.randomUUID().toString().toString();
+        String projectBId = UUID.randomUUID().toString().toString();
 
         String sameExternalSourceId =
                 "Ev-shared-001";

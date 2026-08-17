@@ -6,15 +6,15 @@ import java.util.UUID;
 public interface ProjectContextReader {
 
     ProjectContext getProjectContext(
-            UUID projectId
+            String projectId
     );
 
     List<NodeContext> findCandidateNodes(
-            UUID projectId,
+            String projectId,
             String channelId
     );
 
     List<NodeRelation> getRelatedNodes(
-            UUID nodeId
+            String nodeId
     );
 }

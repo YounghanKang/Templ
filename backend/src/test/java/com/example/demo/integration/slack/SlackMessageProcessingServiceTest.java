@@ -34,10 +34,8 @@ class SlackMessageProcessingServiceTest {
                 );
 
 
-        UUID projectId =
-                UUID.fromString(
-                        "11111111-1111-1111-1111-111111111111"
-                );
+        String projectId =
+                "11111111-1111-1111-1111-111111111111";
 
 
         SlackMessage message =

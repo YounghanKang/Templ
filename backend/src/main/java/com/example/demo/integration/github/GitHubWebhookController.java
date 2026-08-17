@@ -19,7 +19,7 @@ public class GitHubWebhookController {
 
     @PostMapping("/webhook")
     public ResponseEntity<Void> receiveWebhook(
-            @PathVariable UUID projectId,
+            @PathVariable String projectId,
             @RequestHeader("X-GitHub-Event") String githubEvent,
             @RequestHeader("X-GitHub-Delivery") String deliveryId,
             @RequestHeader(

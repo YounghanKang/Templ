@@ -33,7 +33,7 @@ public class SlackMessageBatchService {
 
 
     private record BatchKey(
-            UUID projectId,
+            String projectId,
             String channelId
     ) {
     }
@@ -225,7 +225,7 @@ public class SlackMessageBatchService {
         );
     }
     int bufferedMessageCount(
-            UUID projectId,
+            String projectId,
             String channelId
     ) {
 

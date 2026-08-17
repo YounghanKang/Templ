@@ -10,7 +10,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class NodeMatchingServiceTest {
 
-    private UUID projectId;
+    private String projectId;
 
     private NodeContext loginNode;
 
@@ -27,12 +27,12 @@ class NodeMatchingServiceTest {
     void setUp() {
 
         projectId =
-                UUID.randomUUID();
+                UUID.randomUUID().toString();
 
 
         loginNode =
                 new NodeContext(
-                        UUID.randomUUID(),
+                        UUID.randomUUID().toString(),
                         "로그인 API 구현",
                         "사용자 로그인 기능을 완성한다.",
                         "JWT 기반 인증 API를 구현한다.",
@@ -47,7 +47,7 @@ class NodeMatchingServiceTest {
 
         paymentNode =
                 new NodeContext(
-                        UUID.randomUUID(),
+                        UUID.randomUUID().toString(),
                         "결제 화면 구현",
                         "결제 UI를 완성한다.",
                         "결제 페이지를 구현한다.",
@@ -221,7 +221,7 @@ class NodeMatchingServiceTest {
 
         @Override
         public ProjectContext getProjectContext(
-                UUID projectId
+                String projectId
         ) {
 
             return new ProjectContext(
@@ -236,7 +236,7 @@ class NodeMatchingServiceTest {
 
         @Override
         public List<NodeContext> findCandidateNodes(
-                UUID projectId,
+                String projectId,
                 String channelId
         ) {
 
@@ -246,7 +246,7 @@ class NodeMatchingServiceTest {
 
         @Override
         public List<NodeRelation> getRelatedNodes(
-                UUID nodeId
+                String nodeId
         ) {
 
             return List.of();

@@ -13,7 +13,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
@@ -127,7 +126,7 @@ public class OpenAiContextAnalysisAdapter
                 response.riskScore(),
                 response.confidence(),
                 response.taskId(),
-                safeUuidList(
+                safeStringList(
                         response.impactedNodeIds()
                 ),
                 safeStringList(
@@ -139,22 +138,6 @@ public class OpenAiContextAnalysisAdapter
         );
     }
 
-
-    private List<UUID> safeUuidList(
-            List<UUID> values
-    ) {
-
-        if (values == null) {
-            return List.of();
-        }
-
-
-        return List.copyOf(
-                new ArrayList<>(
-                        values
-                )
-        );
-    }
 
 
     private List<String> safeStringList(

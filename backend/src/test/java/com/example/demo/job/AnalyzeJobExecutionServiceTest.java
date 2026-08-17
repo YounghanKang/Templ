@@ -79,11 +79,11 @@ class AnalyzeJobExecutionServiceTest {
         UUID eventId =
                 UUID.randomUUID();
 
-        UUID projectId =
-                UUID.randomUUID();
+        String projectId =
+                UUID.randomUUID().toString().toString();
 
-        UUID nodeId =
-                UUID.randomUUID();
+        String nodeId =
+                UUID.randomUUID().toString().toString();
 
 
         ProcessingJob job =

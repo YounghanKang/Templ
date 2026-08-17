@@ -26,7 +26,7 @@ public class CollaborationEvent {
      * Backend2는 ProjectNode/Project를 직접 수정 X
      */
     @Column(name = "project_id", nullable = false)
-    private UUID projectId;
+    private String projectId;
 
     /**
      * 이벤트 발생 도구
@@ -104,7 +104,7 @@ public class CollaborationEvent {
 
 
     public CollaborationEvent(
-            UUID projectId,
+            String projectId,
             SourceTool sourceTool,
             CollaborationEventType eventType,
             EventAction eventAction,

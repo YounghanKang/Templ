@@ -53,7 +53,7 @@ public class GitHubWebhookService {
     }
 
     public CollaborationEventIngestionService.IngestionResult handlePush(
-            UUID projectId,
+            String projectId,
             String deliveryId,
             byte[] payload
     ) {
@@ -152,7 +152,7 @@ public class GitHubWebhookService {
     }
 
     public CollaborationEventIngestionService.IngestionResult handleIssue(
-            UUID projectId,
+            String projectId,
             String deliveryId,
             byte[] payload
     ) {
@@ -302,7 +302,7 @@ public class GitHubWebhookService {
         );
     }
     public CollaborationEventIngestionService.IngestionResult handlePullRequest(
-            UUID projectId,
+            String projectId,
             String deliveryId,
             byte[] payload
     ) {

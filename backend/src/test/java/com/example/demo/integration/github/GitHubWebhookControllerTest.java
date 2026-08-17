@@ -33,8 +33,8 @@ class GitHubWebhookControllerTest {
                 );
 
 
-        UUID projectId =
-                UUID.randomUUID();
+        String projectId =
+                UUID.randomUUID().toString().toString();
 
         byte[] payload =
                 "{}".getBytes(
@@ -98,8 +98,8 @@ class GitHubWebhookControllerTest {
                 );
 
 
-        UUID projectId =
-                UUID.randomUUID();
+        String projectId =
+                UUID.randomUUID().toString().toString();
 
         byte[] payload =
                 """
@@ -173,8 +173,8 @@ class GitHubWebhookControllerTest {
                 );
 
 
-        UUID projectId =
-                UUID.randomUUID();
+        String projectId =
+                UUID.randomUUID().toString().toString();
 
         byte[] payload =
                 """
@@ -261,8 +261,8 @@ class GitHubWebhookControllerTest {
                 );
 
 
-        UUID projectId =
-                UUID.randomUUID();
+        String projectId =
+                UUID.randomUUID().toString().toString();
 
         byte[] payload =
                 """

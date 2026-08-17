@@ -31,11 +31,11 @@ class AnalysisContextBuilderTest {
     @Test
     void eventAndCandidatesAreConvertedToAnalysisCommand() {
 
-        UUID projectId =
-                UUID.randomUUID();
+        String projectId =
+                UUID.randomUUID().toString().toString();
 
-        UUID nodeId =
-                UUID.randomUUID();
+        String nodeId =
+                UUID.randomUUID().toString().toString();
 
 
         CollaborationEvent event =
@@ -127,8 +127,8 @@ class AnalysisContextBuilderTest {
     @Test
     void nullEventIsRejected() {
 
-        UUID projectId =
-                UUID.randomUUID();
+        String projectId =
+                UUID.randomUUID().toString().toString();
 
 
         NodeMatchingResult matchingResult =

@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.UUID;
 
 public record CandidateNodeMatch(
-        UUID nodeId,
+        String nodeId,
         String title,
         int score,
         List<String> matchedTerms

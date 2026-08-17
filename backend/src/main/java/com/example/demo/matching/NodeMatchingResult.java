@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.UUID;
 
 public record NodeMatchingResult(
-        UUID projectId,
+        String projectId,
         String channelId,
         List<CandidateNodeMatch> candidates,
         boolean mapped
@@ -20,7 +20,7 @@ public record NodeMatchingResult(
 
 
     public static NodeMatchingResult mapped(
-            UUID projectId,
+            String projectId,
             String channelId,
             List<CandidateNodeMatch> candidates
     ) {
@@ -35,7 +35,7 @@ public record NodeMatchingResult(
 
 
     public static NodeMatchingResult unmapped(
-            UUID projectId,
+            String projectId,
             String channelId
     ) {
 

@@ -7,7 +7,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
-import java.util.UUID;
 
 @Component
 @ConditionalOnProperty(
@@ -18,7 +17,7 @@ public class SlackMessageEventListener {
 
     private final SlackMessageProcessingService processingService;
 
-    private final UUID projectId;
+    private final String projectId;
 
 
     public SlackMessageEventListener(
@@ -75,7 +74,7 @@ public class SlackMessageEventListener {
     }
 
 
-    private UUID parseProjectId(
+    private String parseProjectId(
             String projectId
     ) {
 
@@ -89,20 +88,7 @@ public class SlackMessageEventListener {
             );
         }
 
-
-        try {
-
-            return UUID.fromString(
-                    projectId
-            );
-
-        } catch (IllegalArgumentException exception) {
-
-            throw new IllegalStateException(
-                    "SLACK_PROJECT_ID는 올바른 UUID 형식이어야 합니다.",
-                    exception
-            );
-        }
+        return projectId.trim();
     }
 
 
