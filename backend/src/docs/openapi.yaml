@@ -418,6 +418,201 @@ paths:
         '204':
           description: Deleted
 
+  # --- Specs & AI Suggestions ---
+  /api/teams/{teamId}/specs:
+    post:
+      summary: Submit a project specification for AI analysis
+      tags: [Specs]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TeamId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SpecificationCreate'
+      responses:
+        '200':
+          description: Specification accepted and queued for analysis
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Specification'
+    get:
+      summary: List specifications for a team
+      tags: [Specs]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TeamId'
+      responses:
+        '200':
+          description: List of specifications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Specification'
+
+  /api/teams/{teamId}/specs/{specId}/suggestions:
+    get:
+      summary: List Suggestion cards generated from a specification
+      tags: [Specs]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TeamId'
+        - name: specId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Suggestions produced for this spec
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Suggestion'
+
+  /api/teams/{teamId}/specs/{specId}/preview:
+    get:
+      summary: Preview a roadmap graph derived from spec suggestions (not persisted)
+      tags: [Specs]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TeamId'
+        - name: specId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Roadmap graph preview
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoadmapGraph'
+
+  /api/teams/{teamId}/suggestions:
+    get:
+      summary: List suggestions for a team
+      tags: [Suggestions]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TeamId'
+      responses:
+        '200':
+          description: Suggestion list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Suggestion'
+    post:
+      summary: Create a suggestion (typically from AI or webhook)
+      tags: [Suggestions]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TeamId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SuggestionCreate'
+      responses:
+        '200':
+          description: Created suggestion
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Suggestion'
+
+  /api/teams/{teamId}/suggestions/{id}/approve:
+    post:
+      summary: Approve a suggestion and apply changes to the roadmap
+      tags: [Suggestions]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TeamId'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Suggestion approved and applied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Suggestion'
+
+  /api/teams/{teamId}/suggestions/{id}/regenerate:
+    post:
+      summary: Regenerate AI suggestions with user feedback
+      tags: [Suggestions]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TeamId'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SuggestionRegenerateRequest'
+      responses:
+        '200':
+          description: Newly generated suggestions that reflect the user's feedback
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Suggestion'
+
+  /api/ai/test:
+    post:
+      summary: Test AI suggestion generation (non-persistent)
+      tags: [AI]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AiTestRequest'
+      responses:
+        '200':
+          description: Generated suggestion previews
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Suggestion'
+
+  # --- end Specs & Suggestions ---
+
 components:
   securitySchemes:
     bearerAuth:
@@ -815,3 +1010,146 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/RoadmapEdge'
+
+    # --- Specs & AI Suggestion Schemas ---
+    SpecificationCreate:
+      type: object
+      required:
+        - specText
+      properties:
+        author:
+          type: string
+          example: Alex Rivera
+        specText:
+          type: string
+          example: "Build a consistent design language so all users can intuitively use the product."
+
+    Specification:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        teamId:
+          type: string
+          example: T-001
+        author:
+          type: string
+          example: Alex Rivera
+        specText:
+          type: string
+        status:
+          type: string
+          example: ANALYZING
+        createdAt:
+          type: string
+          format: date-time
+
+    SuggestionCreate:
+      type: object
+      required:
+        - targetType
+        - title
+      properties:
+        targetType:
+          type: string
+          example: roadmapNode
+        targetId:
+          type: string
+          nullable: true
+          example: n-root-1
+        title:
+          type: string
+          example: "AI 제안: 로드맵 뼈대 생성"
+        body:
+          type: string
+          example: "Initial roadmap skeleton generated from spec."
+        sourceTool:
+          type: string
+          example: ai-stub
+        sourceId:
+          type: string
+          nullable: true
+        changeJson:
+          type: string
+          description: |
+            Arbitrary JSON expressed as a string describing proposed change(s).
+            Accepted formats:
+              - Single JSON object representing one roadmap node (label, aiSummary, status, progress, assignees)
+              - JSON array of node objects (first element treated as root, remaining elements as children)
+              - Object with `nodes` or `items` array containing node objects
+
+    SuggestionRegenerateRequest:
+      type: object
+      properties:
+        feedback:
+          type: string
+          example: "관리자 대시보드는 제외하고 로그인만 우선 구현해줘"
+        baseSuggestionId:
+          type: integer
+          format: int64
+          nullable: true
+          example: 42
+
+    Suggestion:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        teamId:
+          type: string
+        targetType:
+          type: string
+        targetId:
+          type: string
+          nullable: true
+        title:
+          type: string
+        body:
+          type: string
+        sourceTool:
+          type: string
+        sourceId:
+          type: string
+          nullable: true
+        changeJson:
+          type: string
+        status:
+          type: string
+          enum: [PENDING, APPROVED, REJECTED]
+        resolvedBy:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        resolvedAt:
+          type: string
+          format: date-time
+
+    # Mapping guidance (human-readable) for frontend/backend contract
+    AiSuggestionMapping:
+      type: object
+      description: |
+        Rules for interpreting Suggestion.changeJson into Roadmap nodes/edges:
+        1. If changeJson is an array or contains `nodes`/`items`, the first element becomes the root node; remaining elements become children.
+        2. Each node object maps fields: title/label -> label, aiSummary/summary -> aiSummary, status -> status, progress -> progress, assignees -> assignees.
+        3. If a Suggestion has targetId the approve flow will update the existing node instead of creating a new root.
+        4. Duplicate prevention: suggestions sharing sourceId that have already been APPROVED are skipped to avoid double application.
+      properties: {}
+
+    AiTestRequest:
+      type: object
+      properties:
+        teamId:
+          type: string
+          example: T-001
+        specId:
+          type: integer
+          format: int64
+        specText:
+          type: string
+          example: "Build a consistent design language so all users can intuitively use the product."
+
+    # --- end Specs & AI SuggestION ScheMAS ---
