@@ -1,0 +1,320 @@
+﻿diff --git a/frontend/src/App.tsx b/frontend/src/App.tsx
+index ee04c12..1eb2d0b 100644
+--- a/frontend/src/App.tsx
++++ b/frontend/src/App.tsx
+@@ -1845,82 +1845,117 @@ function TeamView({ team, tab, onMissionSave, accounts, onAccountsChange }: {
+ }
+ 
+ // ?? Create team form ??????????????????????????????????????????????????????????
+-function CreateTeamForm({ teams, onCreated, accounts, onAccountsChange }: {
+-  teams: TeamType[]; onCreated: (team: TeamType) => void
+-  accounts: Accounts; onAccountsChange: (a: Accounts) => void
+-}) {
+-  const [slackHandle, setSlackHandle] = useState(accounts.slack.handle)
+-  const [teamName, setTeamName] = useState('')
+-  const [teamDesc, setTeamDesc] = useState('')
+-  const [selectedColor, setSelectedColor] = useState(COLOR_SWATCHES[0])
+-  const [inviteInput, setInviteInput] = useState('')
+-  const [invitees, setInvitees] = useState<string[]>([])
+-  const [creating, setCreating] = useState(false)
+-  const [success, setSuccess] = useState(false)
+-
+-  function addInvitee() {
+-    const email = inviteInput.trim()
+-    if (email && !invitees.includes(email)) setInvitees(prev => [...prev, email])
+-    setInviteInput('')
+-  }
+ 
+-  async function handleCreate(e: React.FormEvent) {
+-    e.preventDefault()
+-    if (!teamName.trim() || !slackHandle.trim()) return
+-    onAccountsChange({ ...accounts, slack: { connected: true, handle: slackHandle.trim() } })
+-    setCreating(true)
++type CreateTeamPhase = 'form' | 'creating_team' | 'generating_ai' | 'review_ai'
+ 
+-    try {
+-      const res = await fetch('/api/teams', {
+-        method: 'POST',
+-        headers: {
+-          'Content-Type': 'application/json',
+-          'Authorization': `Bearer ${localStorage.getItem('templ_token')}`
+-        },
+-        body: JSON.stringify({
+-          name: teamName.trim(),
+-          color: selectedColor,
+-          mission: teamDesc.trim(),
+-          slackHandle: slackHandle.trim()
+-        })
+-      })
+-      if (!res.ok) throw new Error('Failed to create team')
+-      const createdTeam = await res.json()
+-      
+-      setSuccess(true)
+-      setTimeout(() => { setSuccess(false); onCreated(createdTeam) }, 800)
+-    } catch (err) {
+-      console.error(err)
+-    } finally {
+-      setCreating(false)
+-    }
++function AiSpecificationReview({ team, previewGraph, suggestions, onApprove, onRegenerate, onReject, isRegenerating }: {
++    team: TeamType; previewGraph: any; suggestions: any[];
++    onApprove: () => void; onRegenerate: (fb: string) => void; onReject: () => void; isRegenerating: boolean;
++  }) {
++    const [feedback, setFeedback] = useState('')
++  
++    return (
++      <div style={{ maxWidth: 800, margin: '40px auto', background: '#ffffff', padding: '40px', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
++        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 26, fontWeight: 700, marginBottom: 8, color: '#0f0f14' }}>
++          AI媛 ?앹꽦???쒖븞
++        </h1>
++        <p style={{ fontSize: 14, color: '#6b6a6a', marginBottom: 24 }}>
++          ?낅젰?섏떊 誘몄뀡??諛뷀깢?쇰줈 ?ㅼ쓬怨?媛숈? 濡쒕뱶留??쒖븞???앹꽦?섏뿀?듬땲?? 寃?????뺤씤?댁＜?몄슂.
++        </p>
++  
++        <div style={{ background: '#f8f9fa', borderRadius: 12, border: '1px solid #e0dfd9', padding: 20, marginBottom: 24, maxHeight: 400, overflowY: 'auto' }}>
++          {suggestions?.map((sug: any) => (
++            <div key={sug.id} style={{ padding: '16px', borderBottom: '1px solid #e0dfd9' }}>
++              <div style={{ fontWeight: 600, fontSize: 16, marginBottom: 6, color: '#0f0f14' }}>{sug.title}</div>
++              <div style={{ fontSize: 14, color: '#4b5563', whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>{sug.body}</div>
++            </div>
++          ))}
++        </div>
++  
++        <div style={{ display: 'flex', gap: 12, marginBottom: 32 }}>
++          <input 
++            type="text" 
++            value={feedback} 
++            onChange={e => setFeedback(e.target.value)}
++            placeholder="?섏젙?섍퀬 ?띠? 遺遺꾩씠??異붽? ?쇰뱶諛깆쓣 ?낅젰?섏꽭??.." 
++            style={{ flex: 1, padding: '14px 16px', borderRadius: 8, border: '1px solid #d1d5db', fontSize: 14, outline: 'none', background: '#ffffff', color: '#111827' }}
++          />
++          <button 
++            onClick={() => onRegenerate(feedback)} 
++            disabled={!feedback.trim() || isRegenerating}
++            style={{ 
++              padding: '0 24px', borderRadius: 8, background: '#f59e0b', color: '#fff', fontWeight: 600, border: 'none', cursor: (!feedback.trim() || isRegenerating) ? 'not-allowed' : 'pointer', opacity: (!feedback.trim() || isRegenerating) ? 0.6 : 1
++            }}>
++            {isRegenerating ? '?앹꽦 以?..' : '?댁슜 蹂댁땐'}
++          </button>
++        </div>
++  
++        <div style={{ display: 'flex', gap: 16, justifyContent: 'center' }}>
++          <button onClick={onReject} style={{ padding: '12px 32px', borderRadius: 8, background: '#f3f4f6', border: '1px solid #d1d5db', color: '#374151', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s' }}>
++            嫄곗젅 (痍⑥냼)
++          </button>
++          <button onClick={onApprove} style={{ padding: '12px 32px', borderRadius: 8, background: 'var(--color-primary)', color: '#fff', fontWeight: 600, border: 'none', cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 4px 12px rgba(107,92,246,0.3)' }}>
++            ?뱀씤 (? ?앹꽦 ?꾨즺)
++          </button>
++        </div>
++      </div>
++    )
+   }
+ 
+-  const inputStyle: React.CSSProperties = {
+-    width: '100%', padding: '10px 14px', borderRadius: 10,
+-    border: '1.5px solid var(--color-border)', fontSize: 14,
+-    color: 'var(--color-foreground)', background: '#fafaf8',
+-    outline: 'none', fontFamily: 'var(--font-body)',
+-    transition: 'border-color 0.15s, box-shadow 0.15s',
+-  }
+-  const onFocus = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+-    e.target.style.borderColor = 'var(--color-primary)'
+-    e.target.style.boxShadow = '0 0 0 3px rgba(107,92,246,0.1)'
+-    e.target.style.background = '#ffffff'
+-  }
+-  const onBlur = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+-    e.target.style.borderColor = 'var(--color-border)'
+-    e.target.style.boxShadow = 'none'
++  if (phase === 'review_ai' && previewGraph) {
++    return (
++      <AiSpecificationReview 
++        team={createdTeam!} 
++        previewGraph={previewGraph} 
++        suggestions={suggestions}
++        isRegenerating={isRegenerating}
++        onApprove={async () => {
++          try {
++             if (suggestions.length > 0) {
++               await fetch(`/api/teams/${createdTeam!.id}/suggestions/${suggestions[0].id}/approve`, { method: 'POST', headers: { 'Authorization': `Bearer ${localStorage.getItem('templ_token')}` } })
++             }
++             onCreated(createdTeam!)
++          } catch(e) { console.error(e) }
++        }}
++        onRegenerate={async (fb: string) => {
++           setIsRegenerating(true)
++           try {
++             await fetch(`/api/teams/${createdTeam!.id}/suggestions/${suggestions[0].id}/regenerate`, {
++               method: 'POST',
++               headers: { 'Content-Type': 'application/json' },
++               body: JSON.stringify({ feedback: fb })
++             })
++             // After regenerating, wait 1s and fetch preview again
++             setTimeout(async () => {
++               await fetchPreviewAndSuggestions(createdTeam!.id, specId!)
++               setIsRegenerating(false)
++             }, 1000)
++           } catch(e) { 
++             console.error(e)
++             setIsRegenerating(false)
++           }
++        }}
++        onReject={async () => {
++           try {
++             if (suggestions.length > 0) {
++               await fetch(`/api/teams/${createdTeam!.id}/suggestions/${suggestions[0].id}/reject`, { method: 'POST', headers: { 'Authorization': `Bearer ${localStorage.getItem('templ_token')}` } })
++             }
++             alert('? ?앹꽦??痍⑥냼?섏뿀?듬땲??')
++             window.location.reload()
++           } catch(e) { console.error(e) }
++        }}
++      />
++    )
+   }
+ 
+   return (
+     <div style={{ maxWidth: 640, margin: '0 auto' }}>
+       <div style={{ marginBottom: 36 }}>
+         <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 30, fontWeight: 700, color: 'var(--color-foreground)', margin: 0, letterSpacing: '-0.02em', lineHeight: 1.1 }}>
+-          New team
++          {t('new_team')}
+         </h1>
+         <p style={{ fontSize: 14, color: 'var(--color-muted-foreground)', marginTop: 8, lineHeight: 1.6 }}>
+-          ???留뚮뱾硫?泥??붾㈃?먯꽌 ? 誘몄뀡??諛붾줈 ?낅젰?????덉뼱??
++          {t('team_desc_ai')}
+         </p>
+       </div>
+ 
+@@ -1928,11 +1963,11 @@ function CreateTeamForm({ teams, onCreated, accounts, onAccountsChange }: {
+         <form onSubmit={handleCreate}>
+           <div style={{ padding: '28px 32px', borderBottom: '1px solid var(--color-border)' }}>
+             <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--color-muted-foreground)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 18 }}>
+-              Identity
++              {t('identity')}
+             </div>
+             <div style={{ display: 'flex', gap: 14, alignItems: 'flex-end', marginBottom: 20 }}>
+               <div>
+-                <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--color-foreground)', marginBottom: 8 }}>Color</div>
++                <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--color-foreground)', marginBottom: 8 }}>{t('color')}</div>
+                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', maxWidth: 140 }}>
+                   {COLOR_SWATCHES.map(c => (
+                     <button key={c} type="button" onClick={() => setSelectedColor(c)} style={{
+@@ -1952,17 +1987,17 @@ function CreateTeamForm({ teams, onCreated, accounts, onAccountsChange }: {
+             </div>
+             <div style={{ marginBottom: 16 }}>
+               <label style={{ fontSize: 12, fontWeight: 500, color: 'var(--color-foreground)', display: 'block', marginBottom: 8 }}>
+-                Team name <span style={{ color: '#ef4444' }}>*</span>
++                {t('team_name')} <span style={{ color: '#ef4444' }}>*</span>
+               </label>
+               <input type="text" value={teamName} onChange={e => setTeamName(e.target.value)}
+-                placeholder="e.g. Platform Engineering" required style={inputStyle} onFocus={onFocus} onBlur={onBlur} />
++                placeholder={t('team_name_placeholder') || 'e.g. Platform Engineering'} required style={inputStyle} onFocus={onFocus} onBlur={onBlur} />
+             </div>
+             <div>
+               <label style={{ fontSize: 12, fontWeight: 500, color: 'var(--color-foreground)', display: 'block', marginBottom: 8 }}>
+-                Description <span style={{ fontWeight: 400, color: 'var(--color-muted-foreground)' }}>(optional)</span>
++                {t('team_mission')} <span style={{ color: '#ef4444' }}>*</span>
+               </label>
+-              <textarea value={teamDesc} onChange={e => setTeamDesc(e.target.value)}
+-                placeholder="What does this team work on?" rows={3}
++              <textarea value={teamDesc} onChange={e => setTeamDesc(e.target.value)} required
++                placeholder={t('team_mission_placeholder') || '?대뼡 湲곕뒫??援ы쁽?좎? ?곸꽭???ㅻ챸?댁＜?몄슂...'} rows={4}
+                 style={{ ...inputStyle, resize: 'none', lineHeight: 1.6 } as React.CSSProperties}
+                 onFocus={onFocus} onBlur={onBlur} />
+             </div>
+@@ -1971,7 +2006,7 @@ function CreateTeamForm({ teams, onCreated, accounts, onAccountsChange }: {
+           <div style={{ padding: '24px 32px', borderBottom: '1px solid var(--color-border)' }}>
+             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+               <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--color-muted-foreground)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+-                Slack account
++                Slack {t('account')}
+               </span>
+               <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.08em', padding: '2px 7px', borderRadius: 5, color: '#b45309', background: '#f59e0b14', border: '1px solid #f59e0b33' }}>
+                 ?꾩닔
+@@ -1985,81 +2020,24 @@ function CreateTeamForm({ teams, onCreated, accounts, onAccountsChange }: {
+                 onFocus={onFocus} onBlur={onBlur} />
+             </div>
+             <p style={{ fontSize: 12, color: 'var(--color-muted-foreground)', margin: '10px 0 0', lineHeight: 1.55 }}>
+-              ? ?뚮┝怨?AI ?붿빟??諛쏆쑝?ㅻ㈃ Slack 怨꾩젙 ?곕룞???꾩슂?⑸땲?? ? ?앹꽦 ???먮룞?쇰줈 ?곕룞?⑸땲??
+-            </p>
+-          </div>
+-
+-          <div style={{ padding: '24px 32px', borderBottom: '1px solid var(--color-border)' }}>
+-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--color-muted-foreground)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 14 }}>
+-              Invite members
+-            </div>
+-            <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+-              <input type="email" value={inviteInput} onChange={e => setInviteInput(e.target.value)}
+-                onKeyDown={e => { if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); addInvitee() } }}
+-                placeholder="name@company.com" style={inputStyle} onFocus={onFocus} onBlur={onBlur} />
+-              <button type="button" onClick={addInvitee} disabled={!inviteInput.trim()}
+-                style={{
+-                  padding: '10px 16px', borderRadius: 10, border: '1.5px solid var(--color-border)',
+-                  background: inviteInput.trim() ? 'var(--color-primary)' : '#f0efe9',
+-                  color: inviteInput.trim() ? '#ffffff' : 'var(--color-muted-foreground)',
+-                  fontSize: 13, fontWeight: 600, fontFamily: 'var(--font-display)',
+-                  cursor: inviteInput.trim() ? 'pointer' : 'not-allowed',
+-                  transition: 'background 0.15s, color 0.15s', whiteSpace: 'nowrap',
+-                }}>
+-                Add
+-              </button>
+-            </div>
+-            <p style={{ fontSize: 12, color: 'var(--color-muted-foreground)', margin: '0 0 14px', lineHeight: 1.5 }}>
+-              ?대찓???낅젰 ??<kbd style={{ fontFamily: 'var(--font-mono)', fontSize: 11, background: '#f0efe9', border: '1px solid var(--color-border)', borderRadius: 4, padding: '1px 5px' }}>Enter</kbd> ?먮뒗 Add瑜??대┃?섏꽭??
++              {t('slack_integration_desc')}
+             </p>
+-            {invitees.length > 0 && (
+-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+-                {invitees.map(email => (
+-                  <div key={email} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 10px 5px 8px', borderRadius: 100, background: 'rgba(107,92,246,0.08)', border: '1px solid rgba(107,92,246,0.2)' }}>
+-                    <div style={{ width: 20, height: 20, borderRadius: '50%', background: 'var(--color-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, color: '#fff', fontFamily: 'var(--font-display)' }}>
+-                      {email[0].toUpperCase()}
+-                    </div>
+-                    <span style={{ fontSize: 12, color: 'var(--color-foreground)', fontWeight: 500 }}>{email}</span>
+-                    <button type="button" onClick={() => setInvitees(prev => prev.filter(e => e !== email))}
+-                      style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', opacity: 0.4, transition: 'opacity 0.1s' }}
+-                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '1' }}
+-                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '0.4' }}>
+-                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+-                        <path d="M2 2L10 10M10 2L2 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+-                      </svg>
+-                    </button>
+-                  </div>
+-                ))}
+-              </div>
+-            )}
+           </div>
+ 
+           <div style={{ padding: '20px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#fafaf8' }}>
+             <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--color-muted-foreground)' }}>
+-              {success
+-                ? <span style={{ color: '#10b981', fontWeight: 500 }}>??????앹꽦?먯뒿?덈떎</span>
+-                : <span>?앹꽦 ??誘몄뀡??諛붾줈 ?낅젰?????덉뼱??/span>}
++              <span>{t('ai_roadmap_generation_desc')}</span>
+             </div>
+-            <button type="submit" disabled={!teamName.trim() || !slackHandle.trim() || creating}
++            <button type="submit" disabled={!teamName.trim() || !slackHandle.trim() || !teamDesc.trim() || phase === 'creating_team'}
+               style={{
+                 padding: '10px 24px', borderRadius: 10, border: 'none',
+-                background: !teamName.trim() || !slackHandle.trim() || creating ? '#d1d0cc' : 'var(--color-primary)',
++                background: (!teamName.trim() || !slackHandle.trim() || !teamDesc.trim() || phase === 'creating_team') ? '#d1d0cc' : 'var(--color-primary)',
+                 color: '#ffffff', fontSize: 14, fontWeight: 600, fontFamily: 'var(--font-display)',
+-                cursor: !teamName.trim() || !slackHandle.trim() || creating ? 'not-allowed' : 'pointer',
++                cursor: (!teamName.trim() || !slackHandle.trim() || !teamDesc.trim() || phase === 'creating_team') ? 'not-allowed' : 'pointer',
+                 display: 'flex', alignItems: 'center', gap: 8, letterSpacing: '-0.01em',
+                 transition: 'background 0.15s',
+-              }}
+-              onMouseEnter={e => { if (teamName.trim() && slackHandle.trim() && !creating) (e.currentTarget as HTMLElement).style.background = '#5a4de0' }}
+-              onMouseLeave={e => { if (teamName.trim() && slackHandle.trim() && !creating) (e.currentTarget as HTMLElement).style.background = 'var(--color-primary)' }}>
+-              {creating ? (
+-                <>
+-                  <svg width="14" height="14" viewBox="0 0 14 14" style={{ animation: 'spin 0.8s linear infinite' }}>
+-                    <circle cx="7" cy="7" r="5" stroke="rgba(255,255,255,0.3)" strokeWidth="2" fill="none" />
+-                    <path d="M7 2A5 5 0 0 1 12 7" stroke="white" strokeWidth="2" strokeLinecap="round" fill="none" />
+-                  </svg>
+-                  Creating??-                </>
+-              ) : 'Create team'}
++              }}>
++              {phase === 'creating_team' ? t('creating') : t('create_team')}
+             </button>
+           </div>
+         </form>

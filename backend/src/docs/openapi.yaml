@@ -1,0 +1,1155 @@
+openapi: 3.0.3
+info:
+  title: Templ API
+  description: |
+    Team and roadmap collaboration backend API contract.
+    Frontend uses camelCase response keys and JWT bearer authentication for protected endpoints.
+  version: 1.1.0
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+security:
+  - bearerAuth: []
+paths:
+  /api/auth/login:
+    post:
+      summary: Login with username/password
+      tags: [Auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/auth/signup:
+    post:
+      summary: Signup a new user
+      tags: [Auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignupRequest'
+      responses:
+        '200':
+          description: Signup success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignupResponse'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /api/auth/google:
+    post:
+      summary: Google login (id_token verification)
+      description: >
+        Accepts a Google ID token (credential) from Google Identity Services.
+        When the server environment variable GOOGLE_CLIENT_ID is set, the token's aud must match that value and the token is verified with Google's public keys.
+        If GOOGLE_CLIENT_ID is not set the server runs in a permissive dev fallback that accepts the token and creates/returns a demo user for local testing.
+      tags: [Auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GoogleLoginRequest'
+      responses:
+        '200':
+          description: OAuth-like login success — returns backend JWT and user info
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+              examples:
+                success:
+                  summary: Example success response
+                  value:
+                    accessToken: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+                    userId: 2
+                    username: google_user
+                    nickname: Google User
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          description: Invalid or expired Google id_token or aud mismatch
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              examples:
+                invalid_token:
+                  summary: Invalid token
+                  value:
+                    error: unauthorized
+                    message: invalid google id_token
+        '500':
+          description: Unexpected server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/auth/google/start:
+    get:
+      summary: Start Google OAuth authorization (redirect to Google)
+      tags: [Auth]
+      security: []
+      parameters:
+        - in: query
+          name: redirect
+          required: false
+          schema:
+            type: string
+          description: Optional frontend URL to return to after login (encoded in state)
+      responses:
+        '302':
+          description: Redirect to Google authorization endpoint
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /api/auth/google/callback:
+    get:
+      summary: OAuth callback — exchange code for tokens and return backend JWT
+      tags: [Auth]
+      security: []
+      parameters:
+        - in: query
+          name: code
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: state
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Returns AuthResponse when state not provided
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '302':
+          description: Redirects back to frontend URL provided in "state" with accessToken query param
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          description: Token exchange or server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /api/auth/check-id:
+    post:
+      summary: Check username availability
+      tags: [Auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckUsernameRequest'
+      responses:
+        '200':
+          description: Availability result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckUsernameResponse'
+
+  /api/auth/send-code:
+    post:
+      summary: Send email verification code
+      tags: [Auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendCodeRequest'
+      responses:
+        '200':
+          description: Code sent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendCodeResponse'
+
+  /api/auth/confirm-code:
+    post:
+      summary: Confirm email verification code
+      tags: [Auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConfirmCodeRequest'
+      responses:
+        '200':
+          description: Verification result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConfirmCodeResponse'
+
+  /api/profile/me:
+    get:
+      summary: Get current user profile
+      tags: [Profile]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Current user profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfileResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/teams:
+    get:
+      summary: List all teams
+      tags: [Teams]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Team list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Team'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      summary: Create a team
+      tags: [Teams]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTeamRequest'
+      responses:
+        '200':
+          description: Created team
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Team'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/teams/{teamId}:
+    get:
+      summary: Get a team by id
+      tags: [Teams]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TeamId'
+      responses:
+        '200':
+          description: Team data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Team'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      summary: Update a team
+      tags: [Teams]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TeamId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTeamRequest'
+      responses:
+        '200':
+          description: Updated team
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Team'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/teams/{teamId}/roadmap:
+    get:
+      summary: Get roadmap graph for a team
+      tags: [Roadmap]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TeamId'
+      responses:
+        '200':
+          description: Roadmap graph
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoadmapGraph'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/teams/{teamId}/nodes:
+    post:
+      summary: Create roadmap node
+      tags: [Roadmap]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TeamId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoadmapNode'
+      responses:
+        '200':
+          description: Created node
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoadmapNode'
+
+  /api/teams/{teamId}/nodes/{nodeId}:
+    patch:
+      summary: Update roadmap node
+      tags: [Roadmap]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TeamId'
+        - $ref: '#/components/parameters/NodeId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoadmapNode'
+      responses:
+        '200':
+          description: Updated node
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoadmapNode'
+    delete:
+      summary: Delete roadmap node
+      tags: [Roadmap]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TeamId'
+        - $ref: '#/components/parameters/NodeId'
+      responses:
+        '204':
+          description: Deleted
+
+  /api/teams/{teamId}/edges:
+    post:
+      summary: Create roadmap edge
+      tags: [Roadmap]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TeamId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoadmapEdge'
+      responses:
+        '200':
+          description: Created edge
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoadmapEdge'
+
+  /api/teams/{teamId}/edges/{edgeId}:
+    delete:
+      summary: Delete roadmap edge
+      tags: [Roadmap]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TeamId'
+        - $ref: '#/components/parameters/EdgeId'
+      responses:
+        '204':
+          description: Deleted
+
+  # --- Specs & AI Suggestions ---
+  /api/teams/{teamId}/specs:
+    post:
+      summary: Submit a project specification for AI analysis
+      tags: [Specs]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TeamId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SpecificationCreate'
+      responses:
+        '200':
+          description: Specification accepted and queued for analysis
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Specification'
+    get:
+      summary: List specifications for a team
+      tags: [Specs]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TeamId'
+      responses:
+        '200':
+          description: List of specifications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Specification'
+
+  /api/teams/{teamId}/specs/{specId}/suggestions:
+    get:
+      summary: List Suggestion cards generated from a specification
+      tags: [Specs]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TeamId'
+        - name: specId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Suggestions produced for this spec
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Suggestion'
+
+  /api/teams/{teamId}/specs/{specId}/preview:
+    get:
+      summary: Preview a roadmap graph derived from spec suggestions (not persisted)
+      tags: [Specs]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TeamId'
+        - name: specId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Roadmap graph preview
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoadmapGraph'
+
+  /api/teams/{teamId}/suggestions:
+    get:
+      summary: List suggestions for a team
+      tags: [Suggestions]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TeamId'
+      responses:
+        '200':
+          description: Suggestion list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Suggestion'
+    post:
+      summary: Create a suggestion (typically from AI or webhook)
+      tags: [Suggestions]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TeamId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SuggestionCreate'
+      responses:
+        '200':
+          description: Created suggestion
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Suggestion'
+
+  /api/teams/{teamId}/suggestions/{id}/approve:
+    post:
+      summary: Approve a suggestion and apply changes to the roadmap
+      tags: [Suggestions]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TeamId'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Suggestion approved and applied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Suggestion'
+
+  /api/teams/{teamId}/suggestions/{id}/regenerate:
+    post:
+      summary: Regenerate AI suggestions with user feedback
+      tags: [Suggestions]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TeamId'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SuggestionRegenerateRequest'
+      responses:
+        '200':
+          description: Newly generated suggestions that reflect the user's feedback
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Suggestion'
+
+  /api/ai/test:
+    post:
+      summary: Test AI suggestion generation (non-persistent)
+      tags: [AI]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AiTestRequest'
+      responses:
+        '200':
+          description: Generated suggestion previews
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Suggestion'
+
+  # --- end Specs & Suggestions ---
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT access token issued from /api/auth/login
+
+  parameters:
+    TeamId:
+      name: teamId
+      in: path
+      required: true
+      schema:
+        type: string
+      example: T-001
+    NodeId:
+      name: nodeId
+      in: path
+      required: true
+      schema:
+        type: string
+      example: root
+    EdgeId:
+      name: edgeId
+      in: path
+      required: true
+      schema:
+        type: string
+      example: e-root-m1
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+    Conflict:
+      description: Conflict
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+
+  schemas:
+    ApiError:
+      type: object
+      properties:
+        error:
+          type: string
+          example: unauthorized
+        message:
+          type: string
+          example: invalid or missing token
+
+    LoginRequest:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+          example: admin
+        password:
+          type: string
+          example: admin123
+      description: |
+        Frontend may also send {"id":"admin","pw":"admin123"}; backend accepts both forms for compatibility.
+
+    SignupRequest:
+      type: object
+      required:
+        - username
+        - password
+        - email
+        - nickname
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+        email:
+          type: string
+        nickname:
+          type: string
+      example:
+        username: newuser
+        password: 1234
+        email: new@example.com
+        nickname: 홍길동
+
+    GoogleLoginRequest:
+      type: object
+      required:
+        - accessToken
+      properties:
+        accessToken:
+          type: string
+      example:
+        accessToken: google-demo-token
+
+    CheckUsernameRequest:
+      type: object
+      required:
+        - username
+      properties:
+        username:
+          type: string
+
+    CheckUsernameResponse:
+      type: object
+      properties:
+        available:
+          type: boolean
+          example: true
+
+    SendCodeRequest:
+      type: object
+      required:
+        - email
+      properties:
+        email:
+          type: string
+
+    SendCodeResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: "1234"
+
+    ConfirmCodeRequest:
+      type: object
+      required:
+        - email
+        - code
+      properties:
+        email:
+          type: string
+        code:
+          type: string
+
+    ConfirmCodeResponse:
+      type: object
+      properties:
+        verified:
+          type: boolean
+          example: true
+
+    SignupResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+
+    AuthResponse:
+      type: object
+      required:
+        - accessToken
+        - userId
+        - username
+        - nickname
+      properties:
+        accessToken:
+          type: string
+          example: eyJhbGciOiJIUzI1NiJ9...
+        userId:
+          type: integer
+          format: int64
+          example: 1
+        username:
+          type: string
+          example: admin
+        nickname:
+          type: string
+          example: Admin
+        locale:
+          type: string
+          example: ko-KR
+
+    UserProfileResponse:
+      type: object
+      properties:
+        userId:
+          type: integer
+          format: int64
+          example: 1
+        username:
+          type: string
+          example: admin
+        nickname:
+          type: string
+          example: Admin
+        email:
+          type: string
+          example: admin@example.com
+        locale:
+          type: string
+          example: ko-KR
+
+    Team:
+      type: object
+      required:
+        - id
+        - name
+        - members
+        - color
+        - mission
+      properties:
+        id:
+          type: string
+          example: T-001
+        name:
+          type: string
+          example: Design System
+        members:
+          type: integer
+          example: 8
+        color:
+          type: string
+          example: '#6b5cf6'
+        mission:
+          type: string
+          example: 제품의 디자인 일관성을 유지한다.
+
+    CreateTeamRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          example: Design System
+        members:
+          type: integer
+          example: 8
+        color:
+          type: string
+          example: '#6b5cf6'
+        mission:
+          type: string
+          example: 제품의 디자인 일관성을 유지한다.
+
+    UpdateTeamRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        color:
+          type: string
+        mission:
+          type: string
+
+    RoadmapComment:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        author:
+          type: string
+          example: Alex
+        text:
+          type: string
+          example: UI 검토가 필요합니다.
+        time:
+          type: string
+          example: 2026-08-16T10:00:00Z
+
+    RoadmapFile:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: GDD_최종.docx
+        size:
+          type: string
+          example: 1.8 MB
+        author:
+          type: string
+          example: Sam Chen
+        date:
+          type: string
+          example: 2025-03-28
+        url:
+          type: string
+          nullable: true
+          example: null
+
+    RoadmapNode:
+      type: object
+      properties:
+        id:
+          type: string
+          example: root
+        label:
+          type: string
+          example: 2D 게임 개발
+        code:
+          type: string
+          example: GOAL
+        status:
+          type: string
+          enum: [done, active, todo]
+          example: active
+        progress:
+          type: integer
+          example: 42
+        goal:
+          type: string
+          example: 2D 액션 RPG 한 편을 기획부터 출시까지 완주한다.
+        dueDate:
+          type: string
+          example: 2025-12-31
+        assignees:
+          type: array
+          items:
+            type: string
+          example: ["Alex Rivera", "Jordan Kim"]
+        prerequisites:
+          type: array
+          items:
+            type: string
+          example: []
+        aiSummary:
+          type: string
+          example: 전체 로드맵은 4개 축으로 구성됩니다.
+        issue:
+          type: string
+          nullable: true
+          example: null
+        files:
+          type: array
+          items:
+            $ref: '#/components/schemas/RoadmapFile'
+        tier:
+          type: string
+          example: root
+        x:
+          type: integer
+          example: 280
+        y:
+          type: integer
+          example: 22
+        w:
+          type: integer
+          example: 240
+        h:
+          type: integer
+          example: 74
+        comments:
+          type: array
+          items:
+            $ref: '#/components/schemas/RoadmapComment'
+
+    RoadmapEdge:
+      type: object
+      properties:
+        id:
+          type: string
+          example: e-root-m1
+        from:
+          type: string
+          example: root
+        to:
+          type: string
+          example: m1
+
+    RoadmapGraph:
+      type: object
+      properties:
+        nodes:
+          type: array
+          items:
+            $ref: '#/components/schemas/RoadmapNode'
+        edges:
+          type: array
+          items:
+            $ref: '#/components/schemas/RoadmapEdge'
+
+    # --- Specs & AI Suggestion Schemas ---
+    SpecificationCreate:
+      type: object
+      required:
+        - specText
+      properties:
+        author:
+          type: string
+          example: Alex Rivera
+        specText:
+          type: string
+          example: "Build a consistent design language so all users can intuitively use the product."
+
+    Specification:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        teamId:
+          type: string
+          example: T-001
+        author:
+          type: string
+          example: Alex Rivera
+        specText:
+          type: string
+        status:
+          type: string
+          example: ANALYZING
+        createdAt:
+          type: string
+          format: date-time
+
+    SuggestionCreate:
+      type: object
+      required:
+        - targetType
+        - title
+      properties:
+        targetType:
+          type: string
+          example: roadmapNode
+        targetId:
+          type: string
+          nullable: true
+          example: n-root-1
+        title:
+          type: string
+          example: "AI 제안: 로드맵 뼈대 생성"
+        body:
+          type: string
+          example: "Initial roadmap skeleton generated from spec."
+        sourceTool:
+          type: string
+          example: ai-stub
+        sourceId:
+          type: string
+          nullable: true
+        changeJson:
+          type: string
+          description: |
+            Arbitrary JSON expressed as a string describing proposed change(s).
+            Accepted formats:
+              - Single JSON object representing one roadmap node (label, aiSummary, status, progress, assignees)
+              - JSON array of node objects (first element treated as root, remaining elements as children)
+              - Object with `nodes` or `items` array containing node objects
+
+    SuggestionRegenerateRequest:
+      type: object
+      properties:
+        feedback:
+          type: string
+          example: "관리자 대시보드는 제외하고 로그인만 우선 구현해줘"
+        baseSuggestionId:
+          type: integer
+          format: int64
+          nullable: true
+          example: 42
+
+    Suggestion:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        teamId:
+          type: string
+        targetType:
+          type: string
+        targetId:
+          type: string
+          nullable: true
+        title:
+          type: string
+        body:
+          type: string
+        sourceTool:
+          type: string
+        sourceId:
+          type: string
+          nullable: true
+        changeJson:
+          type: string
+        status:
+          type: string
+          enum: [PENDING, APPROVED, REJECTED]
+        resolvedBy:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        resolvedAt:
+          type: string
+          format: date-time
+
+    # Mapping guidance (human-readable) for frontend/backend contract
+    AiSuggestionMapping:
+      type: object
+      description: |
+        Rules for interpreting Suggestion.changeJson into Roadmap nodes/edges:
+        1. If changeJson is an array or contains `nodes`/`items`, the first element becomes the root node; remaining elements become children.
+        2. Each node object maps fields: title/label -> label, aiSummary/summary -> aiSummary, status -> status, progress -> progress, assignees -> assignees.
+        3. If a Suggestion has targetId the approve flow will update the existing node instead of creating a new root.
+        4. Duplicate prevention: suggestions sharing sourceId that have already been APPROVED are skipped to avoid double application.
+      properties: {}
+
+    AiTestRequest:
+      type: object
+      properties:
+        teamId:
+          type: string
+          example: T-001
+        specId:
+          type: integer
+          format: int64
+        specText:
+          type: string
+          example: "Build a consistent design language so all users can intuitively use the product."
+
+    # --- end Specs & AI SuggestION ScheMAS ---

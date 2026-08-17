@@ -1,0 +1,10 @@
+{
+  "description": "Provides a secure login and registration interface enabling users to access their accounts and recover forgotten credentials efficiently.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}

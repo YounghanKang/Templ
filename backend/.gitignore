@@ -35,3 +35,13 @@ out/
 
 ### VS Code ###
 .vscode/
+
+# Security & Secret Configs
+application-secret.yml
+application-secret.properties
+application-local.yml
+.env
+
+# OS Generated Files
+.DS_Store
+Thumbs.db
