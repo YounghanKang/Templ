@@ -26,7 +26,6 @@ public class SpecificationService {
         this.asyncProcessor = asyncProcessor;
     }
 
-    @Transactional
     public SpecificationDto.Response submit(String teamId, SpecificationDto.Create req) {
         Specification spec = Specification.builder()
                 .teamId(teamId)

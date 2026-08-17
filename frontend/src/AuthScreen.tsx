@@ -118,6 +118,8 @@ export default function AuthScreen({ onSuccess }: { onSuccess: () => void }) {
         if (res.ok) {
           const data = await res.json()
           localStorage.setItem('templ_token', data.accessToken)
+          if (data.nickname) localStorage.setItem('templ_user_nickname', data.nickname)
+          if (data.username) localStorage.setItem('templ_user_email', data.username)
           onSuccess()
         } else {
           console.error('Failed to authenticate with backend')
@@ -176,6 +178,8 @@ export default function AuthScreen({ onSuccess }: { onSuccess: () => void }) {
       if (res.ok) {
         const data = await res.json()
         localStorage.setItem('templ_token', data.accessToken)
+        if (data.nickname) localStorage.setItem('templ_user_nickname', data.nickname)
+        if (data.username) localStorage.setItem('templ_user_email', data.username)
         onSuccess()
       } else {
         console.error('Login failed')

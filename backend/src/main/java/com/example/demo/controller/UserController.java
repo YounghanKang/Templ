@@ -25,14 +25,4 @@ public class UserController {
         return ResponseEntity.ok(userService.updateProfile(request));
     }
 
-    @GetMapping("/teams/{teamId}/integrations")
-    public ResponseEntity<UserDto.IntegrationSettingsDto> getIntegrations(@PathVariable String teamId) {
-        return ResponseEntity.ok(userService.getIntegrations());
-    }
-
-    @PatchMapping("/teams/{teamId}/integrations")
-    public ResponseEntity<UserDto.IntegrationSettingsDto> updateIntegrations(@PathVariable String teamId,
-                                                                            @RequestBody UserDto.IntegrationSettingsDto request) {
-        return ResponseEntity.ok(userService.updateIntegrations(request));
-    }
 }

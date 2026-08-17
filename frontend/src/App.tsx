@@ -59,11 +59,11 @@ const NODE_DATA: Record<string, NodeDetail> = {
   root: {
     label: '2D 게임 개발', code: 'GOAL', status: 'active', progress: 42,
     goal: '2D 액션 RPG 한 편을 기획부터 출시까지 완주한다.',
-    dueDate: '2025-12-31', assignees: ['Alex Rivera', 'Jordan Kim'], prerequisites: [],
+    dueDate: '2025-12-31', assignees: ['Alex Rivera', localStorage.getItem('templ_user_nickname') || 'Jordan Kim'], prerequisites: [],
     aiSummary: '전체 로드맵은 4개 축(디자인·엔진·스킬·보스)으로 구성되며 현재 디자인 축이 완료 단계, 엔진 축이 진행 중입니다. 스킬·보스 축은 엔진 확정 이후 착수 예정이라 4월 엔진 결정이 전체 일정의 핵심 분기점입니다.',
     files: [
       { id: 1, name: '2D_RPG_기획서_v3.pdf', size: '4.2 MB', author: 'Alex Rivera', date: '2025-03-02' },
-      { id: 2, name: '전체_일정표.xlsx', size: '318 KB', author: 'Jordan Kim', date: '2025-03-11' },
+      { id: 2, name: '전체_일정표.xlsx', size: '318 KB', author: localStorage.getItem('templ_user_nickname') || 'Jordan Kim', date: '2025-03-11' },
     ],
   },
   m1: {
@@ -216,10 +216,10 @@ function elbow(from: RNode, to: RNode, r = 12) {
   ].join(' ')
 }
 
-function RoadmapNode({ node, warn, selected, dimmed, editing, linking, scale, onSelect, onDelete, onStartLink, onMove }: {
+function RoadmapNode({ node, warn, selected, dimmed, editing, linking, scale, onSelect, onDelete, onStartLink, onMove, onMoveEnd }: {
   node: RNode; warn: string | null; selected: boolean; dimmed: boolean; editing: boolean; linking: boolean; scale: number
   onSelect: (id: string) => void; onDelete: (id: string) => void
-  onStartLink: (id: string) => void; onMove: (id: string, x: number, y: number) => void
+  onStartLink: (id: string) => void; onMove: (id: string, x: number, y: number) => void; onMoveEnd: (id: string, x: number, y: number) => void
 }) {
   const { t } = useTranslation()
   const st = STATUS_META[node.status]
@@ -247,6 +247,7 @@ function RoadmapNode({ node, warn, selected, dimmed, editing, linking, scale, on
     ;(e.currentTarget as HTMLElement).releasePointerCapture?.(e.pointerId)
     // Only the drag gesture (edit mode) resolves to a click here; plain clicks use onClick.
     if (d && !d.moved) onSelect(node.id)
+    else if (d && d.moved) onMoveEnd(node.id, node.x, node.y)
   }
 
   return (
@@ -360,9 +361,9 @@ function RoadmapNode({ node, warn, selected, dimmed, editing, linking, scale, on
   )
 }
 
-function RoadmapCanvas({ nodes, edges, selectedId, editing, linkFrom, onSelect, onMove, onDeleteNode, onStartLink, onDeleteEdge }: {
+function RoadmapCanvas({ nodes, edges, selectedId, editing, linkFrom, onSelect, onMove, onMoveEnd, onDeleteNode, onStartLink, onDeleteEdge }: {
   nodes: RNode[]; edges: REdge[]; selectedId: string | null; editing: boolean; linkFrom: string | null
-  onSelect: (id: string) => void; onMove: (id: string, x: number, y: number) => void
+  onSelect: (id: string) => void; onMove: (id: string, x: number, y: number) => void; onMoveEnd: (id: string, x: number, y: number) => void
   onDeleteNode: (id: string) => void; onStartLink: (id: string) => void; onDeleteEdge: (id: string) => void
 }) {
   const { t } = useTranslation()
@@ -516,7 +517,7 @@ function RoadmapCanvas({ nodes, edges, selectedId, editing, linkFrom, onSelect, 
           <RoadmapNode key={n.id} node={n} warn={warnMap[n.id] ?? null}
             selected={selectedId === n.id} dimmed={isDim(n.id)}
             editing={editing} linking={linkFrom === n.id}
-            onSelect={onSelect} onDelete={onDeleteNode} onStartLink={onStartLink} onMove={onMove}
+            onSelect={onSelect} onDelete={onDeleteNode} onStartLink={onStartLink} onMove={onMove} onMoveEnd={onMoveEnd}
             scale={scale} />
         ))}
       </div>
@@ -641,7 +642,7 @@ function NodeDetailPanel({ node, color, onChange, onClose }: {
   function submitComment() {
     const text = draft.trim()
     if (!text) return
-    onChange({ comments: [...comments, { id: Date.now(), author: 'Jordan Kim', text, time: t('node.justNow') }] })
+    onChange({ comments: [...comments, { id: Date.now(), author: localStorage.getItem('templ_user_nickname') || 'Jordan Kim', text, time: t('node.justNow') }] })
     setDraft('')
   }
 
@@ -682,7 +683,7 @@ function NodeDetailPanel({ node, color, onChange, onClose }: {
               fontFamily: 'var(--font-mono)', fontSize: 9, color: st.color, letterSpacing: '0.05em',
             }}>
               <span style={{ width: 5, height: 5, borderRadius: '50%', background: st.color }} />
-              {st.label}
+              {t('node.' + node.status)}
             </span>
           </div>
           <input
@@ -761,7 +762,7 @@ function NodeDetailPanel({ node, color, onChange, onClose }: {
           ))}
 
           <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', marginTop: 4 }}>
-            <Avatar name="Jordan Kim" size={26} />
+            <Avatar name={localStorage.getItem('templ_user_nickname') || 'Jordan Kim'} size={26} />
             <textarea
               value={draft} onChange={e => setDraft(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitComment() } }}
@@ -809,7 +810,7 @@ function NodeDetailPanel({ node, color, onChange, onClose }: {
                   background: 'transparent', color: '#b91c1c', cursor: 'pointer',
                   fontFamily: 'var(--font-display)', fontSize: 11, fontWeight: 600,
                 }}>
-                해결됨
+                {t('node.resolved')}
               </button>
             </div>
             <textarea value={node.issue} onChange={e => onChange({ issue: e.target.value })} rows={4}
@@ -892,7 +893,7 @@ function NodeDetailPanel({ node, color, onChange, onClose }: {
                 let next = Math.max(0, ...files.map(f => f.id)) + 1
                 onChange({
                   files: [...files, ...picked.map(f => ({
-                    id: next++, name: f.name, size: formatBytes(f.size), author: 'Jordan Kim', date: today,
+                    id: next++, name: f.name, size: formatBytes(f.size), author: localStorage.getItem('templ_user_nickname') || 'Jordan Kim', date: today,
                     url: URL.createObjectURL(f),
                   }))],
                 })
@@ -931,7 +932,7 @@ function NodeDetailPanel({ node, color, onChange, onClose }: {
               border: '1.5px dashed #ef444455', background: 'transparent', color: '#b91c1c',
               fontFamily: 'var(--font-display)', fontSize: 11.5, fontWeight: 600, cursor: 'pointer',
             }}>
-              ! 문제 발생으로 표시
+              {t('node.markAsIssue')}
             </button>
           )}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -1001,7 +1002,7 @@ function NodeDetailPanel({ node, color, onChange, onClose }: {
               padding: '9px 12px', borderRadius: 9, border: '1px dashed var(--color-border)',
               fontSize: 12, color: 'var(--color-muted-foreground)', marginBottom: 8,
             }}>
-              선행 작업 없음 · 바로 시작 가능
+              {t('node.noPrerequisites')}
             </div>
           )}
           <ChipEditor items={node.prerequisites} color={color} placeholder={t('node.prerequisitesPlaceholder')}
@@ -1063,7 +1064,7 @@ function TeamMissionInput({ team, onSave }: { team: TeamType; onSave: (mission: 
   const [specOpen, setSpecOpen] = useState(false)
   const [linkFrom, setLinkFrom] = useState<string | null>(null)
   const nextIdRef = useRef(1)
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
+const textareaRef = useRef<HTMLTextAreaElement>(null)
   const [alertNodeId, setAlertNodeId] = useState<string | null>(null)
   const announcedRef = useRef<Set<string>>(new Set())
 
@@ -1089,20 +1090,23 @@ function TeamMissionInput({ team, onSave }: { team: TeamType; onSave: (mission: 
     setGraph(g => ({ ...g, nodes: g.nodes.map(n => n.id === id ? { ...n, ...patch } : n) }))
     const node = safeGraph.nodes.find(n => n.id === id)
     if (node) {
-      fetch(`/api/teams/${team.id}/roadmap/nodes/${id}`, {
-        method: 'PUT',
+      fetch(`/api/teams/${team.id}/nodes/${id}`, {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('templ_token')}` },
         body: JSON.stringify({ ...node, ...patch })
       }).catch(console.error)
     }
   }
 
-  async function moveNode(id: string, x: number, y: number) {
+  function moveNode(id: string, x: number, y: number) {
     setGraph(g => ({ ...g, nodes: g.nodes.map(n => n.id === id ? { ...n, x, y } : n) }))
+  }
+
+  async function saveNodePos(id: string, x: number, y: number) {
     const node = safeGraph.nodes.find(n => n.id === id)
     if (node) {
-      fetch(`/api/teams/${team.id}/roadmap/nodes/${id}`, {
-        method: 'PUT',
+      fetch(`/api/teams/${team.id}/nodes/${id}`, {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('templ_token')}` },
         body: JSON.stringify({ ...node, x, y })
       }).catch(console.error)
@@ -1120,7 +1124,7 @@ function TeamMissionInput({ team, onSave }: { team: TeamType; onSave: (mission: 
     setGraph(g => ({ ...g, nodes: [...g.nodes, newNode] }))
     setSelectedNodeId(id)
 
-    fetch(`/api/teams/${team.id}/roadmap/nodes`, {
+    fetch(`/api/teams/${team.id}/nodes`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('templ_token')}` },
       body: JSON.stringify(newNode)
@@ -1135,7 +1139,7 @@ function TeamMissionInput({ team, onSave }: { team: TeamType; onSave: (mission: 
     setLinkFrom(f => (f === id ? null : f))
     setSelectedNodeId(p => (p === id ? null : p))
 
-    fetch(`/api/teams/${team.id}/roadmap/nodes/${id}`, {
+    fetch(`/api/teams/${team.id}/nodes/${id}`, {
       method: 'DELETE',
       headers: { 'Authorization': `Bearer ${localStorage.getItem('templ_token')}` }
     }).catch(console.error)
@@ -1143,7 +1147,7 @@ function TeamMissionInput({ team, onSave }: { team: TeamType; onSave: (mission: 
 
   async function deleteEdge(id: string) {
     setGraph(g => ({ ...g, edges: g.edges.filter(e => e.id !== id) }))
-    fetch(`/api/teams/${team.id}/roadmap/edges/${id}`, {
+    fetch(`/api/teams/${team.id}/edges/${id}`, {
       method: 'DELETE',
       headers: { 'Authorization': `Bearer ${localStorage.getItem('templ_token')}` }
     }).catch(console.error)
@@ -1156,7 +1160,7 @@ function TeamMissionInput({ team, onSave }: { team: TeamType; onSave: (mission: 
         if (!exists) {
           const newEdge = { id: `e-${linkFrom}-${id}-${Date.now()}`, from: linkFrom, to: id }
           setGraph(g => ({ ...g, edges: [...g.edges, newEdge] }))
-          fetch(`/api/teams/${team.id}/roadmap/edges`, {
+          fetch(`/api/teams/${team.id}/edges`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('templ_token')}` },
             body: JSON.stringify(newEdge)
@@ -1229,20 +1233,7 @@ function TeamMissionInput({ team, onSave }: { team: TeamType; onSave: (mission: 
                     <span style={{ fontSize: 14, lineHeight: 1 }}>+</span> 노드 추가
                   </button>
                 )}
-                <button onClick={() => setSpecOpen(v => !v)} style={{
-                  display: 'flex', alignItems: 'center', gap: 7, padding: '7px 14px', borderRadius: 9,
-                  border: `1px solid ${specOpen ? '#6b5cf6' : '#3a3a4a'}`,
-                  background: specOpen ? '#6b5cf620' : '#191922',
-                  color: specOpen ? '#b7abff' : '#e5e4ef',
-                  fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 600, cursor: 'pointer',
-                  transition: 'background 0.15s, border-color 0.15s, color 0.15s',
-                }}>
-                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                    <path d="M2.5 1.5h5L10 4v6.5H2.5V1.5Z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" />
-                    <path d="M4.4 6h3.2M4.4 8h2.2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-                  </svg>
-                  명세서 확인 및 재설정
-                </button>
+
                 <button onClick={() => { setEditing(v => !v); setLinkFrom(null) }} style={{
                   padding: '7px 16px', borderRadius: 9, border: 'none',
                   background: editing ? '#10b981' : team.color, color: '#ffffff',
@@ -1321,7 +1312,7 @@ function TeamMissionInput({ team, onSave }: { team: TeamType; onSave: (mission: 
               <RoadmapCanvas
                 nodes={safeGraph.nodes} edges={safeGraph.edges}
                 selectedId={selectedNodeId} editing={editing} linkFrom={linkFrom}
-                onSelect={handleNodeSelect} onMove={moveNode}
+                onSelect={handleNodeSelect} onMove={moveNode} onMoveEnd={saveNodePos}
                 onDeleteNode={deleteNode} onDeleteEdge={deleteEdge}
                 onStartLink={id => setLinkFrom(f => (f === id ? null : id))}
               />
@@ -1476,12 +1467,13 @@ function TeamMissionInput({ team, onSave }: { team: TeamType; onSave: (mission: 
 
 // ── Team info tab ─────────────────────────────────────────────────────────────
 function TeamInfo({ team }: { team: TeamType }) {
+  const { t } = useTranslation()
   const [mission, setMission] = useState(team.mission)
   const [editingMission, setEditingMission] = useState(!team.mission)
   const [membersExpanded, setMembersExpanded] = useState(false)
 
   const allMockMembers = [
-    { name: 'Alex Rivera', role: 'Lead', email: 'alex@acmecorp.io' },
+    { name: localStorage.getItem('templ_user_nickname') || 'Jordan Kim', role: 'Lead', email: localStorage.getItem('templ_user_email') || 'jordan@acmecorp.io' },
     { name: 'Sam Chen', role: 'Member', email: 'sam@acmecorp.io' },
     { name: 'Jordan Park', role: 'Member', email: 'jordan@acmecorp.io' },
     { name: 'Morgan Lee', role: 'Viewer', email: 'morgan@acmecorp.io' },
@@ -1510,16 +1502,7 @@ function TeamInfo({ team }: { team: TeamType }) {
                 Mission
               </span>
             </div>
-            <button onClick={() => setEditingMission(v => !v)}
-              style={{
-                padding: '4px 10px', borderRadius: 6, border: `1px solid ${team.color}33`,
-                background: 'transparent', color: team.color, fontSize: 11, fontWeight: 600,
-                fontFamily: 'var(--font-display)', cursor: 'pointer', transition: 'background 0.12s',
-              }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = `${team.color}14` }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}>
-              {editingMission ? '저장' : '편집'}
-            </button>
+
           </div>
           <div style={{ padding: '24px' }}>
             {editingMission ? (
@@ -1569,7 +1552,7 @@ function TeamInfo({ team }: { team: TeamType }) {
         <div style={{ background: '#f4f3ef', borderRadius: 16, border: '1px solid var(--color-border)', overflow: 'hidden' }}>
           <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--color-muted-foreground)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Members</span>
-            <button style={{ padding: '6px 14px', borderRadius: 8, border: '1.5px solid var(--color-border)', background: 'transparent', fontSize: 12, fontWeight: 600, color: 'var(--color-foreground)', cursor: 'pointer', fontFamily: 'var(--font-display)' }}>
+            <button onClick={() => alert(t('node.issueOccurred') ? '초대 기능은 준비 중입니다.' : 'Invite feature is coming soon.')} style={{ padding: '6px 14px', borderRadius: 8, border: '1.5px solid var(--color-border)', background: 'transparent', fontSize: 12, fontWeight: 600, color: 'var(--color-foreground)', cursor: 'pointer', fontFamily: 'var(--font-display)' }}>
               Invite
             </button>
           </div>
@@ -1845,18 +1828,87 @@ function TeamView({ team, tab, onMissionSave, accounts, onAccountsChange }: {
 }
 
 // ── Create team form ──────────────────────────────────────────────────────────
+
+type CreateTeamPhase = 'form' | 'creating_team' | 'generating_ai' | 'review_ai'
+
+function AiSpecificationReview({ team, previewGraph, suggestions, onApprove, onRegenerate, onReject, isRegenerating }: {
+  team: TeamType; previewGraph: any; suggestions: any[];
+  onApprove: () => void; onRegenerate: (fb: string) => void; onReject: () => void; isRegenerating: boolean;
+}) {
+  const [feedback, setFeedback] = useState('')
+
+  return (
+    <div style={{ maxWidth: 800, margin: '40px auto', background: '#fff', borderRadius: 16, padding: 32, boxShadow: '0 8px 30px rgba(0,0,0,0.12)' }}>
+      <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 26, fontWeight: 700, marginBottom: 8, color: 'var(--color-foreground)' }}>
+        AI가 생성한 로드맵 제안
+      </h1>
+      <p style={{ fontSize: 14, color: 'var(--color-muted-foreground)', marginBottom: 24 }}>
+        입력하신 미션을 바탕으로 다음과 같은 로드맵 노드들이 생성되었습니다. 검토 후 승인해주세요.
+      </p>
+
+      <div style={{ background: '#fafaf8', borderRadius: 12, border: '1px solid var(--color-border)', padding: 20, marginBottom: 24, maxHeight: 400, overflowY: 'auto' }}>
+        {previewGraph?.nodes?.map((node: any) => (
+          <div key={node.id} style={{ padding: '12px', borderBottom: '1px solid var(--color-border-sidebar)' }}>
+            <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 4, color: 'var(--color-foreground)' }}>{node.label}</div>
+            <div style={{ fontSize: 13, color: 'var(--color-muted-foreground)' }}>{node.aiSummary}</div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ display: 'flex', gap: 12, marginBottom: 24 }}>
+        <input 
+          type="text" 
+          value={feedback} 
+          onChange={e => setFeedback(e.target.value)}
+          placeholder="수정하고 싶은 부분이나 추가 피드백을 입력하세요..." 
+          style={{ flex: 1, padding: '12px 14px', borderRadius: 8, border: '1.5px solid var(--color-border)', fontSize: 14, outline: 'none', background: '#fff', color: 'var(--color-foreground)' }}
+        />
+        <button 
+          onClick={() => onRegenerate(feedback)} 
+          disabled={!feedback.trim() || isRegenerating}
+          style={{ 
+            padding: '0 20px', borderRadius: 8, background: '#f59e0b', color: '#fff', fontWeight: 600, border: 'none', cursor: (!feedback.trim() || isRegenerating) ? 'not-allowed' : 'pointer', opacity: (!feedback.trim() || isRegenerating) ? 0.6 : 1
+          }}>
+          {isRegenerating ? '생성 중...' : '내용 보충'}
+        </button>
+      </div>
+
+      <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+        <button onClick={onReject} style={{ padding: '10px 24px', borderRadius: 8, background: '#fee2e2', border: '1.5px solid #f87171', color: '#ef4444', fontWeight: 600, cursor: 'pointer', transition: 'background 0.15s' }}>
+          거절 (취소)
+        </button>
+        <button onClick={onApprove} style={{ padding: '10px 24px', borderRadius: 8, background: 'var(--color-primary)', color: '#fff', fontWeight: 600, border: 'none', cursor: 'pointer', transition: 'background 0.15s' }}>
+          승인 (팀 생성 완료)
+        </button>
+      </div>
+    </div>
+  )
+}
+
 function CreateTeamForm({ teams, onCreated, accounts, onAccountsChange }: {
   teams: TeamType[]; onCreated: (team: TeamType) => void
   accounts: Accounts; onAccountsChange: (a: Accounts) => void
 }) {
+  const { t } = useTranslation()
   const [slackHandle, setSlackHandle] = useState(accounts.slack.handle)
+  const [githubRepo, setGithubRepo] = useState(accounts.github.handle)
   const [teamName, setTeamName] = useState('')
   const [teamDesc, setTeamDesc] = useState('')
   const [selectedColor, setSelectedColor] = useState(COLOR_SWATCHES[0])
   const [inviteInput, setInviteInput] = useState('')
   const [invitees, setInvitees] = useState<string[]>([])
-  const [creating, setCreating] = useState(false)
-  const [success, setSuccess] = useState(false)
+  
+  const [phase, setPhase] = useState<CreateTeamPhase>('form')
+  const [createdTeam, setCreatedTeam] = useState<TeamType | null>(null)
+  const [specId, setSpecId] = useState<number | null>(null)
+  const [suggestions, setSuggestions] = useState<any[]>([])
+  const [previewGraph, setPreviewGraph] = useState<any>(null)
+  const [isRegenerating, setIsRegenerating] = useState(false)
+  const pollInterval = useRef<NodeJS.Timeout | null>(null)
+
+  useEffect(() => {
+    return () => { if (pollInterval.current) clearInterval(pollInterval.current) }
+  }, [])
 
   function addInvitee() {
     const email = inviteInput.trim()
@@ -1864,13 +1916,48 @@ function CreateTeamForm({ teams, onCreated, accounts, onAccountsChange }: {
     setInviteInput('')
   }
 
+  function startPolling(tId: string, sId: number) {
+    pollInterval.current = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/teams/${tId}/specs`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('templ_token')}` } })
+        if (!res.ok) return
+        const specs = await res.json()
+        const currentSpec = specs.find((s: any) => s.id === sId)
+        if (currentSpec && currentSpec.status !== 'ANALYZING') {
+          if (pollInterval.current) clearInterval(pollInterval.current)
+          await fetchPreviewAndSuggestions(tId, sId)
+        }
+      } catch (e) {
+        console.error(e)
+      }
+    }, 2000)
+  }
+
+  async function fetchPreviewAndSuggestions(tId: string, sId: number) {
+    try {
+      const [sugRes, prevRes] = await Promise.all([
+        fetch(`/api/teams/${tId}/specs/${sId}/suggestions`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('templ_token')}` } }),
+        fetch(`/api/teams/${tId}/specs/${sId}/preview`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('templ_token')}` } })
+      ])
+      const sugs = await sugRes.json()
+      const prev = await prevRes.json()
+      setSuggestions(sugs)
+      setPreviewGraph(prev)
+      setPhase('review_ai')
+    } catch (e) {
+      console.error(e)
+      setPhase('form') // fallback
+    }
+  }
+
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault()
-    if (!teamName.trim() || !slackHandle.trim()) return
-    onAccountsChange({ ...accounts, slack: { connected: true, handle: slackHandle.trim() } })
-    setCreating(true)
+    if (!teamName.trim() || !slackHandle.trim() || !githubRepo.trim()) return
+    onAccountsChange({ ...accounts, slack: { connected: true, handle: slackHandle.trim() }, github: { connected: true, handle: githubRepo.trim() } })
+    setPhase('creating_team')
 
     try {
+      // 1. Create team
       const res = await fetch('/api/teams', {
         method: 'POST',
         headers: {
@@ -1881,18 +1968,39 @@ function CreateTeamForm({ teams, onCreated, accounts, onAccountsChange }: {
           name: teamName.trim(),
           color: selectedColor,
           mission: teamDesc.trim(),
-          slackHandle: slackHandle.trim()
+          slackHandle: slackHandle.trim(),
+          githubRepo: githubRepo.trim()
         })
       })
       if (!res.ok) throw new Error('Failed to create team')
-      const createdTeam = await res.json()
+      const newTeam = await res.json()
+      setCreatedTeam(newTeam)
+
+      // If no mission, skip AI (optional, but requested by flow)
+      if (!teamDesc.trim()) {
+        onCreated(newTeam)
+        return
+      }
+
+      // 2. Submit spec
+      const specRes = await fetch(`/api/teams/${newTeam.id}/specs`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('templ_token')}`
+        },
+        body: JSON.stringify({ author: accounts.slack.handle, specText: teamDesc.trim() })
+      })
+      if (!specRes.ok) throw new Error('Failed to submit spec')
+      const spec = await specRes.json()
+      setSpecId(spec.id)
       
-      setSuccess(true)
-      setTimeout(() => { setSuccess(false); onCreated(createdTeam) }, 800)
+      setPhase('generating_ai')
+      startPolling(newTeam.id, spec.id)
+
     } catch (err) {
       console.error(err)
-    } finally {
-      setCreating(false)
+      setPhase('form')
     }
   }
 
@@ -1913,26 +2021,93 @@ function CreateTeamForm({ teams, onCreated, accounts, onAccountsChange }: {
     e.target.style.boxShadow = 'none'
   }
 
-  return (
-    <div style={{ maxWidth: 640, margin: '0 auto' }}>
-      <div style={{ marginBottom: 36 }}>
-        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 30, fontWeight: 700, color: 'var(--color-foreground)', margin: 0, letterSpacing: '-0.02em', lineHeight: 1.1 }}>
-          New team
-        </h1>
-        <p style={{ fontSize: 14, color: 'var(--color-muted-foreground)', marginTop: 8, lineHeight: 1.6 }}>
-          팀을 만들면 첫 화면에서 팀 미션을 바로 입력할 수 있어요.
+  if (phase === 'generating_ai') {
+    return (
+      <div style={{ maxWidth: 640, margin: '120px auto', textAlign: 'center' }}>
+        <div style={{ marginBottom: 24 }}>
+          <svg width="48" height="48" viewBox="0 0 24 24" style={{ animation: 'spin 1.5s linear infinite', margin: '0 auto' }}>
+            <circle cx="12" cy="12" r="10" stroke="var(--color-border-sidebar)" strokeWidth="3" fill="none" />
+            <path d="M12 2A10 10 0 0 1 22 12" stroke="var(--color-primary)" strokeWidth="3" strokeLinecap="round" fill="none" />
+          </svg>
+        </div>
+        <h2 style={{ fontFamily: 'var(--font-display)', color: 'var(--color-foreground)', fontSize: 20, marginBottom: 8 }}>
+          AI가 명세서를 분석하고 있습니다...
+        </h2>
+        <p style={{ color: 'var(--color-muted-foreground)', fontSize: 14 }}>
+          잠시만 기다려주세요. 미션에 맞는 로드맵 노드들을 자동으로 구성 중입니다.
         </p>
       </div>
+    )
+  }
 
+  if (phase === 'review_ai' && previewGraph) {
+    return (
+      <AiSpecificationReview 
+        team={createdTeam!} 
+        previewGraph={previewGraph} 
+        suggestions={suggestions}
+        isRegenerating={isRegenerating}
+        onApprove={async () => {
+          try {
+             if (suggestions.length > 0) {
+               await fetch(`/api/teams/${createdTeam!.id}/suggestions/${suggestions[0].id}/approve`, { method: 'POST', headers: { 'Authorization': `Bearer ${localStorage.getItem('templ_token')}` } })
+             }
+             onCreated(createdTeam!)
+          } catch(e) { console.error(e) }
+        }}
+        onRegenerate={async (fb: string) => {
+           setIsRegenerating(true)
+           try {
+             await fetch(`/api/teams/${createdTeam!.id}/suggestions/${suggestions[0].id}/regenerate`, {
+                 method: 'POST',
+                 headers: {
+                   'Content-Type': 'application/json',
+                   'Authorization': `Bearer ${localStorage.getItem('templ_token')}`
+                 },
+               body: JSON.stringify({ feedback: fb })
+             })
+             // After regenerating, wait 1s and fetch preview again
+             setTimeout(async () => {
+               await fetchPreviewAndSuggestions(createdTeam!.id, specId!)
+               setIsRegenerating(false)
+             }, 1000)
+           } catch(e) { 
+             console.error(e)
+             setIsRegenerating(false)
+           }
+        }}
+        onReject={async () => {
+           try {
+             if (suggestions.length > 0) {
+               await fetch(`/api/teams/${createdTeam!.id}/suggestions/${suggestions[0].id}/reject`, { method: 'POST', headers: { 'Authorization': `Bearer ${localStorage.getItem('templ_token')}` } })
+             }
+             alert('팀 생성이 취소되었습니다.')
+             window.location.reload()
+           } catch(e) { console.error(e) }
+        }}
+      />
+    )
+  }
+
+  return (
+    <div style={{ maxWidth: 640, margin: '0 auto' }}>
       <div style={{ background: '#ffffff', borderRadius: 16, border: '1px solid var(--color-border)', overflow: 'hidden' }}>
+        <div style={{ padding: '32px 32px 0 32px' }}>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 30, fontWeight: 700, color: 'var(--color-foreground)', margin: 0, letterSpacing: '-0.02em', lineHeight: 1.1 }}>
+            {t('new_team')}
+          </h1>
+          <p style={{ fontSize: 14, color: 'var(--color-muted-foreground)', marginTop: 8, lineHeight: 1.6 }}>
+            {t('team_desc_ai')}
+          </p>
+        </div>
         <form onSubmit={handleCreate}>
           <div style={{ padding: '28px 32px', borderBottom: '1px solid var(--color-border)' }}>
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--color-muted-foreground)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 18 }}>
-              Identity
+              {t('identity')}
             </div>
             <div style={{ display: 'flex', gap: 14, alignItems: 'flex-end', marginBottom: 20 }}>
               <div>
-                <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--color-foreground)', marginBottom: 8 }}>Color</div>
+                <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--color-foreground)', marginBottom: 8 }}>{t('color')}</div>
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', maxWidth: 140 }}>
                   {COLOR_SWATCHES.map(c => (
                     <button key={c} type="button" onClick={() => setSelectedColor(c)} style={{
@@ -1952,17 +2127,17 @@ function CreateTeamForm({ teams, onCreated, accounts, onAccountsChange }: {
             </div>
             <div style={{ marginBottom: 16 }}>
               <label style={{ fontSize: 12, fontWeight: 500, color: 'var(--color-foreground)', display: 'block', marginBottom: 8 }}>
-                Team name <span style={{ color: '#ef4444' }}>*</span>
+                {t('team_name')} <span style={{ color: '#ef4444' }}>*</span>
               </label>
               <input type="text" value={teamName} onChange={e => setTeamName(e.target.value)}
-                placeholder="e.g. Platform Engineering" required style={inputStyle} onFocus={onFocus} onBlur={onBlur} />
+                placeholder={t('createTeam.namePlaceholder')} required style={inputStyle} onFocus={onFocus} onBlur={onBlur} />
             </div>
             <div>
               <label style={{ fontSize: 12, fontWeight: 500, color: 'var(--color-foreground)', display: 'block', marginBottom: 8 }}>
-                Description <span style={{ fontWeight: 400, color: 'var(--color-muted-foreground)' }}>(optional)</span>
+                {t('team_mission')} <span style={{ color: '#ef4444' }}>*</span>
               </label>
-              <textarea value={teamDesc} onChange={e => setTeamDesc(e.target.value)}
-                placeholder="What does this team work on?" rows={3}
+              <textarea value={teamDesc} onChange={e => setTeamDesc(e.target.value)} required
+                placeholder={t('createTeam.missionPlaceholder')} rows={4}
                 style={{ ...inputStyle, resize: 'none', lineHeight: 1.6 } as React.CSSProperties}
                 onFocus={onFocus} onBlur={onBlur} />
             </div>
@@ -1971,7 +2146,7 @@ function CreateTeamForm({ teams, onCreated, accounts, onAccountsChange }: {
           <div style={{ padding: '24px 32px', borderBottom: '1px solid var(--color-border)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
               <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--color-muted-foreground)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-                Slack account
+                {t('slack_account')}
               </span>
               <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.08em', padding: '2px 7px', borderRadius: 5, color: '#b45309', background: '#f59e0b14', border: '1px solid #f59e0b33' }}>
                 필수
@@ -1980,86 +2155,46 @@ function CreateTeamForm({ teams, onCreated, accounts, onAccountsChange }: {
             <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
               <ProviderMark id="slack" />
               <input type="text" value={slackHandle} onChange={e => setSlackHandle(e.target.value)}
-                placeholder="@handle 또는 slack 이메일" required
+                placeholder={t('createTeam.slackPlaceholder')} required
                 style={{ ...inputStyle, fontFamily: 'var(--font-mono)', fontSize: 13 } as React.CSSProperties}
                 onFocus={onFocus} onBlur={onBlur} />
             </div>
-            <p style={{ fontSize: 12, color: 'var(--color-muted-foreground)', margin: '10px 0 0', lineHeight: 1.55 }}>
-              팀 알림과 AI 요약을 받으려면 Slack 계정 연동이 필요합니다. 팀 생성 시 자동으로 연동됩니다.
-            </p>
-          </div>
 
-          <div style={{ padding: '24px 32px', borderBottom: '1px solid var(--color-border)' }}>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--color-muted-foreground)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 14 }}>
-              Invite members
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 24, marginBottom: 14 }}>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--color-muted-foreground)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                GITHUB REPOSITORY
+              </span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.08em', padding: '2px 7px', borderRadius: 5, color: '#b45309', background: '#f59e0b14', border: '1px solid #f59e0b33' }}>
+                필수
+              </span>
             </div>
-            <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-              <input type="email" value={inviteInput} onChange={e => setInviteInput(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); addInvitee() } }}
-                placeholder="name@company.com" style={inputStyle} onFocus={onFocus} onBlur={onBlur} />
-              <button type="button" onClick={addInvitee} disabled={!inviteInput.trim()}
-                style={{
-                  padding: '10px 16px', borderRadius: 10, border: '1.5px solid var(--color-border)',
-                  background: inviteInput.trim() ? 'var(--color-primary)' : '#f0efe9',
-                  color: inviteInput.trim() ? '#ffffff' : 'var(--color-muted-foreground)',
-                  fontSize: 13, fontWeight: 600, fontFamily: 'var(--font-display)',
-                  cursor: inviteInput.trim() ? 'pointer' : 'not-allowed',
-                  transition: 'background 0.15s, color 0.15s', whiteSpace: 'nowrap',
-                }}>
-                Add
-              </button>
+            <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+              <ProviderMark id="github" />
+              <input type="text" value={githubRepo} onChange={e => setGithubRepo(e.target.value)}
+                placeholder="owner/repo" required
+                style={{ ...inputStyle, fontFamily: 'var(--font-mono)', fontSize: 13 } as React.CSSProperties}
+                onFocus={onFocus} onBlur={onBlur} />
             </div>
-            <p style={{ fontSize: 12, color: 'var(--color-muted-foreground)', margin: '0 0 14px', lineHeight: 1.5 }}>
-              이메일 입력 후 <kbd style={{ fontFamily: 'var(--font-mono)', fontSize: 11, background: '#f0efe9', border: '1px solid var(--color-border)', borderRadius: 4, padding: '1px 5px' }}>Enter</kbd> 또는 Add를 클릭하세요.
+
+            <p style={{ fontSize: 12, color: 'var(--color-muted-foreground)', margin: '14px 0 0', lineHeight: 1.55 }}>
+              {t('createTeam.slackHelper')}
             </p>
-            {invitees.length > 0 && (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                {invitees.map(email => (
-                  <div key={email} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 10px 5px 8px', borderRadius: 100, background: 'rgba(107,92,246,0.08)', border: '1px solid rgba(107,92,246,0.2)' }}>
-                    <div style={{ width: 20, height: 20, borderRadius: '50%', background: 'var(--color-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, color: '#fff', fontFamily: 'var(--font-display)' }}>
-                      {email[0].toUpperCase()}
-                    </div>
-                    <span style={{ fontSize: 12, color: 'var(--color-foreground)', fontWeight: 500 }}>{email}</span>
-                    <button type="button" onClick={() => setInvitees(prev => prev.filter(e => e !== email))}
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', opacity: 0.4, transition: 'opacity 0.1s' }}
-                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '1' }}
-                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '0.4' }}>
-                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                        <path d="M2 2L10 10M10 2L2 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                      </svg>
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
 
           <div style={{ padding: '20px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#fafaf8' }}>
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--color-muted-foreground)' }}>
-              {success
-                ? <span style={{ color: '#10b981', fontWeight: 500 }}>✓ 팀이 생성됐습니다</span>
-                : <span>생성 후 미션을 바로 입력할 수 있어요</span>}
+              <span>{t('createTeam.submitHelper')}</span>
             </div>
-            <button type="submit" disabled={!teamName.trim() || !slackHandle.trim() || creating}
+            <button type="submit" disabled={!teamName.trim() || !slackHandle.trim() || !teamDesc.trim() || phase === 'creating_team'}
               style={{
                 padding: '10px 24px', borderRadius: 10, border: 'none',
-                background: !teamName.trim() || !slackHandle.trim() || creating ? '#d1d0cc' : 'var(--color-primary)',
+                background: (!teamName.trim() || !slackHandle.trim() || !teamDesc.trim() || phase === 'creating_team') ? '#d1d0cc' : 'var(--color-primary)',
                 color: '#ffffff', fontSize: 14, fontWeight: 600, fontFamily: 'var(--font-display)',
-                cursor: !teamName.trim() || !slackHandle.trim() || creating ? 'not-allowed' : 'pointer',
+                cursor: (!teamName.trim() || !slackHandle.trim() || !teamDesc.trim() || phase === 'creating_team') ? 'not-allowed' : 'pointer',
                 display: 'flex', alignItems: 'center', gap: 8, letterSpacing: '-0.01em',
                 transition: 'background 0.15s',
-              }}
-              onMouseEnter={e => { if (teamName.trim() && slackHandle.trim() && !creating) (e.currentTarget as HTMLElement).style.background = '#5a4de0' }}
-              onMouseLeave={e => { if (teamName.trim() && slackHandle.trim() && !creating) (e.currentTarget as HTMLElement).style.background = 'var(--color-primary)' }}>
-              {creating ? (
-                <>
-                  <svg width="14" height="14" viewBox="0 0 14 14" style={{ animation: 'spin 0.8s linear infinite' }}>
-                    <circle cx="7" cy="7" r="5" stroke="rgba(255,255,255,0.3)" strokeWidth="2" fill="none" />
-                    <path d="M7 2A5 5 0 0 1 12 7" stroke="white" strokeWidth="2" strokeLinecap="round" fill="none" />
-                  </svg>
-                  Creating…
-                </>
-              ) : 'Create team'}
+              }}>
+              {phase === 'creating_team' ? t('createTeam.creatingButton') : t('createTeam.submitButton')}
             </button>
           </div>
         </form>
@@ -2228,7 +2363,7 @@ export default function App() {
     if (activeTeamId) {
       try {
         await fetch(`/api/teams/${activeTeamId}/integrations`, {
-          method: 'PUT',
+          method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${localStorage.getItem('templ_token')}`
@@ -2434,9 +2569,9 @@ export default function App() {
               style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px 6px 6px', borderRadius: 100, border: '1px solid var(--color-border)', background: 'transparent', cursor: 'pointer', transition: 'background 0.12s' }}
               onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#f5f4f0' }}
               onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}>
-              <Avatar name="Jordan Kim" size={28} />
+              <Avatar name={localStorage.getItem('templ_user_nickname') || 'Jordan Kim'} size={28} />
               <div style={{ textAlign: 'left' }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-foreground)', lineHeight: 1.2 }}>Jordan Kim</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-foreground)', lineHeight: 1.2 }}>{localStorage.getItem('templ_user_nickname') || 'Jordan Kim'}</div>
                 <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--color-muted-foreground)' }}>Admin</div>
               </div>
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ marginLeft: 2, opacity: 0.4, transform: profileOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}>
@@ -2446,8 +2581,8 @@ export default function App() {
             {profileOpen && (
               <div style={{ position: 'absolute', right: 0, top: 'calc(100% + 8px)', background: '#fff', border: '1px solid var(--color-border)', borderRadius: 12, boxShadow: '0 8px 24px rgba(0,0,0,0.08)', width: 200, overflow: 'hidden', zIndex: 50 }}>
                 <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--color-border)' }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-foreground)' }}>Jordan Kim</div>
-                  <div style={{ fontSize: 12, color: 'var(--color-muted-foreground)', marginTop: 2 }}>jordan@acmecorp.io</div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-foreground)' }}>{localStorage.getItem('templ_user_nickname') || 'Jordan Kim'}</div>
+                  <div style={{ fontSize: 12, color: 'var(--color-muted-foreground)', marginTop: 2 }}>{localStorage.getItem('templ_user_email') || 'jordan@acmecorp.io'}</div>
                 </div>
                 {([
                   { label: t('userMenu.personalSettings'), danger: false, onSelect: () => setSettingsOpen(true) },

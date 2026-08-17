@@ -226,7 +226,8 @@
     "specPlaceholder": "e.g. Build a consistent design language so all users can intuitively use the product.",
     "generateRoadmap": "Generate Roadmap",
     "aiAnalyzing": "AI is analyzing the specification...",
-    "aiWaitMsg": "Please wait a moment. The directory tree will be generated soon."
+    "aiWaitMsg": "Please wait a moment. The directory tree will be generated soon.",
+    "submitButton": "Create Team"
   },
   "settings": {
     "title": "Personal Settings",
@@ -279,5 +280,21 @@
     "todo": "To Do",
     "active": "Active",
     "done": "Done"
-  }
+  },
+  "new_team": "New team",
+  "team_desc_ai": "Create a team and enter a mission, and AI will automatically configure the roadmap for you.",
+  "identity": "Identity",
+  "color": "Color",
+  "team_name": "Team name",
+  "team_name_placeholder": "e.g. Platform Engineering",
+  "team_mission": "Team Mission (Specification)",
+  "team_mission_placeholder": "Please describe in detail what features to implement...",
+  "account": "account",
+  "slack_integration_desc": "Slack account integration is required to receive team notifications and AI summaries. It will be linked automatically upon team creation.",
+  "ai_roadmap_generation_desc": "AI automatically configures the roadmap after creation",
+  "creating": "Creating...",
+  "create_team": "Create team",
+  "ai_analyzing": "AI is analyzing the specification...",
+  "ai_analyzing_desc": "Please wait a moment. We are automatically configuring a roadmap that fits your mission. (Usually takes 10~15 seconds)",
+  "slack_account": "Slack Account"
 }

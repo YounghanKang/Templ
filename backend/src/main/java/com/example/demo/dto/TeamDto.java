@@ -19,6 +19,8 @@ public class TeamDto {
         private Integer members;
         private String color;
         private String mission;
+        private String slackHandle;
+        private String githubRepo;
     }
 
     @Getter
@@ -32,6 +34,7 @@ public class TeamDto {
         private String color;
         private String mission;
         private String slackHandle;
+        private String githubRepo;
     }
 
     @Getter
@@ -44,5 +47,7 @@ public class TeamDto {
         private String name;
         private String color;
         private String mission;
+        private String slackHandle;
+        private String githubRepo;
     }
 }

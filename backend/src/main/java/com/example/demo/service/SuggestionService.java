@@ -131,6 +131,31 @@ public class SuggestionService {
             try {
                 if (s.getSourceId() != null && suggestionRepository.existsBySourceIdAndStatus(s.getSourceId(), "APPROVED")) {
                     // already applied by another suggestion from same source
+                } else if (s.getTargetId() == null && s.getSourceId() != null) {
+                    var allForSource = suggestionRepository.findAllByTeamIdOrderByIdDesc(teamId).stream()
+                            .filter(x -> s.getSourceId().equals(x.getSourceId()) && "PENDING".equals(x.getStatus()))
+                            .collect(Collectors.toList());
+                    if (!allForSource.isEmpty()) {
+                        allForSource.sort(java.util.Comparator.comparing(Suggestion::getId));
+                        var rootS = allForSource.get(0);
+                        RoadmapDto.RoadmapNodeDto rootDto = toNodeDtoFromJson(objectMapper.readTree(rootS.getChangeJson()));
+                        var createdRoot = roadmapService.createNode(teamId, rootDto);
+                        
+                        for (int i = 1; i < allForSource.size(); i++) {
+                            var childS = allForSource.get(i);
+                            RoadmapDto.RoadmapNodeDto childDto = toNodeDtoFromJson(objectMapper.readTree(childS.getChangeJson()));
+                            var createdChild = roadmapService.createNode(teamId, childDto);
+                            roadmapService.createEdge(teamId, RoadmapDto.RoadmapEdgeDto.builder()
+                                    .from(createdRoot.getId()).to(createdChild.getId()).build());
+                            
+                            if (!childS.getId().equals(s.getId())) {
+                                childS.setStatus("APPROVED");
+                                childS.setResolvedBy(approver);
+                                childS.setResolvedAt(Instant.now());
+                                suggestionRepository.save(childS);
+                            }
+                        }
+                    }
                 } else {
                     var rootNode = objectMapper.readTree(s.getChangeJson());
                     if (rootNode.isArray() || rootNode.has("nodes") || rootNode.has("items")) {

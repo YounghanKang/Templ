@@ -226,7 +226,8 @@
     "specPlaceholder": "예) 모든 사용자가 직관적으로 제품을 사용할 수 있도록 일관된 디자인 언어를 구축한다.",
     "generateRoadmap": "로드맵 생성",
     "aiAnalyzing": "AI가 명세서를 분석중입니다...",
-    "aiWaitMsg": "잠시만 기다려주세요. 곧 디렉토리 트리가 생성됩니다."
+    "aiWaitMsg": "잠시만 기다려주세요. 곧 디렉토리 트리가 생성됩니다.",
+    "submitButton": "팀 만들기"
   },
   "settings": {
     "title": "개인 설정",
@@ -279,5 +280,21 @@
     "todo": "대기",
     "active": "진행중",
     "done": "완료"
-  }
+  },
+  "new_team": "새로운 팀",
+  "team_desc_ai": "팀을 만들고 미션을 입력하시면, AI가 자동으로 로드맵을 구성해 드립니다.",
+  "identity": "기본 정보",
+  "color": "색상",
+  "team_name": "팀 이름",
+  "team_name_placeholder": "예: 플랫폼 엔지니어링",
+  "team_mission": "팀 미션 (명세서)",
+  "team_mission_placeholder": "어떤 기능을 구현할지 상세히 설명해주세요...",
+  "account": "계정",
+  "slack_integration_desc": "팀 알림과 AI 요약을 받으려면 Slack 계정 연동이 필요합니다. 팀 생성 시 자동으로 연동됩니다.",
+  "ai_roadmap_generation_desc": "생성 후 AI가 로드맵을 자동으로 구성합니다",
+  "creating": "생성 중...",
+  "create_team": "팀 생성",
+  "ai_analyzing": "AI가 명세서를 분석하고 있습니다...",
+  "ai_analyzing_desc": "잠시만 기다려주세요. 미션에 맞는 로드맵을 자동으로 구성 중입니다. (보통 10~15초 정도 소요됩니다)",
+  "slack_account": "Slack 계정"
 }

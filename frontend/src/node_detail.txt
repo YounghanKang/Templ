@@ -1,0 +1,400 @@
+                문제 발생
+              </span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: '#c2504f', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                Blocked
+              </span>
+              <button onClick={() => onChange({ issue: undefined })}
+                style={{
+                  marginLeft: 'auto', padding: '4px 10px', borderRadius: 7, border: '1px solid #ef444440',
+                  background: 'transparent', color: '#b91c1c', cursor: 'pointer',
+                  fontFamily: 'var(--font-display)', fontSize: 11, fontWeight: 600,
+                }}>
+                해결됨
+              </button>
+            </div>
+            <textarea value={node.issue} onChange={e => onChange({ issue: e.target.value })} rows={4}
+              placeholder={t('node.issuePlaceholder')}
+              style={{ ...fieldStyle, background: '#ffffff', border: '1.5px solid #ef444433', fontSize: 12.5 }} />
+          </div>
+        )}
+
+        {/* 제출된 파일 */}
+        <div>
+          {section(t('node.files'), 'FILES')}
+          {files.length === 0 ? (
+            <p style={{
+              margin: 0, padding: '14px 0', textAlign: 'center', borderRadius: 10,
+              border: '1.5px dashed var(--color-border)', fontSize: 12,
+              color: 'var(--color-muted-foreground)',
+            }}>
+              제출된 파일이 없습니다
+            </p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+              {files.map(f => (
+                <div key={f.id} onClick={() => downloadFile(f)} title={`${f.name} 다운로드`}
+                  onMouseEnter={e => { e.currentTarget.style.background = '#f2f1ec'; e.currentTarget.style.borderColor = `${color}55` }}
+                  onMouseLeave={e => { e.currentTarget.style.background = '#fafaf8'; e.currentTarget.style.borderColor = 'var(--color-border)' }}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 10, padding: '9px 11px',
+                    borderRadius: 10, borderWidth: 1, borderStyle: 'solid', borderColor: 'var(--color-border)',
+                    background: '#fafaf8', cursor: 'pointer', transition: 'background 0.12s, border-color 0.12s',
+                  }}>
+                  <span style={{
+                    width: 30, height: 30, borderRadius: 8, flexShrink: 0,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: `${color}14`, color,
+                    fontFamily: 'var(--font-mono)', fontSize: 8.5, fontWeight: 500, letterSpacing: '0.04em',
+                  }}>
+                    {(f.name.split('.').pop() ?? '').slice(0, 4).toUpperCase()}
+                  </span>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{
+                      fontFamily: 'var(--font-display)', fontSize: 12.5, fontWeight: 600,
+                      color: 'var(--color-foreground)',
+                      whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                    }}>
+                      {f.name}
+                    </div>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, color: 'var(--color-muted-foreground)', marginTop: 2 }}>
+                      {f.size} · {f.author} · {f.date}
+                    </div>
+                  </div>
+                  <svg width="13" height="13" viewBox="0 0 12 12" fill="none" style={{ flexShrink: 0, color: 'var(--color-muted-foreground)' }}>
+                    <path d="M6 1.5v6M6 7.5L3.6 5.1M6 7.5l2.4-2.4M1.8 9.6h8.4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  <button onClick={e => { e.stopPropagation(); onChange({ files: files.filter(x => x.id !== f.id) }) }}
+                    title={t('node.deleteFile')}
+                    style={{
+                      border: 'none', background: 'none', padding: 4, cursor: 'pointer',
+                      color: 'var(--color-muted-foreground)', display: 'flex', flexShrink: 0,
+                    }}>
+                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                      <path d="M1.5 1.5L8.5 8.5M8.5 1.5L1.5 8.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+                    </svg>
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          <label style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+            marginTop: 8, padding: '8px 0', borderRadius: 9,
+            border: '1.5px dashed var(--color-border)', cursor: 'pointer',
+            fontFamily: 'var(--font-display)', fontSize: 11.5, fontWeight: 600,
+            color: 'var(--color-muted-foreground)',
+          }}>
+            <input type="file" multiple style={{ display: 'none' }}
+              onChange={e => {
+                const picked = Array.from(e.target.files ?? [])
+                if (picked.length === 0) return
+                const today = new Date().toISOString().slice(0, 10)
+                let next = Math.max(0, ...files.map(f => f.id)) + 1
+                onChange({
+                  files: [...files, ...picked.map(f => ({
+                    id: next++, name: f.name, size: formatBytes(f.size), author: localStorage.getItem('templ_user_nickname') || 'Jordan Kim', date: today,
+                    url: URL.createObjectURL(f),
+                  }))],
+                })
+                e.target.value = ''
+              }} />
+            + 파일 제출
+          </label>
+        </div>
+
+        {/* 진행 상태 */}
+        <div>
+          {section(t('node.status'), 'STATUS')}
+          <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
+            {(['todo', 'active', 'done'] as const).map(k => {
+              const on = node.status === k
+              const m = STATUS_META[k]
+              return (
+                <button key={k}
+                  onClick={() => onChange({ status: k, progress: k === 'done' ? 100 : k === 'todo' && node.progress === 100 ? 0 : node.progress })}
+                  style={{
+                    flex: 1, padding: '9px 0', borderRadius: 9,
+                    border: `1.5px solid ${on ? m.color : 'var(--color-border)'}`,
+                    background: on ? `${m.color}14` : '#ffffff',
+                    color: on ? m.color : 'var(--color-muted-foreground)',
+                    fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: on ? 700 : 500,
+                    cursor: 'pointer', transition: 'all 0.12s',
+                  }}>
+                  {k === 'done' ? t('node.done_checked') : t(`node.${k}`)}
+                </button>
+              )
+            })}
+          </div>
+          {node.issue === undefined && (
+            <button onClick={() => onChange({ issue: '' })} style={{
+              width: '100%', marginBottom: 12, padding: '8px 0', borderRadius: 9,
+              border: '1.5px dashed #ef444455', background: 'transparent', color: '#b91c1c',
+              fontFamily: 'var(--font-display)', fontSize: 11.5, fontWeight: 600, cursor: 'pointer',
+            }}>
+              ! 문제 발생으로 표시
+            </button>
+          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <input type="range" min={0} max={100} step={5} value={node.progress}
+              onChange={e => onChange({ progress: Number(e.target.value) })}
+              style={{ flex: 1, accentColor: color }} />
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--color-muted-foreground)', width: 34, textAlign: 'right' }}>
+              {node.progress}%
+            </span>
+          </div>
+        </div>
+
+        {/* 목표 */}
+        <div>
+          {section(t('node.objective'), 'OBJECTIVE')}
+          <textarea value={node.goal} onChange={e => onChange({ goal: e.target.value })} rows={3}
+            placeholder={t('node.objectivePlaceholder')}
+            style={{ ...fieldStyle, fontWeight: 500, background: `${color}0a`, border: `1.5px solid ${color}33` }} />
+        </div>
+
+        {/* 시간 제한 */}
+        <div>
+          {section(t('node.deadline'), 'DEADLINE')}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <input type="date" value={node.dueDate} onChange={e => onChange({ dueDate: e.target.value })}
+              style={{ ...fieldStyle, fontFamily: 'var(--font-mono)', flex: 1 }} />
+            <span style={{
+              fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 500, padding: '6px 10px', borderRadius: 7,
+              background: '#0f0f14', color: '#ffffff', letterSpacing: '0.04em', flexShrink: 0,
+            }}>
+              {daysLeft(node.dueDate)}
+            </span>
+          </div>
+        </div>
+
+        {/* 진행 멤버 */}
+        <div>
+          {section(t('node.members'), 'MEMBERS')}
+          {node.assignees.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 10 }}>
+              {node.assignees.map(name => (
+                <div key={name} style={{
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '8px 11px', borderRadius: 10, border: '1px solid var(--color-border)',
+                }}>
+                  <Avatar name={name} size={24} />
+                  <span style={{ flex: 1, fontSize: 13, fontWeight: 500, color: 'var(--color-foreground)' }}>{name}</span>
+                  <button onClick={() => onChange({ assignees: node.assignees.filter(a => a !== name) })}
+                    style={{ border: 'none', background: 'none', cursor: 'pointer', padding: 0, display: 'flex', opacity: 0.4 }}>
+                    <svg width="11" height="11" viewBox="0 0 10 10" fill="none">
+                      <path d="M1.5 1.5L8.5 8.5M8.5 1.5L1.5 8.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+                    </svg>
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          <ChipEditor items={[]} color={color} placeholder={t('node.memberPlaceholder')}
+            onChange={next => { if (next[0]) onChange({ assignees: [...node.assignees, next[0]] }) }} />
+        </div>
+
+        {/* 전 단계 할 일 */}
+        <div>
+          {section(t('node.prerequisites'), 'PREREQUISITES')}
+          {node.prerequisites.length === 0 && (
+            <div style={{
+              padding: '9px 12px', borderRadius: 9, border: '1px dashed var(--color-border)',
+              fontSize: 12, color: 'var(--color-muted-foreground)', marginBottom: 8,
+            }}>
+              선행 작업 없음 · 바로 시작 가능
+            </div>
+          )}
+          <ChipEditor items={node.prerequisites} color={color} placeholder={t('node.prerequisitesPlaceholder')}
+            onChange={next => onChange({ prerequisites: next })} />
+        </div>
+
+        {/* AI 요약 */}
+        <div>
+          {section(t('node.aiSummary'), 'AI SUMMARY')}
+          <div style={{ padding: '14px 15px', borderRadius: 14, background: '#0f0f14', border: '1px solid #2a2a38' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 9 }}>
+              <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+                <path d="M7 1L8.3 5.2L12.5 6.5L8.3 7.8L7 12L5.7 7.8L1.5 6.5L5.7 5.2L7 1Z" fill="#a99bff" />
+              </svg>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: '#a99bff', letterSpacing: '0.12em' }}>
+                GENERATED
+              </span>
+            </div>
+            <textarea value={node.aiSummary} onChange={e => onChange({ aiSummary: e.target.value })} rows={5}
+              placeholder={t('node.aiSummaryPlaceholder')}
+              style={{
+                width: '100%', background: 'transparent', border: '1.5px solid transparent', borderRadius: 8,
+                padding: '2px 4px', margin: '0 0 0 -4px', outline: 'none', resize: 'none',
+                fontSize: 12.5, lineHeight: 1.8, color: '#d3d2e0', fontFamily: 'var(--font-body)',
+                boxSizing: 'border-box',
+              }}
+              onFocus={e => { e.target.style.borderColor = '#6b5cf6'; e.target.style.background = '#181822' }}
+              onBlur={e => { e.target.style.borderColor = 'transparent'; e.target.style.background = 'transparent' }}
+            />
+          </div>
+        </div>
+      </div>
+      )}
+    </div>
+  )
+}
+
+// ── Mission input tab ─────────────────────────────────────────────────────────
+function TeamMissionInput({ team, onSave }: { team: TeamType; onSave: (mission: string) => void }) {
+  const { t } = useTranslation()
+  const [value, setValue] = useState(team.mission)
+  const [saved, setSaved] = useState(!!team.mission)
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
+  const [graph, setGraph] = useState<{ nodes: RNode[]; edges: REdge[] }>({ nodes: [], edges: [] })
+  
+  useEffect(() => {
+    fetch(`/api/teams/${team.id}/roadmap`, {
+      headers: { 'Authorization': `Bearer ${localStorage.getItem('templ_token')}` }
+    })
+    .then(r => r.ok ? r.json() : null)
+    .then(data => {
+      if (data && data.nodes) setGraph(data)
+      else setGraph({ nodes: [], edges: [] })
+    })
+    .catch(console.error)
+  }, [team.id])
+
+  const [editing, setEditing] = useState(false)
+  const [specOpen, setSpecOpen] = useState(false)
+  const [linkFrom, setLinkFrom] = useState<string | null>(null)
+  const nextIdRef = useRef(1)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const [alertNodeId, setAlertNodeId] = useState<string | null>(null)
+  const announcedRef = useRef<Set<string>>(new Set())
+
+  const validGraph = !!graph && Array.isArray(graph.nodes) && Array.isArray(graph.edges)
+  const safeGraph = validGraph ? graph : { nodes: [] as RNode[], edges: [] as REdge[] }
+
+  const selectedNode = safeGraph.nodes.find(n => n.id === selectedNodeId) ?? null
+  const alertNode = safeGraph.nodes.find(n => n.id === alertNodeId) ?? null
+
+  useEffect(() => {
+    const seen = announcedRef.current
+    for (const n of safeGraph.nodes) {
+      if (n.issue && n.issue.trim() && !seen.has(n.id)) {
+        seen.add(n.id)
+        setAlertNodeId(n.id)
+        return
+      }
+      if (!n.issue?.trim()) seen.delete(n.id)
+    }
+  }, [safeGraph.nodes])
+
+  async function patchNode(id: string, patch: Partial<RNode>) {
+    setGraph(g => ({ ...g, nodes: g.nodes.map(n => n.id === id ? { ...n, ...patch } : n) }))
+    const node = safeGraph.nodes.find(n => n.id === id)
+    if (node) {
+      fetch(`/api/teams/${team.id}/roadmap/nodes/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('templ_token')}` },
+        body: JSON.stringify({ ...node, ...patch })
+      }).catch(console.error)
+    }
+  }
+
+  async function moveNode(id: string, x: number, y: number) {
+    setGraph(g => ({ ...g, nodes: g.nodes.map(n => n.id === id ? { ...n, x, y } : n) }))
+    const node = safeGraph.nodes.find(n => n.id === id)
+    if (node) {
+      fetch(`/api/teams/${team.id}/roadmap/nodes/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('templ_token')}` },
+        body: JSON.stringify({ ...node, x, y })
+      }).catch(console.error)
+    }
+  }
+
+  async function addNode() {
+    const id = `n${Date.now()}${nextIdRef.current++}`
+    const maxY = Math.max(0, ...safeGraph.nodes.map(n => n.y + n.h))
+    const newNode: RNode = {
+      id, tier: 'leaf', x: 60, y: maxY + 46, ...SIZE.leaf,
+      label: '새 작업', code: `T-${String(900 + nextIdRef.current)}`, status: 'todo', progress: 0,
+      goal: '', dueDate: '2025-12-31', assignees: [], prerequisites: [], aiSummary: '', comments: [],
+    }
+    setGraph(g => ({ ...g, nodes: [...g.nodes, newNode] }))
+    setSelectedNodeId(id)
+
+    fetch(`/api/teams/${team.id}/roadmap/nodes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('templ_token')}` },
+      body: JSON.stringify(newNode)
+    }).catch(console.error)
+  }
+
+  async function deleteNode(id: string) {
+    setGraph(g => ({
+      nodes: g.nodes.filter(n => n.id !== id),
+      edges: g.edges.filter(e => e.from !== id && e.to !== id),
+    }))
+    setLinkFrom(f => (f === id ? null : f))
+    setSelectedNodeId(p => (p === id ? null : p))
+
+    fetch(`/api/teams/${team.id}/roadmap/nodes/${id}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${localStorage.getItem('templ_token')}` }
+    }).catch(console.error)
+  }
+
+  async function deleteEdge(id: string) {
+    setGraph(g => ({ ...g, edges: g.edges.filter(e => e.id !== id) }))
+    fetch(`/api/teams/${team.id}/roadmap/edges/${id}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${localStorage.getItem('templ_token')}` }
+    }).catch(console.error)
+  }
+
+  async function handleNodeSelect(id: string) {
+    if (editing && linkFrom) {
+      if (linkFrom !== id) {
+        const exists = safeGraph.edges.some(e => e.from === linkFrom && e.to === id)
+        if (!exists) {
+          const newEdge = { id: `e-${linkFrom}-${id}-${Date.now()}`, from: linkFrom, to: id }
+          setGraph(g => ({ ...g, edges: [...g.edges, newEdge] }))
+          fetch(`/api/teams/${team.id}/roadmap/edges`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('templ_token')}` },
+            body: JSON.stringify(newEdge)
+          }).catch(console.error)
+        }
+      }
+      setLinkFrom(null)
+      return
+    }
+    setSelectedNodeId(prev => (prev === id ? null : id))
+  }
+
+  useEffect(() => {
+    if (!saved) textareaRef.current?.focus()
+  }, [])
+
+  function handleSave() {
+    if (!value.trim()) return
+    onSave(value.trim())
+    setSaved(true)
+  }
+
+  function handleEdit() {
+    setSaved(false)
+    setSelectedNodeId(null)
+    setEditing(false)
+    setLinkFrom(null)
+    setTimeout(() => textareaRef.current?.focus(), 50)
+  }
+
+  if (saved) {
+    return (
+      <div style={{ flex: 1, display: 'flex', minHeight: 0, overflow: 'hidden' }}>
+
+        {/* Roadmap canvas */}
+        <div style={{
+          flex: 1, minWidth: 0, alignSelf: 'stretch',
+          display: 'flex', flexDirection: 'column',
+          background: '#0f0f14', borderRadius: 0, borderTop: '1px solid #1e1e28',
+          overflow: 'hidden',
+          backgroundImage: 'radial-gradient(#1e1e2a 1px, transparent 1px)',

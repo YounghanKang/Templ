@@ -33,7 +33,7 @@ public class AIStubService implements AiService {
                 : "명세를 바탕으로 생성된 초기 로드맵 뼈대입니다. 승인하면 로드맵에 반영됩니다.";
 
         String changeJsonRoot = String.format("{\"label\": \"%s\", \"aiSummary\": \"%s\", \"feedback\": \"%s\"}",
-                truncateOneLine(specText, 40), escapeJson(truncateOneLine(specText, 120) + (hasFeedback ? " / 사용자 피드백: " + trimmedFeedback : "")), escapeJson(trimmedFeedback));
+                escapeJson(truncateOneLine(specText, 40)), escapeJson(truncateOneLine(specText, 120) + (hasFeedback ? " / 사용자 피드백: " + trimmedFeedback : "")), escapeJson(trimmedFeedback));
 
         SuggestionDto.Create root = SuggestionDto.Create.builder()
                 .targetType("roadmapNode")

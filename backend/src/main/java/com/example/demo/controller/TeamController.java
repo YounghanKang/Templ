@@ -1,6 +1,7 @@
 package com.example.demo.controller;
 
 import com.example.demo.dto.TeamDto;
+import com.example.demo.dto.UserDto;
 import com.example.demo.service.TeamService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -36,5 +37,16 @@ public class TeamController {
     public ResponseEntity<TeamDto.TeamResponse> updateTeam(@PathVariable String teamId,
                                                          @RequestBody TeamDto.UpdateTeamRequest request) {
         return ResponseEntity.ok(teamService.updateTeam(teamId, request));
+    }
+
+    @GetMapping("/teams/{teamId}/integrations")
+    public ResponseEntity<UserDto.IntegrationSettingsDto> getIntegrations(@PathVariable String teamId) {
+        return ResponseEntity.ok(teamService.getIntegrations(teamId));
+    }
+
+    @PatchMapping("/teams/{teamId}/integrations")
+    public ResponseEntity<UserDto.IntegrationSettingsDto> updateIntegrations(@PathVariable String teamId,
+                                                                            @RequestBody UserDto.IntegrationSettingsDto request) {
+        return ResponseEntity.ok(teamService.updateIntegrations(teamId, request));
     }
 }
