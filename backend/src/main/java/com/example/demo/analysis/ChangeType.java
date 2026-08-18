@@ -1,0 +1,12 @@
+package com.example.demo.analysis;
+
+public enum ChangeType {
+
+    SCOPE_DRIFT,
+    DUPLICATE_WORK,
+    OWNERSHIP_COLLISION,
+    DEPENDENCY_BREAK,
+    DECISION_CONTRADICTION,
+    DELIVERABLE_MISMATCH,
+    DEADLINE_COLLISION
+}
