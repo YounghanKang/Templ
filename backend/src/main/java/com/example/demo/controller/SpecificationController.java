@@ -33,9 +33,11 @@ public class SpecificationController {
 
     @GetMapping("/{specId}/suggestions")
     public ResponseEntity<List<SuggestionDto.Response>> suggestions(@PathVariable String teamId, @PathVariable Long specId) {
-        // filter suggestions by sourceId == specId
+        // filter suggestions by sourceId == specId and status == PENDING
         List<SuggestionDto.Response> all = suggestionService.listForTeam(teamId);
-        List<SuggestionDto.Response> filtered = all.stream().filter(s -> s.getSourceId() != null && s.getSourceId().equals(String.valueOf(specId))).toList();
+        List<SuggestionDto.Response> filtered = all.stream()
+                .filter(s -> s.getSourceId() != null && s.getSourceId().equals(String.valueOf(specId)) && "PENDING".equals(s.getStatus()))
+                .toList();
         return ResponseEntity.ok(filtered);
     }
 

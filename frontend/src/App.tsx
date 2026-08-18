@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import AuthScreen from './AuthScreen'
 const INITIAL_TEAMS = [
@@ -223,7 +223,7 @@ function RoadmapNode({ node, warn, selected, dimmed, editing, linking, scale, su
   onHover?: (id: string | null) => void
 }) {
   const { t } = useTranslation()
-  const st = STATUS_META[node.status]
+  const st = STATUS_META[node.status as Status] || { label: '대기', color: '#6b6a72' }
   const isRoot = node.tier === 'root'
   // A node either has its own problem (red) or inherits one from a downstream node (amber).
   const alert = node.issue ? 'issue' : warn ? 'warn' : null
@@ -1272,11 +1272,11 @@ const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   async function addNode() {
     const id = `n${Date.now()}${nextIdRef.current++}`
-    const maxY = Math.max(0, ...safeGraph.nodes.map(n => n.y + n.h))
+    const defaultDueDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
     const newNode: RNode = {
       id, tier: 'leaf', x: 60, y: maxY + 46, ...SIZE.leaf,
       label: '새 작업', code: `T-${String(900 + nextIdRef.current)}`, status: 'todo', progress: 0,
-      goal: '', dueDate: '2025-12-31', assignees: [], prerequisites: [], aiSummary: '', comments: [],
+      goal: '', dueDate: defaultDueDate, assignees: [], prerequisites: [], aiSummary: '', comments: [],
     }
     setGraph(g => ({ ...g, nodes: [...g.nodes, newNode] }))
     setSelectedNodeId(id)
@@ -2337,7 +2337,8 @@ function CreateTeamForm({ teams, onCreated, accounts, onAccountsChange }: {
         onRegenerate={async (fb: string) => {
            setIsRegenerating(true)
            try {
-             await fetch(`/api/teams/${createdTeam!.id}/suggestions/${suggestions[0].id}/regenerate`, {
+             const baseId = suggestions && suggestions.length > 0 ? suggestions[0].id : 1
+             const res = await fetch(`/api/teams/${createdTeam!.id}/suggestions/${baseId}/regenerate`, {
                  method: 'POST',
                  headers: {
                    'Content-Type': 'application/json',
@@ -2345,11 +2346,9 @@ function CreateTeamForm({ teams, onCreated, accounts, onAccountsChange }: {
                  },
                body: JSON.stringify({ feedback: fb })
              })
-             // After regenerating, wait 1s and fetch preview again
-             setTimeout(async () => {
-               await fetchPreviewAndSuggestions(createdTeam!.id, specId!)
-               setIsRegenerating(false)
-             }, 1000)
+             if (!res.ok) console.error('Regenerate failed', await res.text())
+             await fetchPreviewAndSuggestions(createdTeam!.id, specId!)
+             setIsRegenerating(false)
            } catch(e) { 
              console.error(e)
              setIsRegenerating(false)

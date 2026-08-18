@@ -76,7 +76,7 @@ public class SpecificationService {
      */
     public com.example.demo.dto.RoadmapDto.RoadmapGraphDto generatePreviewGraph(String teamId, Long specId) {
         var rawSuggestions = suggestionService.listForTeam(teamId).stream()
-                .filter(s -> s.getSourceId() != null && s.getSourceId().equals(String.valueOf(specId)))
+                .filter(s -> s.getSourceId() != null && s.getSourceId().equals(String.valueOf(specId)) && "PENDING".equals(s.getStatus()))
                 .sorted(java.util.Comparator.comparing(SuggestionDto.Response::getId))
                 .toList();
 
@@ -100,7 +100,7 @@ public class SpecificationService {
             String label = s.getTitle();
             String code = String.format("T-%03d", i + 1);
             String goal = s.getBody();
-            String dueDate = "2026-09-30";
+            String dueDate = java.time.LocalDate.now().plusMonths(1).toString();
             List<String> assignees = new java.util.ArrayList<>();
             String aiSummary = "";
 

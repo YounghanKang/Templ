@@ -63,7 +63,7 @@ public class SuggestionService {
         if (dto.getProgress() == null) dto.setProgress(0);
         if (dto.getAssignees() == null) dto.setAssignees(new java.util.ArrayList<>());
         if (dto.getGoal() == null) dto.setGoal("");
-        if (dto.getDueDate() == null) dto.setDueDate("2026-09-30");
+        if (dto.getDueDate() == null || dto.getDueDate().isBlank()) dto.setDueDate(java.time.LocalDate.now().plusMonths(1).toString());
         return dto;
     }
 
@@ -121,12 +121,20 @@ public class SuggestionService {
                 .orElseThrow(() -> new IllegalArgumentException("spec not found for suggestion regeneration: " + effectiveSpecId));
 
         List<SuggestionDto.Create> generated = aiService.generateSuggestions(teamId, effectiveSpecId, spec.getSpecText(), feedback, suggestionId);
+
+        // Mark previous pending suggestions for this spec as SUPERSEDED so only the new generation is active
+        var prevPending = suggestionRepository.findAllByTeamIdOrderByIdDesc(teamId).stream()
+                .filter(x -> String.valueOf(effectiveSpecId).equals(x.getSourceId()) && "PENDING".equals(x.getStatus()))
+                .toList();
+        for (Suggestion prev : prevPending) {
+            prev.setStatus("SUPERSEDED");
+            suggestionRepository.save(prev);
+        }
+
         List<SuggestionDto.Response> result = new ArrayList<>();
         for (SuggestionDto.Create candidate : generated) {
             candidate.setParentSuggestionId(suggestionId);
-            if (candidate.getSourceId() == null || candidate.getSourceId().isBlank()) {
-                candidate.setSourceId(String.valueOf(specId));
-            }
+            candidate.setSourceId(String.valueOf(effectiveSpecId));
             if (candidate.getSourceTool() == null || candidate.getSourceTool().isBlank()) {
                 candidate.setSourceTool("ai-regenerate");
             }

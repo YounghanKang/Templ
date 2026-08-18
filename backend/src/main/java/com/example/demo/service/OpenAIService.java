@@ -34,7 +34,33 @@ public class OpenAIService implements AiService {
         this.model = System.getProperty("app.ai.model", System.getenv().getOrDefault("APP_AI_MODEL", "gpt-4o-mini"));
         this.temperature = Double.parseDouble(System.getProperty("app.ai.temperature", System.getenv().getOrDefault("APP_AI_TEMPERATURE", "0.2")));
         this.maxTokens = Integer.parseInt(System.getProperty("app.ai.max-tokens", System.getenv().getOrDefault("APP_AI_MAX_TOKENS", "1500")));
-        this.apiKey = System.getenv("OPENAI_API_KEY");
+        this.apiKey = resolveApiKey();
+    }
+
+    private String resolveApiKey() {
+        String key = System.getenv("OPENAI_API_KEY");
+        if (key != null && !key.isBlank()) return key.trim();
+        key = System.getProperty("OPENAI_API_KEY");
+        if (key != null && !key.isBlank()) return key.trim();
+
+        // Fallback: check .env files in working directory or parent
+        String[] paths = { ".env", "backend/.env", "../backend/.env", "../.env" };
+        for (String p : paths) {
+            java.io.File f = new java.io.File(p);
+            if (f.exists() && f.isFile()) {
+                try {
+                    List<String> lines = java.nio.file.Files.readAllLines(f.toPath());
+                    for (String line : lines) {
+                        line = line.trim();
+                        if (line.startsWith("OPENAI_API_KEY=")) {
+                            String v = line.substring("OPENAI_API_KEY=".length()).trim();
+                            if (!v.isBlank()) return v;
+                        }
+                    }
+                } catch (Exception ignored) {}
+            }
+        }
+        return null;
     }
 
     @Override
@@ -52,40 +78,66 @@ public class OpenAIService implements AiService {
         }
 
         try {
+            String today = java.time.LocalDate.now().toString();
+            String defaultDueDate = java.time.LocalDate.now().plusMonths(1).toString();
+
             String systemPrompt = """
-                    You are an expert AI collaboration orchestrator and technical project manager specializing in Work Breakdown Structures (WBS) and Virtual Directory Hierarchies.
-                    Analyze the project specification (명세서) and break it down into a comprehensive, highly actionable 3-tier hierarchical WBS (루트 최종 목표 -> 주요 모듈/기능 -> 세부 실행 태스크).
-                    
-                    CRITICAL REQUIREMENTS:
-                    1. Return ONLY a valid, raw JSON array of objects. No markdown backticks, no markdown fences, no explanatory text.
-                    2. Maintain language consistency: if the spec is in Korean, generate all titles, labels, goals, and summaries in natural, professional Korean.
-                    3. Structure across 3 tiers:
-                       - 1 Root task (tier="root", tempId="node_root", parentTempId=null): The overarching project goal.
-                       - 2 to 4 Mid-level modules (tier="mid", tempId="node_mid_1", "node_mid_2", ..., parentTempId="node_root"): Core feature domains/milestones.
-                       - 2 to 3 Leaf tasks per Mid module (tier="leaf", tempId="node_leaf_1", ..., parentTempId matching its parent Mid module): Concrete implementation tasks.
-                    4. Ensure total tasks are between 6 and 12 items.
-                    
-                    Each array item must strictly follow this JSON schema:
+                    You are a world-class Principal Product Architect and Technical Project Manager.
+                    Your mission is to analyze the user's project idea/specification (명세서) and decompose it into a deeply thoughtful, highly realistic, and professional Work Breakdown Structure (WBS).
+
+                    CRITICAL DECOMPOSITION PRINCIPLES:
+                    1. 1:1 EXACT REQUIREMENT EXTRACTION & DECOMPOSITION:
+                       - If the user specifies particular features, platforms, or tools (e.g. "로그인은 카카오 네이버로", "동아리 사이트", "회원가입"), you MUST extract them directly into dedicated Mid modules and Leaf tasks without dropping any details.
+                       - Example for "로그인 회원가입이 되는 동아리 사이트를 만들어줘, 로그인은 카카오 네이버로":
+                         * Root: 동아리 웹 사이트 구축
+                         * Mid 1: 소셜 로그인 시스템 -> Leaf: 카카오 로그인 연동, Leaf: 네이버 로그인 연동
+                         * Mid 2: 회원가입 및 프로필 관리 -> Leaf: 동아리 회원가입 폼 및 약관 동의, Leaf: 부원 프로필 및 권한 관리
+                         * Mid 3: 동아리 활동 및 커뮤니티 -> Leaf: 공지사항 및 게시판, Leaf: 활동 일정 캘린더 및 갤러리
+                       - Never drop user-specified technologies, auth providers, or feature constraints.
+
+                    2. DO NOT use generic phase names like "기획", "개발", "테스트". 
+                       Decompose by real functional domains (Pillars).
+
+                    3. STRUCTURE (Strict 3-Tier Hierarchy):
+                       - 1 Root Task (tier="root", tempId="node_root", parentTempId=null): Clear single-sentence ultimate product mission.
+                       - 3 to 4 Feature Modules (tier="mid", tempId="node_mid_1", ..., parentTempId="node_root"): Specific functional pillars directly matching the user's requirements.
+                       - 2 to 3 Actionable Tasks per Module (tier="leaf", tempId="node_leaf_X", parentTempId matching its parent module): Concrete implementation units (e.g. REST API, UI view, DB schema, SDK integration).
+
+                    4. QUALITY STANDARDS & DUE DATE (CRITICAL):
+                       - dueDate: MUST default to approximately 1 month from today (Today is %s, Target Due Date is around %s).
+                       - label: Concise, clear naming (e.g. "카카오 로그인 연동", "네이버 로그인 연동", "부원 권한 관리").
+                       - goal: Professional, unambiguous technical deliverable description.
+                       - assignees: Realistic roles (e.g. ["Frontend", "Backend", "Product Designer", "DevOps"]).
+                       - aiSummary: Provide sharp, realistic engineering insights, potential friction points, API conflict warnings, or security bottlenecks.
+                       - code: Unique identifiers (e.g. Root: T-001, Modules: M-01, M-02, Tasks: T-101, T-102...).
+
+                    5. USER FEEDBACK HANDLING:
+                       - If user feedback is provided, prioritize modifying, adding, or replacing modules/tasks to explicitly fulfill the user's instructions.
+
+                    6. OUTPUT FORMAT:
+                       - Return ONLY a raw JSON array of objects. No markdown backticks, no fences, no explanation.
+
+                    JSON Schema per item:
                     {
-                      "title": "Task or Module Title",
-                      "body": "Detailed description of scope and expected deliverables",
+                      "title": "Module or Task Title",
+                      "body": "Detailed technical scope and expected output",
                       "changeJson": {
                         "tempId": "node_root" | "node_mid_X" | "node_leaf_X",
                         "parentTempId": null | "node_root" | "node_mid_X",
-                        "label": "Concise display label (under 25 chars)",
+                        "label": "Short label under 25 chars",
                         "tier": "root" | "mid" | "leaf",
-                        "code": "T-101" (unique code formatted T-XXX),
-                        "goal": "Clear, measurable goal for this specific task",
-                        "dueDate": "YYYY-MM-DD" (reasonable milestone dates e.g. within 1-3 months),
-                        "assignees": ["Role/Name", ...], (e.g. ["Frontend", "Backend", "Product", "Designer"]),
-                        "aiSummary": "AI insight or risk warning regarding potential friction, API conflicts, or key validation points"
+                        "code": "T-001" | "M-01" | "T-101",
+                        "goal": "Detailed functional goal",
+                        "dueDate": "YYYY-MM-DD" (around %s),
+                        "assignees": ["Role 1", "Role 2"],
+                        "aiSummary": "Real-world engineering challenge, security note, or API contract risk"
                       }
                     }
-                    """;
+                    """.formatted(today, defaultDueDate, defaultDueDate);
 
             String userPrompt = "Project Specification:\n" + specText + "\n\n" +
-                    (feedback.isBlank() ? "" : "User Feedback to Incorporate:\n" + feedback + "\n\n") +
-                    "Generate the complete 3-tier WBS JSON array with accurate tempId and parentTempId tree references.";
+                    (feedback.isBlank() ? "" : "User Feedback to Incorporate with High Priority:\n" + feedback + "\n\n") +
+                    "Decompose this project into a deeply customized, feature-driven 3-tier WBS JSON array. Make sure every specific requirement and entity in the specification is represented in the modules and tasks. Set due dates targeting " + defaultDueDate + ".";
 
             Map<String, Object> body = Map.of(
                     "model", model,
@@ -93,8 +145,8 @@ public class OpenAIService implements AiService {
                             Map.of("role", "system", "content", systemPrompt),
                             Map.of("role", "user", "content", userPrompt)
                     ),
-                    "temperature", temperature,
-                    "max_tokens", maxTokens
+                    "temperature", 0.3,
+                    "max_tokens", 2500
             );
 
             String reqJson = objectMapper.writeValueAsString(body);
@@ -108,15 +160,14 @@ public class OpenAIService implements AiService {
 
             HttpResponse<String> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString());
             if (resp.statusCode() / 100 != 2) {
-                logger.warn("OpenAI API returned non-2xx code {}, falling back to stub", resp.statusCode());
+                logger.error("OpenAI API returned non-2xx code {}, body: {}, falling back to stub", resp.statusCode(), resp.body());
                 return new AIStubService().generateSuggestions(teamId, specId, specText, userFeedback, baseSuggestionId);
             }
 
             JsonNode root = objectMapper.readTree(resp.body());
             JsonNode choices = root.path("choices");
             if (choices.isArray() && choices.size() > 0) {
-                JsonNode message = choices.get(0).path("message").path("content");
-                String content = message.asText();
+                String content = choices.get(0).path("message").path("content").asText();
                 String normalized = normalizeJsonResponse(content);
                 try {
                     List<Map<String, Object>> items = objectMapper.readValue(normalized, new TypeReference<>() {});
@@ -133,9 +184,14 @@ public class OpenAIService implements AiService {
                         String changeStr;
                         try {
                             if (change == null) {
-                                changeStr = objectMapper.writeValueAsString(Map.of("aiSummary", bodyText));
+                                changeStr = objectMapper.writeValueAsString(Map.of("aiSummary", bodyText, "dueDate", defaultDueDate));
                             } else if (change instanceof Map) {
-                                changeStr = objectMapper.writeValueAsString(change);
+                                @SuppressWarnings("unchecked")
+                                Map<String, Object> map = (Map<String, Object>) change;
+                                if (!map.containsKey("dueDate") || map.get("dueDate") == null || map.get("dueDate").toString().isBlank()) {
+                                    map.put("dueDate", defaultDueDate);
+                                }
+                                changeStr = objectMapper.writeValueAsString(map);
                             } else if (change instanceof String) {
                                 JsonNode parsed = objectMapper.readTree((String) change);
                                 changeStr = objectMapper.writeValueAsString(parsed);
@@ -143,7 +199,7 @@ public class OpenAIService implements AiService {
                                 changeStr = objectMapper.writeValueAsString(change.toString());
                             }
                         } catch (Exception ce) {
-                            changeStr = "{\"aiSummary\": \"" + escapeJson(truncateOneLine(bodyText, 200)) + "\"}";
+                            changeStr = "{\"aiSummary\": \"" + escapeJson(truncateOneLine(bodyText, 200)) + "\", \"dueDate\": \"" + defaultDueDate + "\"}";
                         }
 
                         SuggestionDto.Create s = SuggestionDto.Create.builder()

@@ -53,7 +53,7 @@ public class RoadmapService {
                 .status(request.getStatus() == null ? "todo" : request.getStatus())
                 .progress(request.getProgress() == null ? 0 : request.getProgress())
                 .goal(request.getGoal() == null ? "" : request.getGoal())
-                .dueDate(request.getDueDate() == null ? "2025-12-31" : request.getDueDate())
+                .dueDate(request.getDueDate() == null ? java.time.LocalDate.now().plusMonths(1).toString() : request.getDueDate())
                 .assigneesJson(toJson(request.getAssignees() == null ? new ArrayList<>() : request.getAssignees()))
                 .prerequisitesJson(toJson(request.getPrerequisites() == null ? new ArrayList<>() : request.getPrerequisites()))
                 .aiSummary(request.getAiSummary() == null ? "" : request.getAiSummary())
