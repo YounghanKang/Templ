@@ -1273,6 +1273,7 @@ const textareaRef = useRef<HTMLTextAreaElement>(null)
   async function addNode() {
     const id = `n${Date.now()}${nextIdRef.current++}`
     const defaultDueDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+    const maxY = safeGraph.nodes.length > 0 ? Math.max(...safeGraph.nodes.map(n => n.y + n.h)) : 40
     const newNode: RNode = {
       id, tier: 'leaf', x: 60, y: maxY + 46, ...SIZE.leaf,
       label: '새 작업', code: `T-${String(900 + nextIdRef.current)}`, status: 'todo', progress: 0,
