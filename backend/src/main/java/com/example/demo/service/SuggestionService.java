@@ -7,6 +7,7 @@ import com.example.demo.dto.RoadmapDto;
 import com.example.demo.dto.SuggestionDto;
 import com.example.demo.repository.SpecificationRepository;
 import com.example.demo.repository.SuggestionRepository;
+import com.example.demo.repository.TeamRepository;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -25,14 +26,21 @@ public class SuggestionService {
 
     private final SuggestionRepository suggestionRepository;
     private final SpecificationRepository specificationRepository;
+    private final TeamRepository teamRepository;
     private final RoadmapService roadmapService;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final AiService aiService;
     private final SuggestionPolicyProperties policyProperties;
 
-    public SuggestionService(SuggestionRepository suggestionRepository, SpecificationRepository specificationRepository, RoadmapService roadmapService, AiService aiService, SuggestionPolicyProperties policyProperties) {
+    public SuggestionService(SuggestionRepository suggestionRepository,
+                             SpecificationRepository specificationRepository,
+                             TeamRepository teamRepository,
+                             RoadmapService roadmapService,
+                             AiService aiService,
+                             SuggestionPolicyProperties policyProperties) {
         this.suggestionRepository = suggestionRepository;
         this.specificationRepository = specificationRepository;
+        this.teamRepository = teamRepository;
         this.roadmapService = roadmapService;
         this.aiService = aiService;
         this.policyProperties = policyProperties;
@@ -120,12 +128,36 @@ public class SuggestionService {
         Specification spec = specificationRepository.findById(effectiveSpecId)
                 .orElseThrow(() -> new IllegalArgumentException("spec not found for suggestion regeneration: " + effectiveSpecId));
 
-        List<SuggestionDto.Create> generated = aiService.generateSuggestions(teamId, effectiveSpecId, spec.getSpecText(), feedback, suggestionId);
+        if (!feedback.isBlank()) {
+            String updatedSpecText = (spec.getSpecText() == null || spec.getSpecText().isBlank())
+                    ? feedback
+                    : spec.getSpecText() + "\n\n[피드백 반영]: " + feedback;
+            spec.setSpecText(updatedSpecText);
+            specificationRepository.save(spec);
 
-        // Mark previous pending suggestions for this spec as SUPERSEDED so only the new generation is active
+            // Keep team mission synchronized with updated spec
+            teamRepository.findByTeamId(teamId).ifPresent(t -> {
+                t.setMission(updatedSpecText);
+                teamRepository.save(t);
+            });
+        }
+
+        // Gather previous pending suggestions for this spec as Context
         var prevPending = suggestionRepository.findAllByTeamIdOrderByIdDesc(teamId).stream()
                 .filter(x -> String.valueOf(effectiveSpecId).equals(x.getSourceId()) && "PENDING".equals(x.getStatus()))
                 .toList();
+
+        StringBuilder ctxBuilder = new StringBuilder();
+        for (Suggestion prev : prevPending) {
+            String title = prev.getTitle() != null ? prev.getTitle() : "";
+            String body = prev.getBody() != null ? prev.getBody() : "";
+            ctxBuilder.append("- Title: ").append(title).append(", Details: ").append(body).append("\n");
+        }
+        String existingNodesContext = ctxBuilder.toString();
+
+        List<SuggestionDto.Create> generated = aiService.generateSuggestions(teamId, effectiveSpecId, spec.getSpecText(), feedback, suggestionId, existingNodesContext);
+
+        // Mark previous pending suggestions for this spec as SUPERSEDED so only the new generation is active
         for (Suggestion prev : prevPending) {
             prev.setStatus("SUPERSEDED");
             suggestionRepository.save(prev);
@@ -349,6 +381,22 @@ public class SuggestionService {
         s.setStatus("APPROVED");
         s.setResolvedBy(approver);
         s.setResolvedAt(Instant.now());
+
+        // Ensure team mission/description reflects the final spec text (including feedbacks)
+        if (s.getSourceId() != null && !s.getSourceId().isBlank()) {
+            try {
+                Long spId = Long.parseLong(s.getSourceId());
+                specificationRepository.findById(spId).ifPresent(sp -> {
+                    if (sp.getSpecText() != null && !sp.getSpecText().isBlank()) {
+                        teamRepository.findByTeamId(teamId).ifPresent(t -> {
+                            t.setMission(sp.getSpecText());
+                            teamRepository.save(t);
+                        });
+                    }
+                });
+            } catch (Exception ignored) {}
+        }
+
         Suggestion saved = suggestionRepository.save(s);
         return toDto(saved);
     }

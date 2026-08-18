@@ -13,11 +13,16 @@ public class AIStubService implements AiService {
 
     @Override
     public List<SuggestionDto.Create> generateSuggestions(String teamId, Long specId, String specText) {
-        return generateSuggestions(teamId, specId, specText, null, null);
+        return generateSuggestions(teamId, specId, specText, null, null, null);
     }
 
     @Override
     public List<SuggestionDto.Create> generateSuggestions(String teamId, Long specId, String specText, String userFeedback, Long baseSuggestionId) {
+        return generateSuggestions(teamId, specId, specText, userFeedback, baseSuggestionId, null);
+    }
+
+    @Override
+    public List<SuggestionDto.Create> generateSuggestions(String teamId, Long specId, String specText, String userFeedback, Long baseSuggestionId, String existingNodesContext) {
         List<SuggestionDto.Create> out = new ArrayList<>();
         String trimmedFeedback = userFeedback == null ? "" : userFeedback.trim();
         boolean hasFeedback = !trimmedFeedback.isBlank();
@@ -416,29 +421,45 @@ public class AIStubService implements AiService {
         }
 
         if (hasFeedback) {
-            String fbClean = truncateOneLine(feedback, 35);
-            ModuleTemplate mFeedback = new ModuleTemplate(
-                    "피드백 반영: " + fbClean,
-                    "사용자 추가 요청 사항(" + feedback + ")을 WBS에 긴급 반영하여 개발 및 검증을 진행합니다.",
-                    "2026-09-25",
-                    List.of("PM", "담당팀"),
-                    "피드백 요구사항에 따른 변경점과 기존 작업 간의 정합성을 최우선으로 검증해야 합니다."
-            );
-            mFeedback.leaves.add(new LeafTemplate(
-                    fbClean + " 구현",
-                    "피드백 요구사항 구체화 및 기능 구현 (" + feedback + ")",
-                    "2026-09-22",
-                    List.of("담당 개발자"),
-                    "요구사항 세부 스펙 일치 여부 확인"
-            ));
-            mFeedback.leaves.add(new LeafTemplate(
-                    fbClean + " 검증 및 통합",
-                    "피드백 반영 기능 단위 테스트 및 통합 시나리오 검증",
-                    "2026-09-25",
-                    List.of("QA"),
-                    "기존 기능과의 회귀 테스트 필수"
-            ));
-            list.add(0, mFeedback); // Put feedback module at the top
+            String fbLower = feedback.toLowerCase();
+            boolean isDeleteRequest = fbLower.contains("삭제") || fbLower.contains("제거") || fbLower.contains("없애") || fbLower.contains("빼") || fbLower.contains("줄여") || fbLower.contains("중복");
+
+            if (isDeleteRequest) {
+                // Remove matching leaves or modules
+                String[] keywords = {"단체톡", "채팅", "카카오", "네이버", "회원가입", "게시판", "알림", "결제", "통계", "소셜"};
+                for (String kw : keywords) {
+                    if (fbLower.contains(kw)) {
+                        for (ModuleTemplate mod : list) {
+                            mod.leaves.removeIf(l -> l.label.contains(kw) || l.goal.contains(kw));
+                        }
+                        list.removeIf(m -> (m.label.contains(kw) || m.goal.contains(kw)) && m.leaves.isEmpty());
+                    }
+                }
+            } else {
+                String fbClean = truncateOneLine(feedback, 25);
+                ModuleTemplate mFeedback = new ModuleTemplate(
+                        "피드백 반영: " + fbClean,
+                        "사용자 추가 요청 사항(" + feedback + ")을 WBS에 반영하여 개발 및 검증을 진행합니다.",
+                        java.time.LocalDate.now().plusMonths(1).toString(),
+                        List.of("PM", "담당팀"),
+                        "피드백 요구사항에 따른 변경점과 기존 작업 간의 정합성을 최우선으로 검증해야 합니다."
+                );
+                mFeedback.leaves.add(new LeafTemplate(
+                        fbClean + " 기능 구현",
+                        "피드백 요구사항 구체화 및 기능 구현 (" + feedback + ")",
+                        java.time.LocalDate.now().plusDays(20).toString(),
+                        List.of("담당 개발자"),
+                        "요구사항 세부 스펙 일치 여부 확인"
+                ));
+                mFeedback.leaves.add(new LeafTemplate(
+                        fbClean + " 검증 및 통합",
+                        "피드백 반영 기능 단위 테스트 및 통합 시나리오 검증",
+                        java.time.LocalDate.now().plusMonths(1).toString(),
+                        List.of("QA"),
+                        "기존 기능과의 회귀 테스트 필수"
+                ));
+                list.add(mFeedback);
+            }
         }
 
         return list;
