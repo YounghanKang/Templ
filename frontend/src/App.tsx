@@ -616,7 +616,13 @@ function RoadmapCanvas({ nodes, edges, selectedId, editing, linkFrom, suggestion
         <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#b0aec2' }}>
           {Math.round(scale * 100)}%
         </span>
-        <button onClick={() => { setScale(1); if (viewportRef.current) { viewportRef.current.scrollLeft = 0; viewportRef.current.scrollTop = 0 } }}
+        <button onClick={() => { 
+          setScale(1); 
+          if (viewportRef.current) { 
+            viewportRef.current.scrollLeft = 4000 - viewportRef.current.clientWidth / 2 + 300; 
+            viewportRef.current.scrollTop = 4000 - 20; 
+          } 
+        }}
           style={{
             padding: '3px 9px', borderRadius: 100, border: 'none', background: '#2c2c3a',
             color: '#e5e4ef', fontFamily: 'var(--font-display)', fontSize: 10, fontWeight: 600, cursor: 'pointer',
@@ -719,6 +725,12 @@ function NodeDetailPanel({ teamId, node, color, suggestion, onChange, onClose, o
   const st = STATUS_META[node.status]
   const [view, setView] = useState<'info' | 'comments'>('info')
   const [draft, setDraft] = useState('')
+  const [issueDraft, setIssueDraft] = useState(node.issue || '')
+  const [isIssueOpen, setIsIssueOpen] = useState(!!node.issue)
+  useEffect(() => { 
+    setIssueDraft(node.issue || '')
+    setIsIssueOpen(!!node.issue)
+  }, [node.id, node.issue])
   const comments = node.comments ?? []
   const files = node.files ?? []
 
@@ -919,7 +931,7 @@ function NodeDetailPanel({ teamId, node, color, suggestion, onChange, onClose, o
         )}
 
         {/* 문제 발생 */}
-        {node.issue !== undefined && (
+        {isIssueOpen && (
           <div style={{
             borderRadius: 14, border: '1.5px solid #ef444440', background: '#ef44440d', padding: '14px 15px',
           }}>
@@ -938,16 +950,24 @@ function NodeDetailPanel({ teamId, node, color, suggestion, onChange, onClose, o
               <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: '#c2504f', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
                 Blocked
               </span>
-              <button onClick={() => onChange({ issue: undefined })}
+              <button onClick={() => onChange({ issue: issueDraft })}
                 style={{
                   marginLeft: 'auto', padding: '4px 10px', borderRadius: 7, border: '1px solid #ef444440',
+                  background: '#ef4444', color: '#fff', cursor: 'pointer',
+                  fontFamily: 'var(--font-display)', fontSize: 11, fontWeight: 600,
+                }}>
+                확인
+              </button>
+              <button onClick={() => { setIsIssueOpen(false); setIssueDraft(''); onChange({ issue: '' }) }}
+                style={{
+                  padding: '4px 10px', borderRadius: 7, border: '1px solid #ef444440',
                   background: 'transparent', color: '#b91c1c', cursor: 'pointer',
                   fontFamily: 'var(--font-display)', fontSize: 11, fontWeight: 600,
                 }}>
                 {t('node.resolved')}
               </button>
             </div>
-            <textarea value={node.issue} onChange={e => onChange({ issue: e.target.value })} rows={4}
+            <textarea value={issueDraft} onChange={e => setIssueDraft(e.target.value)} rows={4}
               placeholder={t('node.issuePlaceholder')}
               style={{ ...fieldStyle, background: '#ffffff', border: '1.5px solid #ef444433', fontSize: 12.5 }} />
           </div>
@@ -1060,8 +1080,8 @@ function NodeDetailPanel({ teamId, node, color, suggestion, onChange, onClose, o
               )
             })}
           </div>
-          {node.issue === undefined && (
-            <button onClick={() => onChange({ issue: '' })} style={{
+          {!isIssueOpen && (
+            <button onClick={() => setIsIssueOpen(true)} style={{
               width: '100%', marginBottom: 12, padding: '8px 0', borderRadius: 9,
               border: '1.5px dashed #ef444455', background: 'transparent', color: '#b91c1c',
               fontFamily: 'var(--font-display)', fontSize: 11.5, fontWeight: 600, cursor: 'pointer',
@@ -1313,7 +1333,32 @@ const textareaRef = useRef<HTMLTextAreaElement>(null)
   }
 
   async function deleteEdge(id: string) {
-    setGraph(g => ({ ...g, edges: g.edges.filter(e => e.id !== id) }))
+    const edgeToDel = safeGraph.edges.find(e => e.id === id)
+    setGraph(g => {
+      const nextEdges = g.edges.filter(e => e.id !== id)
+      let nextNodes = g.nodes
+      if (edgeToDel) {
+        const childNode = g.nodes.find(n => n.id === edgeToDel.to)
+        if (childNode && childNode.tier !== 'root') {
+          const parentIds = nextEdges.filter(e => e.to === childNode.id).map(e => e.from)
+          const parents = g.nodes.filter(n => parentIds.includes(n.id))
+          
+          let newTier: 'mid' | 'leaf' = 'leaf'
+          if (parents.some(p => p.tier === 'root')) newTier = 'mid'
+          
+          if (newTier !== childNode.tier) {
+            const newSize = SIZE[newTier]
+            nextNodes = g.nodes.map(n => n.id === childNode.id ? { ...n, tier: newTier, ...newSize } : n)
+            fetch(`/api/teams/${team.id}/nodes/${childNode.id}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('templ_token')}` },
+              body: JSON.stringify({ ...childNode, tier: newTier, ...newSize })
+            }).catch(console.error)
+          }
+        }
+      }
+      return { ...g, edges: nextEdges, nodes: nextNodes }
+    })
     fetch(`/api/teams/${team.id}/edges/${id}`, {
       method: 'DELETE',
       headers: { 'Authorization': `Bearer ${localStorage.getItem('templ_token')}` }
@@ -1326,7 +1371,34 @@ const textareaRef = useRef<HTMLTextAreaElement>(null)
         const exists = safeGraph.edges.some(e => e.from === linkFrom && e.to === id)
         if (!exists) {
           const newEdge = { id: `e-${linkFrom}-${id}-${Date.now()}`, from: linkFrom, to: id }
-          setGraph(g => ({ ...g, edges: [...g.edges, newEdge] }))
+          const parentNode = safeGraph.nodes.find(n => n.id === linkFrom)
+          const childNode = safeGraph.nodes.find(n => n.id === id)
+
+          let newTier = childNode?.tier || 'leaf'
+          if (childNode && childNode.tier !== 'root') {
+            const allEdges = [...safeGraph.edges, newEdge]
+            const parentIds = allEdges.filter(e => e.to === id).map(e => e.from)
+            const parents = safeGraph.nodes.filter(n => parentIds.includes(n.id))
+            newTier = 'leaf'
+            if (parents.some(p => p.tier === 'root')) newTier = 'mid'
+          }
+
+          if (childNode && newTier !== childNode.tier) {
+            const newSize = SIZE[newTier as 'root' | 'mid' | 'leaf']
+            setGraph(g => ({
+              ...g,
+              nodes: g.nodes.map(n => n.id === id ? { ...n, tier: newTier, ...newSize } : n),
+              edges: [...g.edges, newEdge]
+            }))
+            fetch(`/api/teams/${team.id}/nodes/${id}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('templ_token')}` },
+              body: JSON.stringify({ ...childNode, tier: newTier, ...newSize })
+            }).catch(console.error)
+          } else {
+            setGraph(g => ({ ...g, edges: [...g.edges, newEdge] }))
+          }
+
           fetch(`/api/teams/${team.id}/edges`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('templ_token')}` },
