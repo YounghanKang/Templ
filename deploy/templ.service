@@ -4,7 +4,10 @@ After=syslog.target network.target
 
 [Service]
 # 실제 프로젝트가 위치한 경로로 수정해야 합니다. (예: /home/ubuntu/Templ/backend)
-WorkingDirectory=/경로를_수정해주세요/backend
+WorkingDirectory=/root/Templ/backend
+
+# 환경 변수 파일 위치 (API 키 등)
+EnvironmentFile=/root/Templ/backend/.env
 
 # 실행할 jar 파일의 경로
 ExecStart=/usr/bin/java -jar build/libs/demo-0.0.1-SNAPSHOT.jar
