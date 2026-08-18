@@ -1,0 +1,21 @@
+[Unit]
+Description=Templ Spring Boot Backend Service
+After=syslog.target network.target
+
+[Service]
+# 실제 프로젝트가 위치한 경로로 수정해야 합니다. (예: /home/ubuntu/Templ/backend)
+WorkingDirectory=/경로를_수정해주세요/backend
+
+# 실행할 jar 파일의 경로
+ExecStart=/usr/bin/java -jar build/libs/demo-0.0.1-SNAPSHOT.jar
+
+# 성공/실패 시 자동 재시작 여부
+SuccessExitStatus=143
+Restart=always
+RestartSec=10
+
+# 실행할 리눅스 유저명 (예: ubuntu, root 등)
+User=root
+
+[Install]
+WantedBy=multi-user.target
