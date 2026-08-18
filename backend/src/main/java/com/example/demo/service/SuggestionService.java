@@ -1,5 +1,6 @@
 package com.example.demo.service;
 
+import com.example.demo.config.SuggestionPolicyProperties;
 import com.example.demo.domain.Specification;
 import com.example.demo.domain.Suggestion;
 import com.example.demo.dto.RoadmapDto;
@@ -27,12 +28,14 @@ public class SuggestionService {
     private final RoadmapService roadmapService;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final AiService aiService;
+    private final SuggestionPolicyProperties policyProperties;
 
-    public SuggestionService(SuggestionRepository suggestionRepository, SpecificationRepository specificationRepository, RoadmapService roadmapService, AiService aiService) {
+    public SuggestionService(SuggestionRepository suggestionRepository, SpecificationRepository specificationRepository, RoadmapService roadmapService, AiService aiService, SuggestionPolicyProperties policyProperties) {
         this.suggestionRepository = suggestionRepository;
         this.specificationRepository = specificationRepository;
         this.roadmapService = roadmapService;
         this.aiService = aiService;
+        this.policyProperties = policyProperties;
     }
 
     private RoadmapDto.RoadmapNodeDto toNodeDtoFromJson(JsonNode item) {
@@ -59,6 +62,7 @@ public class SuggestionService {
     public SuggestionDto.Response create(String teamId, SuggestionDto.Create request) {
         Suggestion s = Suggestion.builder()
                 .teamId(teamId)
+                .parentSuggestionId(request.getParentSuggestionId())
                 .targetType(request.getTargetType())
                 .targetId(request.getTargetId())
                 .title(request.getTitle())
@@ -87,6 +91,13 @@ public class SuggestionService {
                 .orElseThrow(() -> new IllegalArgumentException("suggestion not found: " + suggestionId));
         if (!teamId.equals(base.getTeamId())) throw new IllegalArgumentException("team mismatch");
 
+        // Check regeneration depth limit from policy
+        int currentDepth = getHistory(teamId, suggestionId).size();
+        int maxDepth = policyProperties != null ? policyProperties.getMaxRegenerationDepth() : 5;
+        if (currentDepth >= maxDepth) {
+            throw new IllegalStateException("Exceeded max regeneration depth limit of " + maxDepth);
+        }
+
         String feedback = request == null || request.getFeedback() == null ? "" : request.getFeedback().trim();
         Long specId = null;
         if (base.getSourceId() != null && !base.getSourceId().isBlank()) {
@@ -104,6 +115,7 @@ public class SuggestionService {
         List<SuggestionDto.Create> generated = aiService.generateSuggestions(teamId, effectiveSpecId, spec.getSpecText(), feedback, suggestionId);
         List<SuggestionDto.Response> result = new ArrayList<>();
         for (SuggestionDto.Create candidate : generated) {
+            candidate.setParentSuggestionId(suggestionId);
             if (candidate.getSourceId() == null || candidate.getSourceId().isBlank()) {
                 candidate.setSourceId(String.valueOf(specId));
             }
@@ -261,10 +273,81 @@ public class SuggestionService {
         return toDto(saved);
     }
 
+    public List<SuggestionDto.Response> getHistory(String teamId, Long suggestionId) {
+        List<SuggestionDto.Response> history = new ArrayList<>();
+        Long currentId = suggestionId;
+        while (currentId != null) {
+            final Long targetId = currentId;
+            Optional<Suggestion> opt = suggestionRepository.findById(targetId)
+                    .filter(s -> teamId.equals(s.getTeamId()));
+            if (opt.isEmpty()) break;
+            Suggestion current = opt.get();
+            history.add(toDto(current));
+            currentId = current.getParentSuggestionId();
+            if (currentId != null && currentId.equals(targetId)) break; // cycle protection
+        }
+        return history;
+    }
+
+    public SuggestionDto.DiffResponse getDiff(String teamId, Long baseId, Long targetId) {
+        Suggestion base = suggestionRepository.findById(baseId)
+                .filter(s -> teamId.equals(s.getTeamId()))
+                .orElseThrow(() -> new IllegalArgumentException("Base suggestion not found: " + baseId));
+
+        Long actualTargetId = targetId != null ? targetId : base.getParentSuggestionId();
+        if (actualTargetId == null) {
+            return SuggestionDto.DiffResponse.builder()
+                    .baseSuggestionId(baseId)
+                    .targetSuggestionId(null)
+                    .baseTitle(base.getTitle())
+                    .targetTitle(null)
+                    .titleChanged(false)
+                    .baseBody(base.getBody())
+                    .targetBody(null)
+                    .bodyChanged(false)
+                    .baseStatus(base.getStatus())
+                    .targetStatus(null)
+                    .statusChanged(false)
+                    .changeJsonDiff("No parent/target suggestion to compare")
+                    .build();
+        }
+
+        Suggestion target = suggestionRepository.findById(actualTargetId)
+                .filter(s -> teamId.equals(s.getTeamId()))
+                .orElseThrow(() -> new IllegalArgumentException("Target suggestion not found: " + actualTargetId));
+
+        boolean titleChanged = !java.util.Objects.equals(base.getTitle(), target.getTitle());
+        boolean bodyChanged = !java.util.Objects.equals(base.getBody(), target.getBody());
+        boolean statusChanged = !java.util.Objects.equals(base.getStatus(), target.getStatus());
+
+        String jsonDiff = "changeJson diff: ";
+        if (java.util.Objects.equals(base.getChangeJson(), target.getChangeJson())) {
+            jsonDiff += "No change in payload";
+        } else {
+            jsonDiff += "Base payload differs from target payload";
+        }
+
+        return SuggestionDto.DiffResponse.builder()
+                .baseSuggestionId(baseId)
+                .targetSuggestionId(actualTargetId)
+                .baseTitle(base.getTitle())
+                .targetTitle(target.getTitle())
+                .titleChanged(titleChanged)
+                .baseBody(base.getBody())
+                .targetBody(target.getBody())
+                .bodyChanged(bodyChanged)
+                .baseStatus(base.getStatus())
+                .targetStatus(target.getStatus())
+                .statusChanged(statusChanged)
+                .changeJsonDiff(jsonDiff)
+                .build();
+    }
+
     private SuggestionDto.Response toDto(Suggestion s) {
         return SuggestionDto.Response.builder()
                 .id(s.getId())
                 .teamId(s.getTeamId())
+                .parentSuggestionId(s.getParentSuggestionId())
                 .targetType(s.getTargetType())
                 .targetId(s.getTargetId())
                 .title(s.getTitle())

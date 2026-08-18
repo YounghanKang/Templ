@@ -156,4 +156,49 @@ public class SuggestionServiceTests {
         var nodes = roadmapNodeRepository.findAllByTeamIdOrderByIdAsc(teamId);
         Assertions.assertTrue(nodes.stream().anyMatch(n -> "독립 노드".equals(n.getLabel())));
     }
+
+    @Test
+    public void test_parent_suggestion_id_history_and_diff() {
+        String teamId = "T-TEST-5";
+        teamRepository.save(Team.builder().teamId(teamId).name("Team5").members(1).color("#444").mission("m").build());
+
+        Specification spec = specificationRepository.save(Specification.builder()
+                .teamId(teamId)
+                .author("tester")
+                .specText("기능 명세서 버전 1")
+                .status("READY")
+                .build());
+
+        SuggestionDto.Create parent = SuggestionDto.Create.builder()
+                .targetType("roadmapNode")
+                .targetId(null)
+                .title("부모 제안")
+                .body("부모 설명")
+                .sourceTool("test")
+                .sourceId(String.valueOf(spec.getId()))
+                .changeJson("{\"label\": \"부모\", \"aiSummary\": \"v1\"}")
+                .build();
+        var parentRes = suggestionService.create(teamId, parent);
+
+        var regeneratedList = suggestionService.regenerate(teamId, parentRes.getId(), SuggestionDto.RegenerateRequest.builder()
+                .feedback("피드백 반영 버전 2")
+                .baseSuggestionId(parentRes.getId())
+                .build());
+
+        Assertions.assertFalse(regeneratedList.isEmpty());
+        var childRes = regeneratedList.get(0);
+        Assertions.assertEquals(parentRes.getId(), childRes.getParentSuggestionId());
+
+        // Test History
+        var history = suggestionService.getHistory(teamId, childRes.getId());
+        Assertions.assertEquals(2, history.size());
+        Assertions.assertEquals(childRes.getId(), history.get(0).getId());
+        Assertions.assertEquals(parentRes.getId(), history.get(1).getId());
+
+        // Test Diff
+        var diff = suggestionService.getDiff(teamId, childRes.getId(), parentRes.getId());
+        Assertions.assertEquals(childRes.getId(), diff.getBaseSuggestionId());
+        Assertions.assertEquals(parentRes.getId(), diff.getTargetSuggestionId());
+        Assertions.assertTrue(diff.isTitleChanged() || diff.isBodyChanged());
+    }
 }

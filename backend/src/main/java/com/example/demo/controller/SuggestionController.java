@@ -44,4 +44,19 @@ public class SuggestionController {
             @RequestBody(required = false) SuggestionDto.RegenerateRequest req) {
         return ResponseEntity.ok(suggestionService.regenerate(teamId, id, req));
     }
+
+    @GetMapping("/{id}/diff")
+    public ResponseEntity<SuggestionDto.DiffResponse> getDiff(
+            @PathVariable String teamId,
+            @PathVariable Long id,
+            @RequestParam(required = false) Long targetId) {
+        return ResponseEntity.ok(suggestionService.getDiff(teamId, id, targetId));
+    }
+
+    @GetMapping("/{id}/history")
+    public ResponseEntity<List<SuggestionDto.Response>> getHistory(
+            @PathVariable String teamId,
+            @PathVariable Long id) {
+        return ResponseEntity.ok(suggestionService.getHistory(teamId, id));
+    }
 }

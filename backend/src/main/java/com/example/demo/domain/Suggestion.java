@@ -21,6 +21,9 @@ public class Suggestion {
     // team id like "T-001"
     private String teamId;
 
+    // parent suggestion identifier if regenerated from a previous suggestion
+    private Long parentSuggestionId;
+
     // e.g., "roadmapNode"
     private String targetType;
 

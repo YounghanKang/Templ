@@ -16,6 +16,7 @@ public class SuggestionDto {
     public static class Create {
         private String targetType;
         private String targetId;
+        private Long parentSuggestionId;
         private String title;
         private String body;
         private String sourceTool;
@@ -31,6 +32,7 @@ public class SuggestionDto {
     public static class Response {
         private Long id;
         private String teamId;
+        private Long parentSuggestionId;
         private String targetType;
         private String targetId;
         private String title;
@@ -51,5 +53,24 @@ public class SuggestionDto {
     public static class RegenerateRequest {
         private String feedback;
         private Long baseSuggestionId;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class DiffResponse {
+        private Long baseSuggestionId;
+        private Long targetSuggestionId;
+        private String baseTitle;
+        private String targetTitle;
+        private boolean titleChanged;
+        private String baseBody;
+        private String targetBody;
+        private boolean bodyChanged;
+        private String baseStatus;
+        private String targetStatus;
+        private boolean statusChanged;
+        private String changeJsonDiff;
     }
 }
