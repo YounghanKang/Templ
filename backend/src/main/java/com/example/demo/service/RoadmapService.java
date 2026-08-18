@@ -44,7 +44,7 @@ public class RoadmapService {
 
     public RoadmapDto.RoadmapNodeDto createNode(String teamId, RoadmapDto.RoadmapNodeDto request) {
         teamRepository.findByTeamId(teamId).orElseThrow(() -> new IllegalArgumentException("team not found: " + teamId));
-        String id = request.getId() == null ? "n" + System.currentTimeMillis() : request.getId();
+        String id = request.getId() == null ? "n" + java.util.UUID.randomUUID().toString() : request.getId();
         RoadmapNode entity = RoadmapNode.builder()
                 .nodeId(id)
                 .teamId(teamId)

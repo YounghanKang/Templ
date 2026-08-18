@@ -481,14 +481,23 @@ function RoadmapCanvas({ nodes, edges, selectedId, editing, linkFrom, suggestion
       e.preventDefault()
       const el = viewportRef.current
       if (!el) return
+      const oldScrollLeft = el.scrollLeft
+      const oldScrollTop = el.scrollTop
+      const rect = el.getBoundingClientRect()
+      const px = e.clientX - rect.left
+      const py = e.clientY - rect.top
+
       setScale(prev => {
         const next = Math.min(2, Math.max(0.4, prev * (e.deltaY > 0 ? 0.92 : 1.08)))
         if (next === prev) return prev
-        const rect = el.getBoundingClientRect()
-        const px = e.clientX - rect.left, py = e.clientY - rect.top
         const ratio = next / prev
-        el.scrollLeft = (el.scrollLeft + px) * ratio - px
-        el.scrollTop = (el.scrollTop + py) * ratio - py
+        const nextScrollLeft = (oldScrollLeft + px) * ratio - px
+        const nextScrollTop = (oldScrollTop + py) * ratio - py
+        
+        requestAnimationFrame(() => {
+          el.scrollLeft = nextScrollLeft
+          el.scrollTop = nextScrollTop
+        })
         return next
       })
     }
