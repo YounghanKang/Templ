@@ -33,7 +33,7 @@ public class OpenAIService implements AiService {
     public OpenAIService() {
         this.model = System.getProperty("app.ai.model", System.getenv().getOrDefault("APP_AI_MODEL", "gpt-4o-mini"));
         this.temperature = Double.parseDouble(System.getProperty("app.ai.temperature", System.getenv().getOrDefault("APP_AI_TEMPERATURE", "0.2")));
-        this.maxTokens = Integer.parseInt(System.getProperty("app.ai.max-tokens", System.getenv().getOrDefault("APP_AI_MAX_TOKENS", "800")));
+        this.maxTokens = Integer.parseInt(System.getProperty("app.ai.max-tokens", System.getenv().getOrDefault("APP_AI_MAX_TOKENS", "1500")));
         this.apiKey = System.getenv("OPENAI_API_KEY");
     }
 
@@ -47,32 +47,39 @@ public class OpenAIService implements AiService {
         List<SuggestionDto.Create> out = new ArrayList<>();
         String feedback = userFeedback == null ? "" : userFeedback.trim();
         if (apiKey == null || apiKey.isBlank()) {
-            String fallbackBody = feedback.isBlank()
-                    ? "OPENAI_API_KEY가 설정되어 있지 않습니다. env var OPENAI_API_KEY를 설정하세요."
-                    : "OPENAI_API_KEY가 설정되어 있지 않지만, 사용자 피드백을 반영해 로드맵 재생성 후보를 준비했습니다.\n사용자 의견: " + feedback;
-            SuggestionDto.Create fallback = SuggestionDto.Create.builder()
-                    .targetType("roadmapNode")
-                    .targetId(null)
-                    .title(feedback.isBlank() ? "AI 제안(오픈AI 사용 불가) - 요약" : "AI 재생성(오픈AI 사용 불가) - 사용자 의견 반영")
-                    .body(fallbackBody)
-                    .sourceTool("openai-fallback")
-                    .sourceId(String.valueOf(specId))
-                    .changeJson(String.format("{\"label\": \"%s\", \"aiSummary\": \"%s\", \"feedback\": \"%s\"}", escapeJson(truncateOneLine(specText, 40)), escapeJson(truncateOneLine(specText, 200) + (feedback.isBlank() ? "" : " / 사용자 피드백: " + feedback)), escapeJson(feedback)))
-                    .build();
-            out.add(fallback);
-            return out;
+            // fallback to stub generator if key is missing
+            return new AIStubService().generateSuggestions(teamId, specId, specText, userFeedback, baseSuggestionId);
         }
 
         try {
-            String systemPrompt = "You are a helpful assistant that converts a project specification into a list of suggestion cards. " +
-                    "Return ONLY raw JSON, with no markdown fences, no code fences, and no commentary. " +
-                    "Respond with a strict JSON array. Each array item must be an object with keys: title (string), body (string), changeJson (JSON object with fields like label and aiSummary). " +
-                    "If the user provides feedback, treat it as an instruction that must be reflected in the regenerated suggestions. " +
-                    "Keep the original spec as the main source of truth, but revise the roadmap suggestions to satisfy the user's feedback.";
+            String systemPrompt = """
+                    You are an expert AI collaboration orchestrator and technical project manager.
+                    Analyze the project specification and break it down into a comprehensive Work Breakdown Structure (WBS) across 3 tiers (root, mid, leaf).
+                    
+                    CRITICAL REQUIREMENTS:
+                    1. Return ONLY raw JSON array. No markdown fences, no code blocks, no intro text.
+                    2. Decompose the specification into AT LEAST 5 to 10 actionable tasks covering all functional and technical requirements.
+                    3. Use 'tempId' and 'parentTempId' to establish precise parent-child tree relationships:
+                       - Root task must have tempId='node_1' and parentTempId=null.
+                       - Mid-level modules must have parentTempId='node_1'.
+                       - Leaf tasks must have parentTempId matching their parent mid-level module's tempId.
+                    
+                    Each array item must be an object with:
+                    - title: Task title (string)
+                    - body: Task goal and description (string)
+                    - changeJson: Object with fields:
+                        - tempId: e.g. "node_1", "node_2", "node_3"
+                        - parentTempId: tempId of parent task (or null for root)
+                        - label: Short display label (string)
+                        - tier: "root" | "mid" | "leaf"
+                        - goal: Detailed goal statement (string)
+                        - assignees: Suggested roles or team members (array of strings)
+                        - aiSummary: AI summary explanation (string)
+                    """;
+
             String userPrompt = "Spec:\n" + specText + "\n\n" +
-                    (feedback.isBlank() ? "" : "User feedback:\n" + feedback + "\n\n") +
-                    "Produce up to 5 suggestion objects as described. Return only raw JSON." +
-                    (baseSuggestionId == null ? "" : "\nThe current suggestion being revised has id=" + baseSuggestionId + ".");
+                    (feedback.isBlank() ? "" : "User feedback to reflect:\n" + feedback + "\n\n") +
+                    "Decompose into a structured WBS task array with tempId and parentTempId tree references.";
 
             Map<String, Object> body = Map.of(
                     "model", model,
@@ -95,18 +102,8 @@ public class OpenAIService implements AiService {
 
             HttpResponse<String> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString());
             if (resp.statusCode() / 100 != 2) {
-                // non-2xx
-                SuggestionDto.Create err = SuggestionDto.Create.builder()
-                        .targetType("roadmapNode")
-                        .targetId(null)
-                        .title("AI 제안 오류")
-                        .body("OpenAI 호출 실패: status=" + resp.statusCode())
-                        .sourceTool("openai")
-                        .sourceId(String.valueOf(specId))
-                        .changeJson(String.format("{\"label\": \"%s\", \"aiSummary\": \"%s\"}", escapeJson(truncateOneLine(specText, 40)), escapeJson(truncateOneLine(specText, 200))))
-                        .build();
-                out.add(err);
-                return out;
+                logger.warn("OpenAI API returned non-2xx code {}, falling back to stub", resp.statusCode());
+                return new AIStubService().generateSuggestions(teamId, specId, specText, userFeedback, baseSuggestionId);
             }
 
             JsonNode root = objectMapper.readTree(resp.body());
@@ -118,20 +115,14 @@ public class OpenAIService implements AiService {
                 try {
                     List<Map<String, Object>> items = objectMapper.readValue(normalized, new TypeReference<>() {});
                     for (Map<String, Object> item : items) {
-                        // validation: require title and body
                         Object titleObj = item.get("title");
                         Object bodyObj = item.get("body");
-                        if (titleObj == null || bodyObj == null) {
-                            // skip invalid item
-                            continue;
-                        }
+                        if (titleObj == null || bodyObj == null) continue;
+
                         String title = titleObj.toString().trim();
                         String bodyText = bodyObj.toString().trim();
-                        if (title.isBlank() || bodyText.isBlank()) {
-                            continue;
-                        }
+                        if (title.isBlank() || bodyText.isBlank()) continue;
 
-                        // normalize changeJson field
                         Object change = item.get("changeJson");
                         String changeStr;
                         try {
@@ -140,20 +131,12 @@ public class OpenAIService implements AiService {
                             } else if (change instanceof Map) {
                                 changeStr = objectMapper.writeValueAsString(change);
                             } else if (change instanceof String) {
-                                String changeCandidate = (String) change;
-                                // try parsing string as JSON; if fails, wrap into aiSummary
-                                try {
-                                    JsonNode parsed = objectMapper.readTree(changeCandidate);
-                                    changeStr = objectMapper.writeValueAsString(parsed);
-                                } catch (Exception pe) {
-                                    changeStr = objectMapper.writeValueAsString(Map.of("aiSummary", changeCandidate));
-                                }
+                                JsonNode parsed = objectMapper.readTree((String) change);
+                                changeStr = objectMapper.writeValueAsString(parsed);
                             } else {
-                                // unknown type, stringify
                                 changeStr = objectMapper.writeValueAsString(change.toString());
                             }
                         } catch (Exception ce) {
-                            // if any serialization issue, fallback
                             changeStr = "{\"aiSummary\": \"" + escapeJson(truncateOneLine(bodyText, 200)) + "\"}";
                         }
 
@@ -168,37 +151,18 @@ public class OpenAIService implements AiService {
                                 .build();
                         out.add(s);
                     }
-                    if (!out.isEmpty()) return out;
+                    if (out.size() >= 3) return out;
                 } catch (Exception e) {
-                    // parsing failed; fall through to fallback
+                    logger.warn("Failed parsing OpenAI JSON output: {}", e.getMessage());
                 }
-                // fallback: wrap content into one suggestion
-                SuggestionDto.Create single = SuggestionDto.Create.builder()
-                        .targetType("roadmapNode")
-                        .targetId(null)
-                        .title(truncateOneLine(content, 80))
-                        .body(truncateOneLine(content, 600))
-                        .sourceTool("openai")
-                        .sourceId(String.valueOf(specId))
-                        .changeJson(String.format("{\"aiSummary\": \"%s\"}", escapeJson(truncateOneLine(content, 400))))
-                        .build();
-                out.add(single);
             }
 
         } catch (Exception ex) {
-            SuggestionDto.Create err = SuggestionDto.Create.builder()
-                    .targetType("roadmapNode")
-                    .targetId(null)
-                    .title("AI 처리 실패")
-                    .body("OpenAI 처리 중 예외: " + ex.getMessage())
-                    .sourceTool("openai")
-                    .sourceId(String.valueOf(specId))
-                    .changeJson(String.format("{\"label\": \"%s\", \"aiSummary\": \"%s\"}", escapeJson(truncateOneLine(specText, 40)), escapeJson(truncateOneLine(specText, 200))))
-                    .build();
-            out.add(err);
+            logger.error("Exception during OpenAI call: {}", ex.getMessage(), ex);
         }
 
-        return out;
+        // Guardrail: If OpenAI fails or returns < 3 tasks, use stub generator
+        return new AIStubService().generateSuggestions(teamId, specId, specText, userFeedback, baseSuggestionId);
     }
 
     private String normalizeJsonResponse(String content) {

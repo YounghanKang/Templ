@@ -40,6 +40,9 @@ public class SuggestionService {
         if (item.has("label")) dto.setLabel(item.get("label").asText());
         else if (item.has("title")) dto.setLabel(item.get("title").asText());
         if (item.has("aiSummary")) dto.setAiSummary(item.get("aiSummary").asText());
+        else if (item.has("body")) dto.setAiSummary(item.get("body").asText());
+        if (item.has("goal")) dto.setGoal(item.get("goal").asText());
+        if (item.has("tier")) dto.setTier(item.get("tier").asText());
         if (item.has("status")) dto.setStatus(item.get("status").asText());
         if (item.has("progress")) dto.setProgress(item.get("progress").asInt());
         if (item.has("assignees") && item.get("assignees").isArray()) {
@@ -131,31 +134,6 @@ public class SuggestionService {
             try {
                 if (s.getSourceId() != null && suggestionRepository.existsBySourceIdAndStatus(s.getSourceId(), "APPROVED")) {
                     // already applied by another suggestion from same source
-                } else if (s.getTargetId() == null && s.getSourceId() != null) {
-                    var allForSource = suggestionRepository.findAllByTeamIdOrderByIdDesc(teamId).stream()
-                            .filter(x -> s.getSourceId().equals(x.getSourceId()) && "PENDING".equals(x.getStatus()))
-                            .collect(Collectors.toList());
-                    if (!allForSource.isEmpty()) {
-                        allForSource.sort(java.util.Comparator.comparing(Suggestion::getId));
-                        var rootS = allForSource.get(0);
-                        RoadmapDto.RoadmapNodeDto rootDto = toNodeDtoFromJson(objectMapper.readTree(rootS.getChangeJson()));
-                        var createdRoot = roadmapService.createNode(teamId, rootDto);
-                        
-                        for (int i = 1; i < allForSource.size(); i++) {
-                            var childS = allForSource.get(i);
-                            RoadmapDto.RoadmapNodeDto childDto = toNodeDtoFromJson(objectMapper.readTree(childS.getChangeJson()));
-                            var createdChild = roadmapService.createNode(teamId, childDto);
-                            roadmapService.createEdge(teamId, RoadmapDto.RoadmapEdgeDto.builder()
-                                    .from(createdRoot.getId()).to(createdChild.getId()).build());
-                            
-                            if (!childS.getId().equals(s.getId())) {
-                                childS.setStatus("APPROVED");
-                                childS.setResolvedBy(approver);
-                                childS.setResolvedAt(Instant.now());
-                                suggestionRepository.save(childS);
-                            }
-                        }
-                    }
                 } else {
                     var rootNode = objectMapper.readTree(s.getChangeJson());
                     if (rootNode.isArray() || rootNode.has("nodes") || rootNode.has("items")) {
@@ -188,6 +166,66 @@ public class SuggestionService {
                                 roadmapService.createEdge(teamId, edge);
                             }
                         }
+                    } else if (s.getTargetId() == null && s.getSourceId() != null) {
+                        var allForSource = suggestionRepository.findAllByTeamIdOrderByIdDesc(teamId).stream()
+                                .filter(x -> s.getSourceId().equals(x.getSourceId()) && "PENDING".equals(x.getStatus()))
+                                .collect(Collectors.toList());
+                        if (!allForSource.isEmpty()) {
+                            allForSource.sort(java.util.Comparator.comparing(Suggestion::getId));
+
+                            Map<String, String> tempIdToRealId = new java.util.HashMap<>();
+                            Map<String, String> childToParentTempMap = new java.util.HashMap<>();
+                            List<String> createdNodeIds = new java.util.ArrayList<>();
+
+                            for (Suggestion currS : allForSource) {
+                                JsonNode json = objectMapper.readTree(currS.getChangeJson());
+                                RoadmapDto.RoadmapNodeDto nodeDto = toNodeDtoFromJson(json);
+                                var createdNode = roadmapService.createNode(teamId, nodeDto);
+                                createdNodeIds.add(createdNode.getId());
+
+                                String tempId = json.has("tempId") ? json.get("tempId").asText() : null;
+                                String parentTempId = json.has("parentTempId") ? json.get("parentTempId").asText() : null;
+
+                                if (tempId != null && !tempId.isBlank()) {
+                                    tempIdToRealId.put(tempId, createdNode.getId());
+                                }
+                                if (tempId != null && parentTempId != null && !parentTempId.isBlank()) {
+                                    childToParentTempMap.put(tempId, parentTempId);
+                                }
+
+                                if (!currS.getId().equals(s.getId())) {
+                                    currS.setStatus("APPROVED");
+                                    currS.setResolvedBy(approver);
+                                    currS.setResolvedAt(Instant.now());
+                                    suggestionRepository.save(currS);
+                                }
+                            }
+
+                            if (!childToParentTempMap.isEmpty()) {
+                                for (Map.Entry<String, String> entry : childToParentTempMap.entrySet()) {
+                                    String realChildId = tempIdToRealId.get(entry.getKey());
+                                    String realParentId = tempIdToRealId.get(entry.getValue());
+                                    if (realChildId != null && realParentId != null) {
+                                        roadmapService.createEdge(teamId, RoadmapDto.RoadmapEdgeDto.builder()
+                                                .from(realParentId).to(realChildId).build());
+                                    }
+                                }
+                            } else if (createdNodeIds.size() > 1) {
+                                String rootId = createdNodeIds.get(0);
+                                for (int i = 1; i < createdNodeIds.size(); i++) {
+                                    roadmapService.createEdge(teamId, RoadmapDto.RoadmapEdgeDto.builder()
+                                            .from(rootId).to(createdNodeIds.get(i)).build());
+                                }
+                            }
+                        } else {
+                            // Fallback if allForSource is empty: create node for single suggestion
+                            RoadmapDto.RoadmapNodeDto singleDto = toNodeDtoFromJson(rootNode);
+                            roadmapService.createNode(teamId, singleDto);
+                        }
+                    } else if (s.getTargetId() == null) {
+                        // targetId is null and sourceId is null: create single node
+                        RoadmapDto.RoadmapNodeDto singleDto = toNodeDtoFromJson(rootNode);
+                        roadmapService.createNode(teamId, singleDto);
                     } else if (s.getTargetId() != null) {
                         Map<String, Object> changes = objectMapper.readValue(s.getChangeJson(), new TypeReference<>(){});
                         RoadmapDto.RoadmapNodeDto updateDto = new RoadmapDto.RoadmapNodeDto();
