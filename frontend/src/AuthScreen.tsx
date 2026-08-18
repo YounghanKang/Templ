@@ -97,10 +97,6 @@ export default function AuthScreen({ onSuccess }: { onSuccess: () => void }) {
   // ID duplicate check
   const [idStatus, setIdStatus] = useState<Status>('idle')
 
-  // Email verification
-  const [emailStatus, setEmailStatus] = useState<Status>('idle')
-  const [emailCode, setEmailCode] = useState('')
-  const [emailCodeFocused, setEmailCodeFocused] = useState(false)
 
   const loginWithGoogle = useGoogleLogin({
     onSuccess: async (codeResponse) => {
@@ -134,8 +130,6 @@ export default function AuthScreen({ onSuccess }: { onSuccess: () => void }) {
   // reset verification states on lang change
   useEffect(() => {
     setIdStatus('idle')
-    setEmailStatus('idle')
-    setEmailCode('')
   }, [i18n.language])
 
   useEffect(() => {
@@ -154,18 +148,7 @@ export default function AuthScreen({ onSuccess }: { onSuccess: () => void }) {
     setIdStatus(taken ? 'error' : 'verified')
   }
 
-  // Simulate sending email code
-  const handleSendCode = () => {
-    if (!su.email.trim()) return
-    setEmailStatus('sent')
-    setEmailCode('')
-  }
 
-  // Simulate confirming code — "1234" is the magic code
-  const handleConfirmCode = () => {
-    setEmailStatus(emailCode === '1234' ? 'verified' : 'error')
-  }
-  
   // Login handler
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -365,44 +348,14 @@ export default function AuthScreen({ onSuccess }: { onSuccess: () => void }) {
                 style={inputBase(sf.pw, font)} />
             </div>
 
-            {/* ── Email with verification ── */}
+            {/* ── Email ── */}
             <div>
               <label className="block text-[10px] tracking-[0.12em] uppercase mb-1.5" style={{ color: '#6b6760', fontFamily: font }}>{t('auth.emailLabel')}</label>
-              <div className="flex gap-2">
-                <input type="email" value={su.email}
-                  onChange={e => { setSu(p => ({ ...p, email: e.target.value })); setEmailStatus('idle'); setEmailCode('') }}
-                  onFocus={() => setSf(p => ({ ...p, email: true }))} onBlur={() => setSf(p => ({ ...p, email: false }))}
-                  placeholder={t('auth.emailPlaceholder')} autoComplete="email"
-                  style={{ ...inputBase(sf.email, font), width: undefined, flex: 1 }} />
-                <button type="button" onClick={handleSendCode}
-                  disabled={!su.email.trim() || emailStatus === 'verified'}
-                  style={actionBtn(font, !su.email.trim() || emailStatus === 'verified')}
-                  onMouseOver={e => { if (su.email.trim() && emailStatus !== 'verified') (e.currentTarget as HTMLButtonElement).style.background = '#eff4ff' }}
-                  onMouseOut={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent' }}>
-                  {emailStatus === 'verified' ? '✓' : t('auth.sendCode')}
-                </button>
-              </div>
-              <StatusMsg status={emailStatus === 'sent' ? 'sent' : emailStatus === 'verified' ? 'verified' : 'idle'}
-                okMsg={t('auth.codeOk')} failMsg={t('auth.codeFail')} sentMsg={t('auth.codeSent')} font={font} />
-
-              {/* Code input — appears after code sent */}
-              {(emailStatus === 'sent' || emailStatus === 'error') && (
-                <div className="flex gap-2 mt-2">
-                  <input type="text" value={emailCode} onChange={e => setEmailCode(e.target.value)}
-                    onFocus={() => setEmailCodeFocused(true)} onBlur={() => setEmailCodeFocused(false)}
-                    placeholder={t('auth.codePlaceholder')} maxLength={6}
-                    style={{ ...inputBase(emailCodeFocused, font), width: undefined, flex: 1, padding: '8px 14px' }} />
-                  <button type="button" onClick={handleConfirmCode} disabled={!emailCode.trim()}
-                    style={actionBtn(font, !emailCode.trim())}
-                    onMouseOver={e => { if (emailCode.trim()) (e.currentTarget as HTMLButtonElement).style.background = '#eff4ff' }}
-                    onMouseOut={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent' }}>
-                    {t('auth.confirmCode')}
-                  </button>
-                </div>
-              )}
-              {emailStatus === 'error' && (
-                <StatusMsg status="error" okMsg="" failMsg={t('auth.codeFail')} font={font} />
-              )}
+              <input type="email" value={su.email}
+                onChange={e => setSu(p => ({ ...p, email: e.target.value }))}
+                onFocus={() => setSf(p => ({ ...p, email: true }))} onBlur={() => setSf(p => ({ ...p, email: false }))}
+                placeholder={t('auth.emailPlaceholder')} autoComplete="email"
+                style={inputBase(sf.email, font)} />
             </div>
 
             {/* ── Nickname (Job field removed) ── */}

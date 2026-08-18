@@ -15,20 +15,9 @@ public class TeamService {
 
     public TeamService(TeamRepository teamRepository) {
         this.teamRepository = teamRepository;
-        seedDefaultTeams();
     }
 
-    private void seedDefaultTeams() {
-        if (teamRepository.count() > 0) {
-            return;
-        }
 
-        teamRepository.saveAll(List.of(
-                Team.builder().teamId("T-001").name("Design System").members(8).color("#6b5cf6").mission("모든 사용자가 직관적으로 제품을 사용할 수 있도록 일관된 디자인 언어를 구축한다.").build(),
-                Team.builder().teamId("T-002").name("Platform Engineering").members(14).color("#10b981").mission("개발자 경험을 최우선으로, 확장 가능하고 안정적인 인프라 기반을 마련한다.").build(),
-                Team.builder().teamId("T-003").name("Growth & Marketing").members(6).color("#f59e0b").mission("데이터 기반 실험으로 제품 성장을 가속화하고 시장 점유율을 확대한다.").build()
-        ));
-    }
 
     public List<TeamDto.TeamResponse> listTeams() {
         return teamRepository.findAllByOrderByIdAsc().stream()

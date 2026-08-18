@@ -216,10 +216,11 @@ function elbow(from: RNode, to: RNode, r = 12) {
   ].join(' ')
 }
 
-function RoadmapNode({ node, warn, selected, dimmed, editing, linking, scale, onSelect, onDelete, onStartLink, onMove, onMoveEnd }: {
-  node: RNode; warn: string | null; selected: boolean; dimmed: boolean; editing: boolean; linking: boolean; scale: number
+function RoadmapNode({ node, warn, selected, dimmed, editing, linking, scale, suggestion, onSelect, onDelete, onStartLink, onMove, onMoveEnd, onHover }: {
+  node: RNode; warn: string | null; selected: boolean; dimmed: boolean; editing: boolean; linking: boolean; scale: number; suggestion?: any
   onSelect: (id: string) => void; onDelete: (id: string) => void
   onStartLink: (id: string) => void; onMove: (id: string, x: number, y: number) => void; onMoveEnd: (id: string, x: number, y: number) => void
+  onHover?: (id: string | null) => void
 }) {
   const { t } = useTranslation()
   const st = STATUS_META[node.status]
@@ -236,8 +237,8 @@ function RoadmapNode({ node, warn, selected, dimmed, editing, linking, scale, on
   }
   function handlePointerMove(e: React.PointerEvent) {
     if (!drag.current) return
-    const nx = Math.max(8, Math.round((drag.current.ox + (e.clientX - drag.current.cx) / scale) / 4) * 4)
-    const ny = Math.max(8, Math.round((drag.current.oy + (e.clientY - drag.current.cy) / scale) / 4) * 4)
+    const nx = Math.round((drag.current.ox + (e.clientX - drag.current.cx) / scale) / 4) * 4
+    const ny = Math.round((drag.current.oy + (e.clientY - drag.current.cy) / scale) / 4) * 4
     if (Math.abs(nx - node.x) > 1 || Math.abs(ny - node.y) > 1) drag.current.moved = true
     onMove(node.id, nx, ny)
   }
@@ -255,6 +256,8 @@ function RoadmapNode({ node, warn, selected, dimmed, editing, linking, scale, on
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
+      onPointerEnter={() => { if (editing && !linking && onHover) onHover(node.id) }}
+      onPointerLeave={() => { if (editing && onHover) onHover(null) }}
       onClick={() => { if (!editing) onSelect(node.id) }}
       style={{
         position: 'absolute', left: node.x, top: node.y, width: node.w, height: node.h,
@@ -361,13 +364,14 @@ function RoadmapNode({ node, warn, selected, dimmed, editing, linking, scale, on
   )
 }
 
-function RoadmapCanvas({ nodes, edges, selectedId, editing, linkFrom, onSelect, onMove, onMoveEnd, onDeleteNode, onStartLink, onDeleteEdge }: {
-  nodes: RNode[]; edges: REdge[]; selectedId: string | null; editing: boolean; linkFrom: string | null
+function RoadmapCanvas({ nodes, edges, selectedId, editing, linkFrom, suggestions, onSelect, onMove, onMoveEnd, onDeleteNode, onStartLink, onDeleteEdge }: {
+  nodes: RNode[]; edges: REdge[]; selectedId: string | null; editing: boolean; linkFrom: string | null; suggestions?: any[]
   onSelect: (id: string) => void; onMove: (id: string, x: number, y: number) => void; onMoveEnd: (id: string, x: number, y: number) => void
   onDeleteNode: (id: string) => void; onStartLink: (id: string) => void; onDeleteEdge: (id: string) => void
 }) {
   const { t } = useTranslation()
   const [hoverEdge, setHoverEdge] = useState<string | null>(null)
+  const [hoverNode, setHoverNode] = useState<string | null>(null)
   const [panning, setPanning] = useState(false)
   const viewportRef = useRef<HTMLDivElement>(null)
   const pan = useRef<{ x: number; y: number; sl: number; st: number } | null>(null)
@@ -393,8 +397,9 @@ function RoadmapCanvas({ nodes, edges, selectedId, editing, linkFrom, onSelect, 
   })()
 
   const byId = Object.fromEntries(nodes.map(n => [n.id, n]))
-  const width = Math.max(680, ...nodes.map(n => n.x + n.w + PAD_X))
-  const height = Math.max(MIN_CANVAS_H, ...nodes.map(n => n.y + n.h + 40))
+  const CANVAS_PAD = 4000
+  const width = Math.max(680, ...nodes.map(n => n.x + n.w + PAD_X)) + CANVAS_PAD * 2
+  const height = Math.max(MIN_CANVAS_H, ...nodes.map(n => n.y + n.h + 40)) + CANVAS_PAD * 2
 
   // Highlight the ancestor path of the selected node.
   const activePath = (() => {
@@ -431,6 +436,11 @@ function RoadmapCanvas({ nodes, edges, selectedId, editing, linkFrom, onSelect, 
       })
     }
     vp.addEventListener('wheel', onWheel, { passive: false })
+    
+    // Set initial scroll to the center of the pad
+    vp.scrollLeft = CANVAS_PAD * scale - vp.clientWidth / 2 + 300
+    vp.scrollTop = CANVAS_PAD * scale - 20
+
     return () => vp.removeEventListener('wheel', onWheel)
   }, [])
 
@@ -474,8 +484,8 @@ function RoadmapCanvas({ nodes, edges, selectedId, editing, linkFrom, onSelect, 
         position: 'relative', width, height, minWidth: width,
         transform: `scale(${scale})`, transformOrigin: '0 0',
       }}>
-
-        <svg width={width} height={height} style={{ position: 'absolute', inset: 0 }}>
+        <div style={{ position: 'absolute', inset: 0, transform: `translate(${CANVAS_PAD}px, ${CANVAS_PAD}px)` }}>
+        <svg width={width} height={height} style={{ position: 'absolute', inset: 0, overflow: 'visible' }}>
           <defs>
             <marker id="rm-arrow" markerWidth="9" markerHeight="9" refX="6.5" refY="3" orient="auto">
               <path d="M0,0 L0,6 L7,3 z" fill="#7d7c96" />
@@ -511,15 +521,22 @@ function RoadmapCanvas({ nodes, edges, selectedId, editing, linkFrom, onSelect, 
               </g>
             )
           })}
+
+          {/* Preview Edge for Linking */}
+          {editing && linkFrom && hoverNode && linkFrom !== hoverNode && byId[linkFrom] && byId[hoverNode] && (
+            <path d={elbow(byId[linkFrom], byId[hoverNode])} fill="none" stroke="#f59e0b" strokeWidth={2} strokeDasharray="5 5" style={{ pointerEvents: 'none' }} />
+          )}
         </svg>
 
         {nodes.map(n => (
           <RoadmapNode key={n.id} node={n} warn={warnMap[n.id] ?? null}
             selected={selectedId === n.id} dimmed={isDim(n.id)}
             editing={editing} linking={linkFrom === n.id}
+            scale={scale} suggestion={suggestions?.find((s: any) => s.targetId === n.id)}
             onSelect={onSelect} onDelete={onDeleteNode} onStartLink={onStartLink} onMove={onMove} onMoveEnd={onMoveEnd}
-            scale={scale} />
+            onHover={setHoverNode} />
         ))}
+      </div>
       </div>
       </div>
     </div>
@@ -629,8 +646,8 @@ function ChipEditor({ items, color, placeholder, onChange }: {
   )
 }
 
-function NodeDetailPanel({ node, color, onChange, onClose }: {
-  node: RNode; color: string; onChange: (patch: Partial<RNode>) => void; onClose: () => void
+function NodeDetailPanel({ teamId, node, color, suggestion, onChange, onClose, onSuggestionResolved }: {
+  teamId?: string; node: RNode; color: string; suggestion?: any; onChange: (patch: Partial<RNode>) => void; onClose: () => void; onSuggestionResolved?: () => void
 }) {
   const { t } = useTranslation()
   const st = STATUS_META[node.status]
@@ -733,7 +750,7 @@ function NodeDetailPanel({ node, color, onChange, onClose }: {
               padding: '18px 14px', borderRadius: 12, border: '1px dashed var(--color-border)',
               fontSize: 12.5, color: 'var(--color-muted-foreground)', textAlign: 'center', lineHeight: 1.6,
             }}>
-              아직 댓글이 없습니다.<br />이 작업에 대한 의견을 남겨보세요.
+              {t('roadmap.detail.noCommentsLine1')}<br />{t('roadmap.detail.noCommentsLine2')}
             </div>
           )}
 
@@ -783,6 +800,57 @@ function NodeDetailPanel({ node, color, onChange, onClose }: {
         </div>
       ) : (
       <div style={{ padding: 18, display: 'flex', flexDirection: 'column', gap: 22 }}>
+        {/* AI Suggestion */}
+        {suggestion && teamId && (
+          <div style={{
+            borderRadius: 14, border: '1.5px solid var(--color-primary)', background: '#6b5cf60a', padding: '16px 18px',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+              <span style={{
+                width: 20, height: 20, borderRadius: '50%', background: 'var(--color-primary)', flexShrink: 0,
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                  <path d="M12 2L15 9L22 12L15 15L12 22L9 15L2 12L9 9L12 2Z" fill="#fff" />
+                </svg>
+              </span>
+              <span style={{ fontFamily: 'var(--font-display)', fontSize: 13.5, fontWeight: 700, color: 'var(--color-primary)' }}>
+                AI 제안
+              </span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#6b5cf6', letterSpacing: '0.08em', background: '#6b5cf61a', padding: '2px 6px', borderRadius: 6, marginLeft: 'auto' }}>
+                {suggestion.sourceTool}
+              </span>
+            </div>
+            <div style={{ fontSize: 13, color: 'var(--color-foreground)', fontWeight: 600, marginBottom: 4 }}>
+              {suggestion.title}
+            </div>
+            <div style={{ fontSize: 12.5, color: 'var(--color-muted-foreground)', lineHeight: 1.6, marginBottom: 16 }}>
+              {suggestion.body}
+            </div>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button onClick={() => {
+                fetch(`/api/teams/${teamId}/suggestions/${suggestion.id}/approve`, { method: 'POST', headers: { 'Authorization': `Bearer ${localStorage.getItem('templ_token')}` } })
+                  .then(() => onSuggestionResolved?.())
+                  .catch(console.error)
+              }} style={{
+                flex: 1, padding: '8px 0', borderRadius: 8, background: 'var(--color-primary)', color: '#fff',
+                fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer'
+              }}>
+                승인 적용
+              </button>
+              <button onClick={() => {
+                fetch(`/api/teams/${teamId}/suggestions/${suggestion.id}/reject`, { method: 'POST', headers: { 'Authorization': `Bearer ${localStorage.getItem('templ_token')}` } })
+                  .then(() => onSuggestionResolved?.())
+                  .catch(console.error)
+              }} style={{
+                flex: 1, padding: '8px 0', borderRadius: 8, background: 'transparent', color: 'var(--color-muted-foreground)',
+                fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 600, border: '1px solid var(--color-border)', cursor: 'pointer'
+              }}>
+                무시
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* 문제 발생 */}
         {node.issue !== undefined && (
@@ -799,7 +867,7 @@ function NodeDetailPanel({ node, color, onChange, onClose }: {
                 </svg>
               </span>
               <span style={{ fontFamily: 'var(--font-display)', fontSize: 12.5, fontWeight: 700, color: '#b91c1c' }}>
-                문제 발생
+                {t('node.issueOccurred')}
               </span>
               <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: '#c2504f', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
                 Blocked
@@ -828,7 +896,7 @@ function NodeDetailPanel({ node, color, onChange, onClose }: {
               border: '1.5px dashed var(--color-border)', fontSize: 12,
               color: 'var(--color-muted-foreground)',
             }}>
-              제출된 파일이 없습니다
+              {t('node.noFiles')}
             </p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
@@ -899,7 +967,7 @@ function NodeDetailPanel({ node, color, onChange, onClose }: {
                 })
                 e.target.value = ''
               }} />
-            + 파일 제출
+            {t('node.submitFile')}
           </label>
         </div>
 
@@ -1047,6 +1115,7 @@ function TeamMissionInput({ team, onSave }: { team: TeamType; onSave: (mission: 
   const [saved, setSaved] = useState(!!team.mission)
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
   const [graph, setGraph] = useState<{ nodes: RNode[]; edges: REdge[] }>({ nodes: [], edges: [] })
+  const [suggestions, setSuggestions] = useState<any[]>([])
   
   useEffect(() => {
     fetch(`/api/teams/${team.id}/roadmap`, {
@@ -1058,6 +1127,25 @@ function TeamMissionInput({ team, onSave }: { team: TeamType; onSave: (mission: 
       else setGraph({ nodes: [], edges: [] })
     })
     .catch(console.error)
+  }, [team.id])
+
+  useEffect(() => {
+    const fetchSuggestions = async () => {
+      try {
+        const res = await fetch(`/api/teams/${team.id}/suggestions`, {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('templ_token')}` }
+        })
+        if (res.ok) {
+          const data = await res.json()
+          setSuggestions(data.filter((s: any) => s.status === 'PENDING' && s.targetType === 'NODE'))
+        }
+      } catch (err) {
+        console.error(err)
+      }
+    }
+    fetchSuggestions()
+    const intv = setInterval(fetchSuggestions, 5000)
+    return () => clearInterval(intv)
   }, [team.id])
 
   const [editing, setEditing] = useState(false)
@@ -1214,7 +1302,7 @@ const textareaRef = useRef<HTMLTextAreaElement>(null)
                   Roadmap · Auto-generated
                 </div>
                 <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700, color: '#ffffff', margin: 0, letterSpacing: '-0.02em' }}>
-                  목표 달성 로드맵
+                  {t('roadmap.title')}
                 </h2>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
@@ -1230,7 +1318,7 @@ const textareaRef = useRef<HTMLTextAreaElement>(null)
                     border: '1px solid #3a3a4a', background: '#191922', color: '#e5e4ef',
                     fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 600, cursor: 'pointer',
                   }}>
-                    <span style={{ fontSize: 14, lineHeight: 1 }}>+</span> 노드 추가
+                    <span style={{ fontSize: 14, lineHeight: 1 }}>+</span> {t('roadmap.toolbar.addNode')}
                   </button>
                 )}
 
@@ -1252,7 +1340,7 @@ const textareaRef = useRef<HTMLTextAreaElement>(null)
               }}>
                 <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: linkFrom ? '#f5b849' : '#9998ad', letterSpacing: '0.04em', lineHeight: 1.7 }}>
                   {linkFrom
-                    ? '연결할 대상 노드를 클릭하세요 · ESC 대신 시작 노드의 화살표 버튼을 다시 눌러 취소'
+                    ? t('roadmap.toolbar.connectingHelp')
                     : t('roadmap.canvas_help_edit')}
                 </span>
               </div>
@@ -1310,8 +1398,8 @@ const textareaRef = useRef<HTMLTextAreaElement>(null)
                 </div>
               )}
               <RoadmapCanvas
-                nodes={safeGraph.nodes} edges={safeGraph.edges}
-                selectedId={selectedNodeId} editing={editing} linkFrom={linkFrom}
+                nodes={safeGraph.nodes} edges={safeGraph.edges} selectedId={selectedNodeId}
+                editing={editing} linkFrom={linkFrom} suggestions={suggestions}
                 onSelect={handleNodeSelect} onMove={moveNode} onMoveEnd={saveNodePos}
                 onDeleteNode={deleteNode} onDeleteEdge={deleteEdge}
                 onStartLink={id => setLinkFrom(f => (f === id ? null : id))}
@@ -1389,8 +1477,26 @@ const textareaRef = useRef<HTMLTextAreaElement>(null)
         {/* Right: detail panel */}
         {selectedNode && (
           <NodeDetailPanel key={selectedNode.id} node={selectedNode} color={team.color}
+            teamId={team.id}
+            suggestion={suggestions.find((s: any) => s.targetId === selectedNode.id)}
             onChange={patch => patchNode(selectedNode.id, patch)}
-            onClose={() => setSelectedNodeId(null)} />
+            onClose={() => setSelectedNodeId(null)}
+            onSuggestionResolved={() => {
+              // Re-fetch roadmap nodes
+              fetch(`/api/teams/${team.id}/roadmap`, {
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('templ_token')}` }
+              }).then(r => r.ok ? r.json() : null).then(data => {
+                if (data && data.nodes) setGraph(data)
+              }).catch(console.error)
+              
+              // Re-fetch suggestions
+              fetch(`/api/teams/${team.id}/suggestions`, {
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('templ_token')}` }
+              }).then(r => r.ok ? r.json() : []).then(data => {
+                setSuggestions(data.filter((s: any) => s.status === 'PENDING' && s.targetType === 'NODE'))
+              }).catch(console.error)
+            }}
+          />
         )}
       </div>
     )
@@ -1677,7 +1783,7 @@ function AccountRow({ id, name, hint, required, account, color, onConnect, onDis
             background: 'transparent', fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 600,
             color: 'var(--color-muted-foreground)', cursor: 'pointer', flexShrink: 0,
           }}>
-            연동 해제
+            {t('integrations.disconnect')}
           </button>
         ) : (
           <button onClick={() => { if (!demo) { setEditing(v => !v); setDraft('') } }} style={{
@@ -1686,7 +1792,7 @@ function AccountRow({ id, name, hint, required, account, color, onConnect, onDis
             cursor: demo ? 'not-allowed' : 'pointer', flexShrink: 0, transition: 'background 0.15s',
             opacity: demo ? 0.7 : 1,
           }}>
-            {editing ? '취소' : '연동하기'}
+            {editing ? t('common.cancel') : t('integrations.connect')}
           </button>
         )}
       </div>
@@ -1753,7 +1859,7 @@ function TeamIntegrations({ team, accounts, onAccountsChange }: {
               Integrations
             </div>
             <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 26, fontWeight: 700, color: 'var(--color-foreground)', margin: 0, letterSpacing: '-0.02em' }}>
-              연동 설정
+              {t('integrations.title')}
             </h1>
             <p style={{ fontSize: 13.5, color: 'var(--color-muted-foreground)', marginTop: 8, lineHeight: 1.65, margin: '8px 0 0 0' }}>
               {t('integrations.desc')}
@@ -1803,7 +1909,7 @@ function TeamIntegrations({ team, accounts, onAccountsChange }: {
                 fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 600,
                 cursor: accounts.slack.connected ? 'pointer' : 'not-allowed', letterSpacing: '-0.01em',
               }}>
-              설정 저장
+              {t('integrations.saveSettingsButton')}
             </button>
           </div>
         </div>
@@ -2207,7 +2313,7 @@ function CreateTeamForm({ teams, onCreated, accounts, onAccountsChange }: {
 type Profile = { region: string; language: string }
 
 const REGIONS = ['대한민국 · 서울', '대한민국 · 부산', '일본 · 도쿄', '미국 · 샌프란시스코', '독일 · 베를린', '싱가포르']
-const LANGUAGES = ['한국어', 'English', '日本語', '中文(简体)']
+const LANGUAGES = ['한국어', 'English', '中文(简体)']
 
 function PersonalSettings({ profile, onChange, onClose }: {
   profile: Profile; onChange: (p: Profile) => void; onClose: () => void
@@ -2324,7 +2430,7 @@ export default function App() {
         }
         if (profileData) {
           setProfile(profileData)
-          const langMap: Record<string, string> = { '한국어': 'ko', 'English': 'en', '日本語': 'ja', '中文(简体)': 'zh' }
+          const langMap: Record<string, string> = { '한국어': 'ko', 'English': 'en', '中文(简体)': 'zh' }
           const mappedLang = langMap[profileData.language] || profileData.language;
           if (mappedLang) i18n.changeLanguage(mappedLang)
         }
@@ -2383,7 +2489,7 @@ export default function App() {
 
   async function handleProfileChange(newProfile: typeof profile) {
     setProfile(newProfile)
-    const langMap: Record<string, string> = { '한국어': 'ko', 'English': 'en', '日本語': 'ja', '中文(简体)': 'zh' }
+    const langMap: Record<string, string> = { '한국어': 'ko', 'English': 'en', '中文(简体)': 'zh' }
     const mappedLang = langMap[newProfile.language] || newProfile.language;
     if (mappedLang) i18n.changeLanguage(mappedLang)
     try {

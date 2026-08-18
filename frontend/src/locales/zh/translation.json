@@ -279,5 +279,21 @@
     "todo": "待办",
     "active": "进行中",
     "done": "已完成"
-  }
+  },
+  "new_team": "新团队",
+  "team_desc_ai": "创建团队并输入最终目标后，AI将自动为您生成路线图。",
+  "identity": "基本信息",
+  "color": "颜色",
+  "team_name": "团队名称",
+  "team_name_placeholder": "例如：平台工程团队",
+  "team_mission": "团队最终目标 (说明书)",
+  "team_mission_placeholder": "请详细描述要实现的功能...",
+  "account": "账号",
+  "slack_integration_desc": "需要关联 Slack 账号才能接收团队通知和 AI 摘要。创建团队时将自动关联。",
+  "ai_roadmap_generation_desc": "创建后AI将自动配置路线图",
+  "creating": "创建中...",
+  "create_team": "创建团队",
+  "ai_analyzing": "AI正在分析说明书...",
+  "ai_analyzing_desc": "请稍等。正在根据您的最终目标自动生成路线图。(通常需要10~15秒)",
+  "slack_account": "Slack 账号"
 }
