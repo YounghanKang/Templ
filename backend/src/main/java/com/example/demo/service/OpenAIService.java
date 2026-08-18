@@ -65,16 +65,21 @@ public class OpenAIService implements AiService {
 
     @Override
     public List<SuggestionDto.Create> generateSuggestions(String teamId, Long specId, String specText) {
-        return generateSuggestions(teamId, specId, specText, null, null);
+        return generateSuggestions(teamId, specId, specText, null, null, null);
     }
 
     @Override
     public List<SuggestionDto.Create> generateSuggestions(String teamId, Long specId, String specText, String userFeedback, Long baseSuggestionId) {
+        return generateSuggestions(teamId, specId, specText, userFeedback, baseSuggestionId, null);
+    }
+
+    @Override
+    public List<SuggestionDto.Create> generateSuggestions(String teamId, Long specId, String specText, String userFeedback, Long baseSuggestionId, String existingNodesContext) {
         List<SuggestionDto.Create> out = new ArrayList<>();
         String feedback = userFeedback == null ? "" : userFeedback.trim();
         if (apiKey == null || apiKey.isBlank()) {
             // fallback to stub generator if key is missing
-            return new AIStubService().generateSuggestions(teamId, specId, specText, userFeedback, baseSuggestionId);
+            return new AIStubService().generateSuggestions(teamId, specId, specText, userFeedback, baseSuggestionId, existingNodesContext);
         }
 
         try {
@@ -83,39 +88,38 @@ public class OpenAIService implements AiService {
 
             String systemPrompt = """
                     You are a world-class Principal Product Architect and Technical Project Manager.
-                    Your mission is to analyze the user's project idea/specification (명세서) and decompose it into a deeply thoughtful, highly realistic, and professional Work Breakdown Structure (WBS).
+                    Your mission is to analyze the user's project specification (명세서) and decompose it into a deeply thoughtful, highly realistic, and professional Work Breakdown Structure (WBS).
 
-                    CRITICAL DECOMPOSITION PRINCIPLES:
-                    1. 1:1 EXACT REQUIREMENT EXTRACTION & DECOMPOSITION:
-                       - If the user specifies particular features, platforms, or tools (e.g. "로그인은 카카오 네이버로", "동아리 사이트", "회원가입"), you MUST extract them directly into dedicated Mid modules and Leaf tasks without dropping any details.
-                       - Example for "로그인 회원가입이 되는 동아리 사이트를 만들어줘, 로그인은 카카오 네이버로":
-                         * Root: 동아리 웹 사이트 구축
-                         * Mid 1: 소셜 로그인 시스템 -> Leaf: 카카오 로그인 연동, Leaf: 네이버 로그인 연동
-                         * Mid 2: 회원가입 및 프로필 관리 -> Leaf: 동아리 회원가입 폼 및 약관 동의, Leaf: 부원 프로필 및 권한 관리
-                         * Mid 3: 동아리 활동 및 커뮤니티 -> Leaf: 공지사항 및 게시판, Leaf: 활동 일정 캘린더 및 갤러리
-                       - Never drop user-specified technologies, auth providers, or feature constraints.
+                    CRITICAL DECOMPOSITION & FEEDBACK INSTRUCTIONS:
+                    1. 1:1 EXACT REQUIREMENT EXTRACTION:
+                       - Extract all user-specified entities, authentication providers, and features directly into Mid modules and Leaf tasks without omitting any requirements.
+                       - Never use generic phase names like "기획", "개발", "테스트". Decompose by real functional domains.
 
-                    2. DO NOT use generic phase names like "기획", "개발", "테스트". 
-                       Decompose by real functional domains (Pillars).
+                    2. ZERO REDUNDANCY & STRICT DEDUPLICATION (CRITICAL):
+                       - Eliminate any duplicate or redundant nodes. For example, if multiple "단체톡" or duplicate chat/login tasks exist, MERGE them into exactly ONE distinct node.
+                       - Each distinct technical responsibility must appear in only ONE module and ONE task.
 
-                    3. STRUCTURE (Strict 3-Tier Hierarchy):
+                    3. USER FEEDBACK COMPLIANCE (HIGHEST PRIORITY):
+                       - If the user provides feedback requesting removal, deletion, or exclusion (e.g. "단체톡 없애줘", "중복 제거해줘", "이 기능 빼줘"), you MUST DELETE all corresponding nodes or merge duplicates into one.
+                       - NEVER add new duplicate nodes when asked to delete or reduce!
+                       - If the user asks to modify or refine a feature, update the relevant node's label and goal directly.
+                       - If the user asks to add a new capability, add it to the most relevant module or create a new dedicated module.
+
+                    4. STRUCTURE (Strict 3-Tier Hierarchy):
                        - 1 Root Task (tier="root", tempId="node_root", parentTempId=null): Clear single-sentence ultimate product mission.
                        - 3 to 4 Feature Modules (tier="mid", tempId="node_mid_1", ..., parentTempId="node_root"): Specific functional pillars directly matching the user's requirements.
-                       - 2 to 3 Actionable Tasks per Module (tier="leaf", tempId="node_leaf_X", parentTempId matching its parent module): Concrete implementation units (e.g. REST API, UI view, DB schema, SDK integration).
+                       - 2 to 3 Actionable Tasks per Module (tier="leaf", tempId="node_leaf_X", parentTempId matching its parent module): Concrete implementation units.
 
-                    4. QUALITY STANDARDS & DUE DATE (CRITICAL):
-                       - dueDate: MUST default to approximately 1 month from today (Today is %s, Target Due Date is around %s).
-                       - label: Concise, clear naming (e.g. "카카오 로그인 연동", "네이버 로그인 연동", "부원 권한 관리").
+                    5. QUALITY STANDARDS & DUE DATE:
+                       - dueDate: MUST default to approximately 1 month from today (Today is %s, Target Due Date is %s).
+                       - label: Concise, clear naming under 25 characters.
                        - goal: Professional, unambiguous technical deliverable description.
-                       - assignees: Realistic roles (e.g. ["Frontend", "Backend", "Product Designer", "DevOps"]).
+                       - assignees: Realistic roles (e.g. ["Frontend", "Backend", "DevOps", "Designer"]).
                        - aiSummary: Provide sharp, realistic engineering insights, potential friction points, API conflict warnings, or security bottlenecks.
                        - code: Unique identifiers (e.g. Root: T-001, Modules: M-01, M-02, Tasks: T-101, T-102...).
 
-                    5. USER FEEDBACK HANDLING:
-                       - If user feedback is provided, prioritize modifying, adding, or replacing modules/tasks to explicitly fulfill the user's instructions.
-
                     6. OUTPUT FORMAT:
-                       - Return ONLY a raw JSON array of objects. No markdown backticks, no fences, no explanation.
+                       - Return ONLY a raw JSON array of objects. No markdown backticks, no fences, no commentary.
 
                     JSON Schema per item:
                     {
@@ -128,16 +132,28 @@ public class OpenAIService implements AiService {
                         "tier": "root" | "mid" | "leaf",
                         "code": "T-001" | "M-01" | "T-101",
                         "goal": "Detailed functional goal",
-                        "dueDate": "YYYY-MM-DD" (around %s),
+                        "dueDate": "YYYY-MM-DD" (%s),
                         "assignees": ["Role 1", "Role 2"],
                         "aiSummary": "Real-world engineering challenge, security note, or API contract risk"
                       }
                     }
                     """.formatted(today, defaultDueDate, defaultDueDate);
 
-            String userPrompt = "Project Specification:\n" + specText + "\n\n" +
-                    (feedback.isBlank() ? "" : "User Feedback to Incorporate with High Priority:\n" + feedback + "\n\n") +
-                    "Decompose this project into a deeply customized, feature-driven 3-tier WBS JSON array. Make sure every specific requirement and entity in the specification is represented in the modules and tasks. Set due dates targeting " + defaultDueDate + ".";
+            StringBuilder promptBuilder = new StringBuilder();
+            promptBuilder.append("Project Specification:\n").append(specText).append("\n\n");
+
+            if (existingNodesContext != null && !existingNodesContext.isBlank()) {
+                promptBuilder.append("Current WBS Nodes Before Feedback:\n").append(existingNodesContext).append("\n\n");
+            }
+
+            if (!feedback.isBlank()) {
+                promptBuilder.append("User Feedback / Revision Request (MUST APPLY STRICTLY):\n").append(feedback).append("\n\n");
+                promptBuilder.append("Please carefully adjust the WBS according to this feedback. If instructed to remove or deduplicate, delete the redundant tasks. Return the refined 3-tier WBS JSON array targeting due date ").append(defaultDueDate).append(".");
+            } else {
+                promptBuilder.append("Decompose this project into a deeply customized, feature-driven 3-tier WBS JSON array. Set due dates targeting ").append(defaultDueDate).append(".");
+            }
+
+            String userPrompt = promptBuilder.toString();
 
             Map<String, Object> body = Map.of(
                     "model", model,
@@ -145,7 +161,7 @@ public class OpenAIService implements AiService {
                             Map.of("role", "system", "content", systemPrompt),
                             Map.of("role", "user", "content", userPrompt)
                     ),
-                    "temperature", 0.3,
+                    "temperature", 0.2,
                     "max_tokens", 2500
             );
 
@@ -161,7 +177,7 @@ public class OpenAIService implements AiService {
             HttpResponse<String> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString());
             if (resp.statusCode() / 100 != 2) {
                 logger.error("OpenAI API returned non-2xx code {}, body: {}, falling back to stub", resp.statusCode(), resp.body());
-                return new AIStubService().generateSuggestions(teamId, specId, specText, userFeedback, baseSuggestionId);
+                return new AIStubService().generateSuggestions(teamId, specId, specText, userFeedback, baseSuggestionId, existingNodesContext);
             }
 
             JsonNode root = objectMapper.readTree(resp.body());

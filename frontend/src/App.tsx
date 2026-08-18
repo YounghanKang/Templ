@@ -2208,7 +2208,14 @@ function AiSpecificationReview({ team, previewGraph, suggestions, onApprove, onR
           style={{ flex: 1, padding: '12px 16px', borderRadius: 10, border: '1.5px solid var(--color-border)', fontSize: 13.5, outline: 'none', background: '#fff', color: 'var(--color-foreground)' }}
         />
         <button 
-          onClick={() => onRegenerate(feedback)} 
+          onClick={() => {
+            const fb = feedback.trim()
+            if (fb) {
+              setAppliedFeedbacks(prev => [...prev, fb])
+              onRegenerate(fb)
+              setFeedback('')
+            }
+          }} 
           disabled={!feedback.trim() || isRegenerating || isApproving}
           style={{ 
             padding: '0 22px', borderRadius: 10, background: '#f59e0b', color: '#fff', fontWeight: 600, border: 'none', cursor: (!feedback.trim() || isRegenerating || isApproving) ? 'not-allowed' : 'pointer', opacity: (!feedback.trim() || isRegenerating || isApproving) ? 0.6 : 1, fontSize: 13.5
