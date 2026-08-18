@@ -135,4 +135,25 @@ public class SuggestionServiceTests {
                 item.getBody() != null && item.getBody().contains("관리자 대시보드는 제외하고 로그인만 우선 구현해줘")
         ));
     }
+
+    @Test
+    public void approve_creates_single_node_when_target_id_is_null() {
+        String teamId = "T-TEST-4";
+        teamRepository.save(Team.builder().teamId(teamId).name("Team4").members(1).color("#333").mission("m").build());
+
+        SuggestionDto.Create single = SuggestionDto.Create.builder()
+                .targetType("roadmapNode")
+                .targetId(null)
+                .title("Single task")
+                .body("Single task body")
+                .sourceTool("test")
+                .sourceId(null)
+                .changeJson("{\"label\": \"독립 노드\", \"aiSummary\": \"단일 노드 요약\"}")
+                .build();
+        var s = suggestionService.create(teamId, single);
+        suggestionService.approve(teamId, s.getId(), "tester");
+
+        var nodes = roadmapNodeRepository.findAllByTeamIdOrderByIdAsc(teamId);
+        Assertions.assertTrue(nodes.stream().anyMatch(n -> "독립 노드".equals(n.getLabel())));
+    }
 }
