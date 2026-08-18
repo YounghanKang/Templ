@@ -246,6 +246,7 @@ class NodeMatchingServiceTest {
 
         @Override
         public List<NodeRelation> getRelatedNodes(
+                String projectId,
                 String nodeId
         ) {
 

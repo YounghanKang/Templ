@@ -17,26 +17,38 @@ class OpenAiPromptBuilderTest {
 
 
     @Test
-    void promptContainsEventAndCandidates() {
+    void promptContainsEventAndActualProjectTaskContext() {
 
         String projectId =
-                UUID.randomUUID().toString().toString();
+                "T-001";
 
         UUID eventId =
                 UUID.randomUUID();
 
         String nodeId =
-                UUID.randomUUID().toString().toString();
+                "m2";
 
 
         AnalysisCandidate candidate =
                 new AnalysisCandidate(
                         nodeId,
-                        "로그인 API 구현",
+                        "백엔드 API 구현",
+                        "Spring Boot 기반 API를 구현한다.",
+                        "GitHub와 Slack 진행 상황을 분석하는 백엔드 작업",
+                        "IN_PROGRESS",
+                        55,
+                        List.of(
+                                "Alice",
+                                "Bob"
+                        ),
+                        List.of(
+                                "프로젝트 설계"
+                        ),
+                        "2026-08-20",
                         85,
                         List.of(
-                                "로그인",
-                                "API"
+                                "webhook",
+                                "api"
                         )
                 );
 
@@ -44,12 +56,14 @@ class OpenAiPromptBuilderTest {
         AnalysisCommand command =
                 new AnalysisCommand(
                         projectId,
+                        "TEMPL",
+                        "계획과 실제 협업 진행 상황의 차이를 감지한다.",
                         eventId,
                         "SLACK",
                         "#backend",
                         null,
-                        "로그인 API를 삭제하기로 결정했습니다.",
-                        "테스트 사용자",
+                        "Alice가 Webhook 처리 지연 문제를 수정하고 있습니다.",
+                        "Alice",
                         List.of(candidate)
                 );
 
@@ -58,9 +72,28 @@ class OpenAiPromptBuilderTest {
                 promptBuilder.build(command);
 
 
+        /*
+         * Project Context
+         */
         assertTrue(
                 prompt.contains(
-                        projectId.toString()
+                        "TEMPL"
+                )
+        );
+
+        assertTrue(
+                prompt.contains(
+                        "계획과 실제 협업 진행 상황의 차이를 감지한다."
+                )
+        );
+
+
+        /*
+         * Event Context
+         */
+        assertTrue(
+                prompt.contains(
+                        projectId
                 )
         );
 
@@ -72,22 +105,84 @@ class OpenAiPromptBuilderTest {
 
         assertTrue(
                 prompt.contains(
-                        nodeId.toString()
+                        "SLACK"
                 )
         );
 
         assertTrue(
                 prompt.contains(
-                        "로그인 API 구현"
+                        "Alice가 Webhook 처리 지연 문제를 수정하고 있습니다."
+                )
+        );
+
+
+        /*
+         * Task Context
+         */
+        assertTrue(
+                prompt.contains(
+                        nodeId
                 )
         );
 
         assertTrue(
                 prompt.contains(
-                        "로그인 API를 삭제하기로 결정했습니다."
+                        "백엔드 API 구현"
                 )
         );
 
+        assertTrue(
+                prompt.contains(
+                        "Spring Boot 기반 API를 구현한다."
+                )
+        );
+
+        assertTrue(
+                prompt.contains(
+                        "GitHub와 Slack 진행 상황을 분석하는 백엔드 작업"
+                )
+        );
+
+        assertTrue(
+                prompt.contains(
+                        "IN_PROGRESS"
+                )
+        );
+
+        assertTrue(
+                prompt.contains(
+                        "55"
+                )
+        );
+
+        assertTrue(
+                prompt.contains(
+                        "Alice"
+                )
+        );
+
+        assertTrue(
+                prompt.contains(
+                        "Bob"
+                )
+        );
+
+        assertTrue(
+                prompt.contains(
+                        "프로젝트 설계"
+                )
+        );
+
+        assertTrue(
+                prompt.contains(
+                        "2026-08-20"
+                )
+        );
+
+
+        /*
+         * 분석 규칙
+         */
         assertTrue(
                 prompt.contains(
                         "SCOPE_DRIFT"
@@ -97,6 +192,18 @@ class OpenAiPromptBuilderTest {
         assertTrue(
                 prompt.contains(
                         "DEPENDENCY_BREAK"
+                )
+        );
+
+        assertTrue(
+                prompt.contains(
+                        "계획된 목표(goal)와 실제 수행 내용의 차이"
+                )
+        );
+
+        assertTrue(
+                prompt.contains(
+                        "존재하지 않는 nodeId를 새로 만들어내지 마세요."
                 )
         );
     }

@@ -1,7 +1,6 @@
 package com.example.demo.matching;
 
 import java.util.List;
-import java.util.UUID;
 
 public interface ProjectContextReader {
 
@@ -15,6 +14,7 @@ public interface ProjectContextReader {
     );
 
     List<NodeRelation> getRelatedNodes(
+            String projectId,
             String nodeId
     );
 }

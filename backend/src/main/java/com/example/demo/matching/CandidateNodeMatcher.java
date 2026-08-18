@@ -211,6 +211,13 @@ public class CandidateNodeMatcher {
         return new CandidateNodeMatch(
                 node.nodeId(),
                 node.title(),
+                node.goal(),
+                node.summary(),
+                node.status(),
+                node.progress(),
+                node.assignees(),
+                node.prerequisites(),
+                node.dueDate(),
                 score,
                 new ArrayList<>(
                         matchedTerms

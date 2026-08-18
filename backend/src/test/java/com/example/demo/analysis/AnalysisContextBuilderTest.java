@@ -24,7 +24,9 @@ class AnalysisContextBuilderTest {
     void setUp() {
 
         builder =
-                new AnalysisContextBuilder();
+                new AnalysisContextBuilder(
+                        new TestProjectContextReader()
+                );
     }
 
 
@@ -32,10 +34,10 @@ class AnalysisContextBuilderTest {
     void eventAndCandidatesAreConvertedToAnalysisCommand() {
 
         String projectId =
-                UUID.randomUUID().toString().toString();
+                UUID.randomUUID().toString();
 
         String nodeId =
-                UUID.randomUUID().toString().toString();
+                UUID.randomUUID().toString();
 
 
         CollaborationEvent event =
@@ -88,6 +90,16 @@ class AnalysisContextBuilderTest {
                 command.projectId()
         );
 
+        assertEquals(
+                "TEMPL 테스트 프로젝트",
+                command.projectName()
+        );
+
+        assertEquals(
+                "계획과 실제 협업 진행 상황의 차이를 감지한다.",
+                command.projectMission()
+        );
+
 
         assertEquals(
                 SourceTool.SLACK.name(),
@@ -128,7 +140,7 @@ class AnalysisContextBuilderTest {
     void nullEventIsRejected() {
 
         String projectId =
-                UUID.randomUUID().toString().toString();
+                UUID.randomUUID().toString();
 
 
         NodeMatchingResult matchingResult =
@@ -153,5 +165,42 @@ class AnalysisContextBuilderTest {
                 "event는 필수입니다.",
                 exception.getMessage()
         );
+    }
+    private static class TestProjectContextReader
+            implements com.example.demo.matching.ProjectContextReader {
+
+        @Override
+        public com.example.demo.matching.ProjectContext getProjectContext(
+                String projectId
+        ) {
+
+            return new com.example.demo.matching.ProjectContext(
+                    projectId,
+                    "TEMPL 테스트 프로젝트",
+                    "계획과 실제 협업 진행 상황의 차이를 감지한다.",
+                    1L,
+                    List.of()
+            );
+        }
+
+
+        @Override
+        public List<com.example.demo.matching.NodeContext> findCandidateNodes(
+                String projectId,
+                String channelId
+        ) {
+
+            return List.of();
+        }
+
+
+        @Override
+        public List<com.example.demo.matching.NodeRelation> getRelatedNodes(
+                String projectId,
+                String nodeId
+        ) {
+
+            return List.of();
+        }
     }
 }

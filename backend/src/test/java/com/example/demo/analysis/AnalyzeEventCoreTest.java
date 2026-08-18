@@ -83,7 +83,9 @@ class AnalyzeEventCoreTest {
         analyzeEventCore =
                 new AnalyzeEventCore(
                         nodeMatchingService,
-                        new AnalysisContextBuilder(),
+                        new AnalysisContextBuilder(
+                                projectContextReader
+                        ),
                         analysisPort,
                         new AnalysisResultValidator()
                 );
@@ -329,6 +331,7 @@ class AnalyzeEventCoreTest {
 
         @Override
         public List<NodeRelation> getRelatedNodes(
+                String projectId,
                 String nodeId
         ) {
 
