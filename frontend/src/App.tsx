@@ -396,10 +396,67 @@ function RoadmapCanvas({ nodes, edges, selectedId, editing, linkFrom, suggestion
     return out
   })()
 
-  const byId = Object.fromEntries(nodes.map(n => [n.id, n]))
+  // Auto-layout normalization if nodes overlap or lack valid positions
+  const positionedNodes = useMemo(() => {
+    if (!nodes || nodes.length === 0) return []
+    // Check if multiple nodes share the exact same x, y coordinates
+    const coordSet = new Set<string>()
+    let hasOverlap = false
+    for (const n of nodes) {
+      const key = `${n.x},${n.y}`
+      if (coordSet.has(key)) {
+        hasOverlap = true
+        break
+      }
+      coordSet.add(key)
+    }
+
+    if (!hasOverlap && nodes.every(n => n.x !== undefined && n.y !== undefined && (n.w || 0) > 0)) {
+      return nodes
+    }
+
+    // Auto-compute tree layout
+    const root = nodes.find(n => n.tier === 'root') || nodes[0]
+    const mids = nodes.filter(n => n.tier === 'mid')
+    const effectiveMids = mids.length > 0 ? mids : nodes.filter(n => n !== root && edges.some(e => e.from === root.id && e.to === n.id))
+    const leaves = nodes.filter(n => n !== root && !effectiveMids.includes(n))
+
+    let curX = PAD_X
+    const out: RNode[] = []
+
+    if (effectiveMids.length === 0 && leaves.length > 0) {
+      // Flat layout
+      leaves.forEach((l, idx) => {
+        out.push({ ...l, x: curX + idx * (LEAF_W + LEAF_GAP), y: LEAF_Y, w: LEAF_W, h: LEAF_H, tier: 'leaf' })
+      })
+      const totalW = curX + leaves.length * (LEAF_W + LEAF_GAP)
+      out.unshift({ ...root, x: Math.max(0, totalW / 2 - ROOT_W / 2), y: ROOT_Y, w: ROOT_W, h: ROOT_H, tier: 'root' })
+      return out
+    }
+
+    effectiveMids.forEach((mid, mIdx) => {
+      const childLeaves = leaves.filter(l => edges.some(e => e.from === mid.id && e.to === l.id))
+      const displayLeaves = childLeaves.length > 0 ? childLeaves : leaves.slice(mIdx * 2, (mIdx + 1) * 2)
+      const groupW = displayLeaves.length > 0 ? displayLeaves.length * LEAF_W + (displayLeaves.length - 1) * LEAF_GAP : MID_W
+      const actualGroupW = Math.max(groupW, MID_W)
+
+      displayLeaves.forEach((leaf, lIdx) => {
+        out.push({ ...leaf, x: curX + lIdx * (LEAF_W + LEAF_GAP), y: LEAF_Y, w: LEAF_W, h: LEAF_H, tier: 'leaf' })
+      })
+
+      out.push({ ...mid, x: curX + actualGroupW / 2 - MID_W / 2, y: MID_Y, w: MID_W, h: MID_H, tier: 'mid' })
+      curX += actualGroupW + GROUP_GAP
+    })
+
+    const totalW = Math.max(curX - GROUP_GAP + PAD_X, 800)
+    out.unshift({ ...root, x: totalW / 2 - ROOT_W / 2, y: ROOT_Y, w: ROOT_W, h: ROOT_H, tier: 'root' })
+    return out
+  }, [nodes, edges])
+
+  const byId = Object.fromEntries(positionedNodes.map(n => [n.id, n]))
   const CANVAS_PAD = 4000
-  const width = Math.max(680, ...nodes.map(n => n.x + n.w + PAD_X)) + CANVAS_PAD * 2
-  const height = Math.max(MIN_CANVAS_H, ...nodes.map(n => n.y + n.h + 40)) + CANVAS_PAD * 2
+  const width = Math.max(680, ...positionedNodes.map(n => n.x + n.w + PAD_X)) + CANVAS_PAD * 2
+  const height = Math.max(MIN_CANVAS_H, ...positionedNodes.map(n => n.y + n.h + 40)) + CANVAS_PAD * 2
 
   // Highlight the ancestor path of the selected node.
   const activePath = (() => {
@@ -528,7 +585,7 @@ function RoadmapCanvas({ nodes, edges, selectedId, editing, linkFrom, suggestion
           )}
         </svg>
 
-        {nodes.map(n => (
+        {positionedNodes.map(n => (
           <RoadmapNode key={n.id} node={n} warn={warnMap[n.id] ?? null}
             selected={selectedId === n.id} dimmed={isDim(n.id)}
             editing={editing} linking={linkFrom === n.id}
@@ -1118,15 +1175,27 @@ function TeamMissionInput({ team, onSave }: { team: TeamType; onSave: (mission: 
   const [suggestions, setSuggestions] = useState<any[]>([])
   
   useEffect(() => {
-    fetch(`/api/teams/${team.id}/roadmap`, {
-      headers: { 'Authorization': `Bearer ${localStorage.getItem('templ_token')}` }
-    })
-    .then(r => r.ok ? r.json() : null)
-    .then(data => {
-      if (data && data.nodes) setGraph(data)
-      else setGraph({ nodes: [], edges: [] })
-    })
-    .catch(console.error)
+    let active = true
+    const loadRoadmap = async () => {
+      try {
+        const r = await fetch(`/api/teams/${team.id}/roadmap`, {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('templ_token')}` }
+        })
+        if (!r.ok) return
+        const data = await r.json()
+        if (active && data && Array.isArray(data.nodes)) {
+          setGraph(data)
+        }
+      } catch (err) {
+        console.error(err)
+      }
+    }
+    loadRoadmap()
+    const retryTimer = setTimeout(loadRoadmap, 1000)
+    return () => {
+      active = false
+      clearTimeout(retryTimer)
+    }
   }, [team.id])
 
   useEffect(() => {
@@ -1942,49 +2011,145 @@ function AiSpecificationReview({ team, previewGraph, suggestions, onApprove, onR
   onApprove: () => void; onRegenerate: (fb: string) => void; onReject: () => void; isRegenerating: boolean;
 }) {
   const [feedback, setFeedback] = useState('')
+  const [isApproving, setIsApproving] = useState(false)
+
+  const nodes: any[] = previewGraph?.nodes || []
+  const rootNode = nodes.find(n => n.tier === 'root') || nodes[0]
+  const midNodes = nodes.filter(n => n.tier === 'mid')
+  const leafNodes = nodes.filter(n => n.tier === 'leaf')
 
   return (
-    <div style={{ maxWidth: 800, margin: '40px auto', background: '#fff', borderRadius: 16, padding: 32, boxShadow: '0 8px 30px rgba(0,0,0,0.12)' }}>
-      <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 26, fontWeight: 700, marginBottom: 8, color: 'var(--color-foreground)' }}>
-        AI가 생성한 로드맵 제안
-      </h1>
-      <p style={{ fontSize: 14, color: 'var(--color-muted-foreground)', marginBottom: 24 }}>
-        입력하신 미션을 바탕으로 다음과 같은 로드맵 노드들이 생성되었습니다. 검토 후 승인해주세요.
-      </p>
-
-      <div style={{ background: '#fafaf8', borderRadius: 12, border: '1px solid var(--color-border)', padding: 20, marginBottom: 24, maxHeight: 400, overflowY: 'auto' }}>
-        {previewGraph?.nodes?.map((node: any) => (
-          <div key={node.id} style={{ padding: '12px', borderBottom: '1px solid var(--color-border-sidebar)' }}>
-            <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 4, color: 'var(--color-foreground)' }}>{node.label}</div>
-            <div style={{ fontSize: 13, color: 'var(--color-muted-foreground)' }}>{node.aiSummary}</div>
-          </div>
-        ))}
+    <div style={{ maxWidth: 860, margin: '30px auto 50px', background: '#ffffff', borderRadius: 20, padding: 36, boxShadow: '0 12px 40px rgba(0,0,0,0.08)', border: '1px solid var(--color-border)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ width: 10, height: 10, borderRadius: '50%', background: team.color }} />
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--color-primary)', letterSpacing: '0.12em', fontWeight: 600, textTransform: 'uppercase' }}>
+            AI Roadmap Architect
+          </span>
+        </div>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--color-muted-foreground)' }}>
+          총 {nodes.length}개 노드 생성됨
+        </span>
       </div>
 
+      <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 700, marginBottom: 8, color: 'var(--color-foreground)', letterSpacing: '-0.02em' }}>
+        명세서 분석 및 계층적 WBS 로드맵 제안
+      </h1>
+      <p style={{ fontSize: 14, color: 'var(--color-muted-foreground)', marginBottom: 24, lineHeight: 1.6 }}>
+        입력하신 명세서를 바탕으로 AI가 최상위 목표, 핵심 모듈, 세부 실행 단위로 구조화했습니다. 검토 후 승인해주세요.
+      </p>
+
+      {/* WBS Tree Container */}
+      <div style={{ background: '#fafaf8', borderRadius: 14, border: '1px solid var(--color-border)', padding: 20, marginBottom: 24, maxHeight: 460, overflowY: 'auto' }}>
+        {rootNode && (
+          <div style={{ background: '#ffffff', border: `1.5px solid ${team.color}`, borderRadius: 12, padding: '16px 18px', marginBottom: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+              <span style={{ fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 6, background: `${team.color}18`, color: team.color, fontFamily: 'var(--font-mono)' }}>
+                ROOT GOAL · {rootNode.code || 'T-001'}
+              </span>
+              <span style={{ fontSize: 11, color: 'var(--color-muted-foreground)', fontFamily: 'var(--font-mono)' }}>
+                {rootNode.dueDate ? `마감: ${rootNode.dueDate}` : '전체 프로젝트 기간'}
+              </span>
+            </div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--color-foreground)', marginBottom: 4 }}>
+              {rootNode.label}
+            </div>
+            {rootNode.goal && <div style={{ fontSize: 13, color: 'var(--color-foreground)', opacity: 0.85, marginBottom: 6 }}>{rootNode.goal}</div>}
+            {rootNode.aiSummary && (
+              <div style={{ fontSize: 12, color: 'var(--color-muted-foreground)', background: '#f5f4ef', padding: '6px 10px', borderRadius: 6, display: 'flex', gap: 6 }}>
+                <span style={{ color: '#f59e0b' }}>💡</span> {rootNode.aiSummary}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Modules & Subtasks */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {midNodes.length > 0 ? (
+            midNodes.map((mid: any, mIdx: number) => {
+              const children = leafNodes.filter(l => previewGraph?.edges?.some((e: any) => e.from === mid.id && e.to === l.id))
+              const displayLeaves = children.length > 0 ? children : leafNodes.slice(mIdx * 2, (mIdx + 1) * 2)
+
+              return (
+                <div key={mid.id} style={{ background: '#ffffff', border: '1px solid var(--color-border)', borderRadius: 12, padding: '14px 16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 5, background: '#3b82f615', color: '#2563eb', fontFamily: 'var(--font-mono)' }}>
+                        MODULE · {mid.code || `M-0${mIdx + 1}`}
+                      </span>
+                      <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--color-foreground)' }}>{mid.label}</span>
+                    </div>
+                    {mid.assignees?.length > 0 && (
+                      <span style={{ fontSize: 11, color: 'var(--color-muted-foreground)', fontFamily: 'var(--font-mono)' }}>
+                        {mid.assignees.join(', ')}
+                      </span>
+                    )}
+                  </div>
+                  {mid.goal && <div style={{ fontSize: 12.5, color: 'var(--color-muted-foreground)', marginBottom: 8 }}>{mid.goal}</div>}
+
+                  {/* Child leaves */}
+                  {displayLeaves.length > 0 && (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 8, marginTop: 10, paddingTop: 10, borderTop: '1px dashed var(--color-border)' }}>
+                      {displayLeaves.map((leaf: any) => (
+                        <div key={leaf.id} style={{ background: '#f8f8f6', border: '1px solid var(--color-border)', borderRadius: 8, padding: '9px 12px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                            <span style={{ fontSize: 9.5, fontWeight: 600, color: '#6b7280', fontFamily: 'var(--font-mono)' }}>{leaf.code || 'TASK'}</span>
+                            <span style={{ fontSize: 9.5, color: '#9ca3af', fontFamily: 'var(--font-mono)' }}>{leaf.dueDate}</span>
+                          </div>
+                          <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--color-foreground)', marginBottom: 3 }}>{leaf.label}</div>
+                          {leaf.goal && <div style={{ fontSize: 11.5, color: 'var(--color-muted-foreground)', lineHeight: 1.4 }}>{leaf.goal}</div>}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )
+            })
+          ) : (
+            leafNodes.map((node: any) => (
+              <div key={node.id} style={{ background: '#ffffff', border: '1px solid var(--color-border)', borderRadius: 10, padding: '12px 14px' }}>
+                <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 4, color: 'var(--color-foreground)' }}>{node.label}</div>
+                <div style={{ fontSize: 12.5, color: 'var(--color-muted-foreground)' }}>{node.aiSummary || node.goal}</div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* Feedback input */}
       <div style={{ display: 'flex', gap: 12, marginBottom: 24 }}>
         <input 
           type="text" 
           value={feedback} 
           onChange={e => setFeedback(e.target.value)}
-          placeholder="수정하고 싶은 부분이나 추가 피드백을 입력하세요..." 
-          style={{ flex: 1, padding: '12px 14px', borderRadius: 8, border: '1.5px solid var(--color-border)', fontSize: 14, outline: 'none', background: '#fff', color: 'var(--color-foreground)' }}
+          placeholder="수정하고 싶은 부분이나 추가 피드백을 입력하세요 (예: 백엔드 API 보안 강화, 배포 파이프라인 추가)..." 
+          style={{ flex: 1, padding: '12px 16px', borderRadius: 10, border: '1.5px solid var(--color-border)', fontSize: 13.5, outline: 'none', background: '#fff', color: 'var(--color-foreground)' }}
         />
         <button 
           onClick={() => onRegenerate(feedback)} 
-          disabled={!feedback.trim() || isRegenerating}
+          disabled={!feedback.trim() || isRegenerating || isApproving}
           style={{ 
-            padding: '0 20px', borderRadius: 8, background: '#f59e0b', color: '#fff', fontWeight: 600, border: 'none', cursor: (!feedback.trim() || isRegenerating) ? 'not-allowed' : 'pointer', opacity: (!feedback.trim() || isRegenerating) ? 0.6 : 1
+            padding: '0 22px', borderRadius: 10, background: '#f59e0b', color: '#fff', fontWeight: 600, border: 'none', cursor: (!feedback.trim() || isRegenerating || isApproving) ? 'not-allowed' : 'pointer', opacity: (!feedback.trim() || isRegenerating || isApproving) ? 0.6 : 1, fontSize: 13.5
           }}>
-          {isRegenerating ? '생성 중...' : '내용 보충'}
+          {isRegenerating ? '재생성 중...' : '피드백 반영'}
         </button>
       </div>
 
-      <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
-        <button onClick={onReject} style={{ padding: '10px 24px', borderRadius: 8, background: '#fee2e2', border: '1.5px solid #f87171', color: '#ef4444', fontWeight: 600, cursor: 'pointer', transition: 'background 0.15s' }}>
+      {/* Action buttons */}
+      <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', alignItems: 'center' }}>
+        <button onClick={onReject} disabled={isApproving} style={{ padding: '11px 22px', borderRadius: 10, background: '#fee2e2', border: '1.5px solid #f87171', color: '#ef4444', fontWeight: 600, cursor: isApproving ? 'not-allowed' : 'pointer', fontSize: 13.5 }}>
           거절 (취소)
         </button>
-        <button onClick={onApprove} style={{ padding: '10px 24px', borderRadius: 8, background: 'var(--color-primary)', color: '#fff', fontWeight: 600, border: 'none', cursor: 'pointer', transition: 'background 0.15s' }}>
-          승인 (팀 생성 완료)
+        <button 
+          onClick={async () => {
+            setIsApproving(true)
+            await onApprove()
+          }} 
+          disabled={isApproving}
+          style={{ 
+            padding: '11px 26px', borderRadius: 10, background: 'var(--color-primary)', color: '#fff', fontWeight: 600, border: 'none', cursor: isApproving ? 'wait' : 'pointer', fontSize: 13.5, display: 'flex', alignItems: 'center', gap: 8, boxShadow: '0 4px 14px rgba(107,92,246,0.3)'
+          }}>
+          {isApproving ? '로드맵 생성 및 적용 중...' : '승인 (팀 생성 완료)'}
         </button>
       </div>
     </div>
@@ -2156,10 +2321,18 @@ function CreateTeamForm({ teams, onCreated, accounts, onAccountsChange }: {
         onApprove={async () => {
           try {
              if (suggestions.length > 0) {
-               await fetch(`/api/teams/${createdTeam!.id}/suggestions/${suggestions[0].id}/approve`, { method: 'POST', headers: { 'Authorization': `Bearer ${localStorage.getItem('templ_token')}` } })
+               const res = await fetch(`/api/teams/${createdTeam!.id}/suggestions/${suggestions[0].id}/approve`, {
+                 method: 'POST',
+                 headers: { 'Authorization': `Bearer ${localStorage.getItem('templ_token')}` }
+               })
+               if (!res.ok) console.error('Approve failed', await res.text())
              }
+             await new Promise(r => setTimeout(r, 350))
              onCreated(createdTeam!)
-          } catch(e) { console.error(e) }
+          } catch(e) { 
+            console.error(e)
+            onCreated(createdTeam!)
+          }
         }}
         onRegenerate={async (fb: string) => {
            setIsRegenerating(true)

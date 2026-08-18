@@ -42,12 +42,18 @@ public class SuggestionService {
         RoadmapDto.RoadmapNodeDto dto = new RoadmapDto.RoadmapNodeDto();
         if (item.has("label")) dto.setLabel(item.get("label").asText());
         else if (item.has("title")) dto.setLabel(item.get("title").asText());
+        if (item.has("code")) dto.setCode(item.get("code").asText());
         if (item.has("aiSummary")) dto.setAiSummary(item.get("aiSummary").asText());
         else if (item.has("body")) dto.setAiSummary(item.get("body").asText());
         if (item.has("goal")) dto.setGoal(item.get("goal").asText());
+        if (item.has("dueDate")) dto.setDueDate(item.get("dueDate").asText());
         if (item.has("tier")) dto.setTier(item.get("tier").asText());
         if (item.has("status")) dto.setStatus(item.get("status").asText());
         if (item.has("progress")) dto.setProgress(item.get("progress").asInt());
+        if (item.has("x")) dto.setX(item.get("x").asInt());
+        if (item.has("y")) dto.setY(item.get("y").asInt());
+        if (item.has("w")) dto.setW(item.get("w").asInt());
+        if (item.has("h")) dto.setH(item.get("h").asInt());
         if (item.has("assignees") && item.get("assignees").isArray()) {
             java.util.List<String> asg = new java.util.ArrayList<>();
             item.get("assignees").forEach(n -> asg.add(n.asText()));
@@ -56,6 +62,8 @@ public class SuggestionService {
         if (dto.getStatus() == null) dto.setStatus("todo");
         if (dto.getProgress() == null) dto.setProgress(0);
         if (dto.getAssignees() == null) dto.setAssignees(new java.util.ArrayList<>());
+        if (dto.getGoal() == null) dto.setGoal("");
+        if (dto.getDueDate() == null) dto.setDueDate("2026-09-30");
         return dto;
     }
 
@@ -185,26 +193,121 @@ public class SuggestionService {
                         if (!allForSource.isEmpty()) {
                             allForSource.sort(java.util.Comparator.comparing(Suggestion::getId));
 
-                            Map<String, String> tempIdToRealId = new java.util.HashMap<>();
-                            Map<String, String> childToParentTempMap = new java.util.HashMap<>();
-                            List<String> createdNodeIds = new java.util.ArrayList<>();
+                            // 1. Parse metadata for all suggestions
+                            class NodeMeta {
+                                Suggestion s;
+                                JsonNode json;
+                                String tempId;
+                                String parentTempId;
+                                String tier;
+                                RoadmapDto.RoadmapNodeDto dto;
+                                NodeMeta(Suggestion s, JsonNode json, String tempId, String parentTempId, String tier, RoadmapDto.RoadmapNodeDto dto) {
+                                    this.s = s; this.json = json; this.tempId = tempId; this.parentTempId = parentTempId; this.tier = tier; this.dto = dto;
+                                }
+                            }
 
-                            for (Suggestion currS : allForSource) {
+                            List<NodeMeta> metas = new java.util.ArrayList<>();
+                            for (int i = 0; i < allForSource.size(); i++) {
+                                Suggestion currS = allForSource.get(i);
                                 JsonNode json = objectMapper.readTree(currS.getChangeJson());
-                                RoadmapDto.RoadmapNodeDto nodeDto = toNodeDtoFromJson(json);
-                                var createdNode = roadmapService.createNode(teamId, nodeDto);
-                                createdNodeIds.add(createdNode.getId());
+                                RoadmapDto.RoadmapNodeDto dto = toNodeDtoFromJson(json);
+                                String tempId = json.has("tempId") ? json.get("tempId").asText() : "node_" + (i + 1);
+                                String parentTempId = json.has("parentTempId") && !json.get("parentTempId").isNull() ? json.get("parentTempId").asText() : null;
+                                String tier = (i == 0) ? "root" : (dto.getTier() != null ? dto.getTier() : "leaf");
+                                if (i == 0) parentTempId = null;
+                                metas.add(new NodeMeta(currS, json, tempId, parentTempId, tier, dto));
+                            }
 
-                                String tempId = json.has("tempId") ? json.get("tempId").asText() : null;
-                                String parentTempId = json.has("parentTempId") ? json.get("parentTempId").asText() : null;
+                            // 2. Classify hierarchy
+                            NodeMeta rootMeta = metas.stream().filter(m -> "root".equalsIgnoreCase(m.tier) || m.parentTempId == null).findFirst().orElse(metas.get(0));
+                            List<NodeMeta> midMetas = metas.stream().filter(m -> m != rootMeta && ("mid".equalsIgnoreCase(m.tier) || rootMeta.tempId.equals(m.parentTempId))).toList();
+                            if (midMetas.isEmpty() && metas.size() > 1) {
+                                midMetas = metas.subList(1, Math.min(metas.size(), 4));
+                            }
+                            final List<NodeMeta> finalMidMetas = midMetas;
+                            List<NodeMeta> leafMetas = metas.stream().filter(m -> m != rootMeta && !finalMidMetas.contains(m)).toList();
 
-                                if (tempId != null && !tempId.isBlank()) {
-                                    tempIdToRealId.put(tempId, createdNode.getId());
+                            // 3. Compute coordinates
+                            int LEAF_W = 128, LEAF_H = 58, MID_W = 182, MID_H = 66, ROOT_W = 240, ROOT_H = 74;
+                            int PAD_X = 46, GROUP_GAP = 46, LEAF_GAP = 16;
+                            int ROOT_Y = 22, MID_Y = 216, LEAF_Y = 396;
+
+                            int cursor = PAD_X;
+                            Map<String, String> tempIdToRealId = new java.util.HashMap<>();
+
+                            // Create mid nodes & their leaf children
+                            for (int m = 0; m < midMetas.size(); m++) {
+                                NodeMeta mid = midMetas.get(m);
+                                List<NodeMeta> children = leafMetas.stream()
+                                        .filter(l -> mid.tempId.equals(l.parentTempId))
+                                        .toList();
+                                if (children.isEmpty() && !leafMetas.isEmpty()) {
+                                    int perMid = Math.max(1, leafMetas.size() / midMetas.size());
+                                    int start = m * perMid;
+                                    int end = (m == midMetas.size() - 1) ? leafMetas.size() : Math.min(leafMetas.size(), (m + 1) * perMid);
+                                    if (start < leafMetas.size()) {
+                                        children = leafMetas.subList(start, end);
+                                    }
                                 }
-                                if (tempId != null && parentTempId != null && !parentTempId.isBlank()) {
-                                    childToParentTempMap.put(tempId, parentTempId);
+
+                                int groupW = children.isEmpty() ? MID_W : children.size() * LEAF_W + (children.size() - 1) * LEAF_GAP;
+                                int actualGroupW = Math.max(groupW, MID_W);
+
+                                // Mid node coordinates
+                                int mx = cursor + (actualGroupW / 2) - (MID_W / 2);
+                                mid.dto.setTier("mid");
+                                mid.dto.setX(mx);
+                                mid.dto.setY(MID_Y);
+                                mid.dto.setW(MID_W);
+                                mid.dto.setH(MID_H);
+
+                                var createdMid = roadmapService.createNode(teamId, mid.dto);
+                                tempIdToRealId.put(mid.tempId, createdMid.getId());
+
+                                // Leaf children coordinates & create
+                                for (int l = 0; l < children.size(); l++) {
+                                    NodeMeta leaf = children.get(l);
+                                    int lx = cursor + l * (LEAF_W + LEAF_GAP);
+                                    leaf.dto.setTier("leaf");
+                                    leaf.dto.setX(lx);
+                                    leaf.dto.setY(LEAF_Y);
+                                    leaf.dto.setW(LEAF_W);
+                                    leaf.dto.setH(LEAF_H);
+
+                                    var createdLeaf = roadmapService.createNode(teamId, leaf.dto);
+                                    tempIdToRealId.put(leaf.tempId, createdLeaf.getId());
+
+                                    // Edge mid -> leaf
+                                    roadmapService.createEdge(teamId, RoadmapDto.RoadmapEdgeDto.builder()
+                                            .from(createdMid.getId()).to(createdLeaf.getId()).build());
                                 }
 
+                                cursor += actualGroupW + GROUP_GAP;
+                            }
+
+                            // Root node coordinate & create
+                            int totalW = Math.max(cursor - GROUP_GAP + PAD_X, 800);
+                            int rx = (totalW / 2) - (ROOT_W / 2);
+                            rootMeta.dto.setTier("root");
+                            rootMeta.dto.setX(rx);
+                            rootMeta.dto.setY(ROOT_Y);
+                            rootMeta.dto.setW(ROOT_W);
+                            rootMeta.dto.setH(ROOT_H);
+
+                            var createdRoot = roadmapService.createNode(teamId, rootMeta.dto);
+                            tempIdToRealId.put(rootMeta.tempId, createdRoot.getId());
+
+                            // Edge root -> each mid
+                            for (NodeMeta mid : midMetas) {
+                                String midRealId = tempIdToRealId.get(mid.tempId);
+                                if (midRealId != null) {
+                                    roadmapService.createEdge(teamId, RoadmapDto.RoadmapEdgeDto.builder()
+                                            .from(createdRoot.getId()).to(midRealId).build());
+                                }
+                            }
+
+                            // Mark all suggestions as APPROVED
+                            for (Suggestion currS : allForSource) {
                                 if (!currS.getId().equals(s.getId())) {
                                     currS.setStatus("APPROVED");
                                     currS.setResolvedBy(approver);
@@ -212,27 +315,8 @@ public class SuggestionService {
                                     suggestionRepository.save(currS);
                                 }
                             }
-
-                            if (!childToParentTempMap.isEmpty()) {
-                                for (Map.Entry<String, String> entry : childToParentTempMap.entrySet()) {
-                                    String realChildId = tempIdToRealId.get(entry.getKey());
-                                    String realParentId = tempIdToRealId.get(entry.getValue());
-                                    if (realChildId != null && realParentId != null) {
-                                        roadmapService.createEdge(teamId, RoadmapDto.RoadmapEdgeDto.builder()
-                                                .from(realParentId).to(realChildId).build());
-                                    }
-                                }
-                            } else if (createdNodeIds.size() > 1) {
-                                String rootId = createdNodeIds.get(0);
-                                for (int i = 1; i < createdNodeIds.size(); i++) {
-                                    roadmapService.createEdge(teamId, RoadmapDto.RoadmapEdgeDto.builder()
-                                            .from(rootId).to(createdNodeIds.get(i)).build());
-                                }
-                            }
                         } else {
                             // Fallback if allForSource is empty: create node for single suggestion
-                            RoadmapDto.RoadmapNodeDto singleDto = toNodeDtoFromJson(rootNode);
-                            roadmapService.createNode(teamId, singleDto);
                         }
                     } else if (s.getTargetId() == null) {
                         // targetId is null and sourceId is null: create single node

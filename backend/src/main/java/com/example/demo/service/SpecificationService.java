@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -74,72 +75,197 @@ public class SpecificationService {
      * Build a preview roadmap graph from suggestions linked to a spec without persisting nodes.
      */
     public com.example.demo.dto.RoadmapDto.RoadmapGraphDto generatePreviewGraph(String teamId, Long specId) {
-        var suggestions = suggestionService.listForTeam(teamId).stream()
+        var rawSuggestions = suggestionService.listForTeam(teamId).stream()
                 .filter(s -> s.getSourceId() != null && s.getSourceId().equals(String.valueOf(specId)))
+                .sorted(java.util.Comparator.comparing(SuggestionDto.Response::getId))
                 .toList();
 
-        List<com.example.demo.dto.RoadmapDto.RoadmapNodeDto> nodes = new java.util.ArrayList<>();
-        List<com.example.demo.dto.RoadmapDto.RoadmapEdgeDto> edges = new java.util.ArrayList<>();
-
-        // create a synthetic root node if there is a root suggestion (title contains '로['] or first suggestion)
-        long idCounter = 1;
-        String rootId = "preview-root-" + specId;
-
-        if (!suggestions.isEmpty()) {
-            var rootSuggestion = suggestions.get(0);
-            com.example.demo.dto.RoadmapDto.RoadmapNodeDto rootNode = new com.example.demo.dto.RoadmapDto.RoadmapNodeDto();
-            rootNode.setId(rootId);
-            rootNode.setLabel(rootSuggestion.getTitle());
-            rootNode.setAiSummary(extractAiSummary(rootSuggestion.getChangeJson()));
-            rootNode.setStatus("todo");
-            rootNode.setProgress(0);
-            rootNode.setAssignees(new java.util.ArrayList<>());
-            nodes.add(rootNode);
-
-            for (int i = 1; i < suggestions.size(); i++) {
-                var s = suggestions.get(i);
-                String nid = "preview-" + specId + "-" + (idCounter++);
-                com.example.demo.dto.RoadmapDto.RoadmapNodeDto node = new com.example.demo.dto.RoadmapDto.RoadmapNodeDto();
-                node.setId(nid);
-                node.setLabel(s.getTitle());
-                node.setAiSummary(extractAiSummary(s.getChangeJson()));
-                node.setStatus("todo");
-                node.setProgress(0);
-                node.setAssignees(extractAssignees(s.getChangeJson()));
-                nodes.add(node);
-                edges.add(com.example.demo.dto.RoadmapDto.RoadmapEdgeDto.builder().id("e-" + nid + "-" + rootId).from(rootId).to(nid).build());
-            }
+        if (rawSuggestions.isEmpty()) {
+            return com.example.demo.dto.RoadmapDto.RoadmapGraphDto.builder()
+                    .nodes(new java.util.ArrayList<>())
+                    .edges(new java.util.ArrayList<>())
+                    .build();
         }
 
-        return com.example.demo.dto.RoadmapDto.RoadmapGraphDto.builder().nodes(nodes).edges(edges).build();
-    }
+        com.fasterxml.jackson.databind.ObjectMapper om = new com.fasterxml.jackson.databind.ObjectMapper();
 
-    private String extractAiSummary(String changeJson) {
-        if (changeJson == null) return "";
-        try {
-            var om = new com.fasterxml.jackson.databind.ObjectMapper();
-            var node = om.readTree(changeJson);
-            if (node.has("aiSummary")) return node.get("aiSummary").asText("");
-            if (node.has("summary")) return node.get("summary").asText("");
-            return "";
-        } catch (Exception e) {
-            return "";
-        }
-    }
+        // 1. Parse nodes metadata
+        List<PreviewNodeMeta> metas = new java.util.ArrayList<>();
+        for (int i = 0; i < rawSuggestions.size(); i++) {
+            var s = rawSuggestions.get(i);
+            String previewId = "preview-" + specId + "-" + (i + 1);
+            String tempId = "node_" + (i + 1);
+            String parentTempId = null;
+            String tier = (i == 0) ? "root" : "leaf";
+            String label = s.getTitle();
+            String code = String.format("T-%03d", i + 1);
+            String goal = s.getBody();
+            String dueDate = "2026-09-30";
+            List<String> assignees = new java.util.ArrayList<>();
+            String aiSummary = "";
 
-    private java.util.List<String> extractAssignees(String changeJson) {
-        if (changeJson == null) return new java.util.ArrayList<>();
-        try {
-            var om = new com.fasterxml.jackson.databind.ObjectMapper();
-            var node = om.readTree(changeJson);
-            if (node.has("assignees") && node.get("assignees").isArray()) {
-                java.util.List<String> out = new java.util.ArrayList<>();
-                for (var it : node.get("assignees")) out.add(it.asText());
-                return out;
+            if (s.getChangeJson() != null && !s.getChangeJson().isBlank()) {
+                try {
+                    var json = om.readTree(s.getChangeJson());
+                    if (json.has("tempId") && !json.get("tempId").isNull()) tempId = json.get("tempId").asText();
+                    if (json.has("parentTempId") && !json.get("parentTempId").isNull()) parentTempId = json.get("parentTempId").asText();
+                    if (json.has("tier")) tier = json.get("tier").asText();
+                    if (json.has("label")) label = json.get("label").asText();
+                    if (json.has("code")) code = json.get("code").asText();
+                    if (json.has("goal")) goal = json.get("goal").asText();
+                    if (json.has("dueDate")) dueDate = json.get("dueDate").asText();
+                    if (json.has("aiSummary")) aiSummary = json.get("aiSummary").asText();
+                    if (json.has("assignees") && json.get("assignees").isArray()) {
+                        for (var item : json.get("assignees")) assignees.add(item.asText());
+                    }
+                } catch (Exception ignored) {}
             }
-            return new java.util.ArrayList<>();
-        } catch (Exception e) {
-            return new java.util.ArrayList<>();
+
+            metas.add(new PreviewNodeMeta(previewId, tempId, parentTempId, tier, label, code, goal, dueDate, assignees, aiSummary, s.getId()));
+        }
+
+        // 2. Classify hierarchy
+        PreviewNodeMeta rootMeta = metas.stream().filter(m -> "root".equalsIgnoreCase(m.tier) || m.parentTempId == null).findFirst().orElse(metas.get(0));
+        List<PreviewNodeMeta> midMetas = metas.stream().filter(m -> m != rootMeta && ("mid".equalsIgnoreCase(m.tier) || (rootMeta.tempId.equals(m.parentTempId)))).toList();
+        if (midMetas.isEmpty() && metas.size() > 1) {
+            midMetas = metas.subList(1, Math.min(metas.size(), 4));
+        }
+
+        final List<PreviewNodeMeta> finalMidMetas = midMetas;
+        List<PreviewNodeMeta> leafMetas = metas.stream().filter(m -> m != rootMeta && !finalMidMetas.contains(m)).toList();
+
+        // 3. Compute coordinates
+        int LEAF_W = 128, LEAF_H = 58, MID_W = 182, MID_H = 66, ROOT_W = 240, ROOT_H = 74;
+        int PAD_X = 46, GROUP_GAP = 46, LEAF_GAP = 16;
+        int ROOT_Y = 22, MID_Y = 216, LEAF_Y = 396;
+
+        int cursor = PAD_X;
+        List<com.example.demo.dto.RoadmapDto.RoadmapNodeDto> outNodes = new java.util.ArrayList<>();
+        List<com.example.demo.dto.RoadmapDto.RoadmapEdgeDto> outEdges = new java.util.ArrayList<>();
+        Map<String, String> tempIdToPreviewId = new java.util.HashMap<>();
+
+        tempIdToPreviewId.put(rootMeta.tempId, rootMeta.previewId);
+
+        // Position mid modules & their leaf children
+        for (int m = 0; m < midMetas.size(); m++) {
+            PreviewNodeMeta mid = midMetas.get(m);
+            tempIdToPreviewId.put(mid.tempId, mid.previewId);
+
+            List<PreviewNodeMeta> children = leafMetas.stream()
+                    .filter(l -> mid.tempId.equals(l.parentTempId))
+                    .toList();
+            if (children.isEmpty() && !leafMetas.isEmpty()) {
+                // distribute proportionally if parentTempId was unspecified
+                int perMid = Math.max(1, leafMetas.size() / midMetas.size());
+                int start = m * perMid;
+                int end = (m == midMetas.size() - 1) ? leafMetas.size() : Math.min(leafMetas.size(), (m + 1) * perMid);
+                if (start < leafMetas.size()) {
+                    children = leafMetas.subList(start, end);
+                }
+            }
+
+            int groupW = children.isEmpty() ? MID_W : children.size() * LEAF_W + (children.size() - 1) * LEAF_GAP;
+            int actualGroupW = Math.max(groupW, MID_W);
+
+            // Add leaves
+            for (int l = 0; l < children.size(); l++) {
+                PreviewNodeMeta leaf = children.get(l);
+                tempIdToPreviewId.put(leaf.tempId, leaf.previewId);
+                int lx = cursor + l * (LEAF_W + LEAF_GAP);
+                int ly = LEAF_Y;
+
+                outNodes.add(com.example.demo.dto.RoadmapDto.RoadmapNodeDto.builder()
+                        .id(leaf.previewId)
+                        .label(leaf.label)
+                        .code(leaf.code)
+                        .tier("leaf")
+                        .goal(leaf.goal)
+                        .dueDate(leaf.dueDate)
+                        .assignees(leaf.assignees)
+                        .aiSummary(leaf.aiSummary)
+                        .status("todo")
+                        .progress(0)
+                        .x(lx).y(ly).w(LEAF_W).h(LEAF_H)
+                        .build());
+
+                outEdges.add(com.example.demo.dto.RoadmapDto.RoadmapEdgeDto.builder()
+                        .id("e-" + mid.previewId + "-" + leaf.previewId)
+                        .from(mid.previewId)
+                        .to(leaf.previewId)
+                        .build());
+            }
+
+            // Add mid node
+            int mx = cursor + (actualGroupW / 2) - (MID_W / 2);
+            int my = MID_Y;
+            outNodes.add(com.example.demo.dto.RoadmapDto.RoadmapNodeDto.builder()
+                    .id(mid.previewId)
+                    .label(mid.label)
+                    .code(mid.code)
+                    .tier("mid")
+                    .goal(mid.goal)
+                    .dueDate(mid.dueDate)
+                    .assignees(mid.assignees)
+                    .aiSummary(mid.aiSummary)
+                    .status("todo")
+                    .progress(0)
+                    .x(mx).y(my).w(MID_W).h(MID_H)
+                    .build());
+
+            outEdges.add(com.example.demo.dto.RoadmapDto.RoadmapEdgeDto.builder()
+                    .id("e-" + rootMeta.previewId + "-" + mid.previewId)
+                    .from(rootMeta.previewId)
+                    .to(mid.previewId)
+                    .build());
+
+            cursor += actualGroupW + GROUP_GAP;
+        }
+
+        // Add root node
+        int totalW = Math.max(cursor - GROUP_GAP + PAD_X, 800);
+        int rx = (totalW / 2) - (ROOT_W / 2);
+        outNodes.add(0, com.example.demo.dto.RoadmapDto.RoadmapNodeDto.builder()
+                .id(rootMeta.previewId)
+                .label(rootMeta.label)
+                .code(rootMeta.code)
+                .tier("root")
+                .goal(rootMeta.goal)
+                .dueDate(rootMeta.dueDate)
+                .assignees(rootMeta.assignees)
+                .aiSummary(rootMeta.aiSummary)
+                .status("todo")
+                .progress(0)
+                .x(rx).y(ROOT_Y).w(ROOT_W).h(ROOT_H)
+                .build());
+
+        return com.example.demo.dto.RoadmapDto.RoadmapGraphDto.builder().nodes(outNodes).edges(outEdges).build();
+    }
+
+    private static class PreviewNodeMeta {
+        String previewId;
+        String tempId;
+        String parentTempId;
+        String tier;
+        String label;
+        String code;
+        String goal;
+        String dueDate;
+        List<String> assignees;
+        String aiSummary;
+        Long suggestionId;
+
+        PreviewNodeMeta(String previewId, String tempId, String parentTempId, String tier, String label, String code, String goal, String dueDate, List<String> assignees, String aiSummary, Long suggestionId) {
+            this.previewId = previewId;
+            this.tempId = tempId;
+            this.parentTempId = parentTempId;
+            this.tier = tier;
+            this.label = label;
+            this.code = code;
+            this.goal = goal;
+            this.dueDate = dueDate;
+            this.assignees = assignees;
+            this.aiSummary = aiSummary;
+            this.suggestionId = suggestionId;
         }
     }
 }

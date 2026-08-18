@@ -53,33 +53,39 @@ public class OpenAIService implements AiService {
 
         try {
             String systemPrompt = """
-                    You are an expert AI collaboration orchestrator and technical project manager.
-                    Analyze the project specification and break it down into a comprehensive Work Breakdown Structure (WBS) across 3 tiers (root, mid, leaf).
+                    You are an expert AI collaboration orchestrator and technical project manager specializing in Work Breakdown Structures (WBS) and Virtual Directory Hierarchies.
+                    Analyze the project specification (명세서) and break it down into a comprehensive, highly actionable 3-tier hierarchical WBS (루트 최종 목표 -> 주요 모듈/기능 -> 세부 실행 태스크).
                     
                     CRITICAL REQUIREMENTS:
-                    1. Return ONLY raw JSON array. No markdown fences, no code blocks, no intro text.
-                    2. Decompose the specification into AT LEAST 5 to 10 actionable tasks covering all functional and technical requirements.
-                    3. Use 'tempId' and 'parentTempId' to establish precise parent-child tree relationships:
-                       - Root task must have tempId='node_1' and parentTempId=null.
-                       - Mid-level modules must have parentTempId='node_1'.
-                       - Leaf tasks must have parentTempId matching their parent mid-level module's tempId.
+                    1. Return ONLY a valid, raw JSON array of objects. No markdown backticks, no markdown fences, no explanatory text.
+                    2. Maintain language consistency: if the spec is in Korean, generate all titles, labels, goals, and summaries in natural, professional Korean.
+                    3. Structure across 3 tiers:
+                       - 1 Root task (tier="root", tempId="node_root", parentTempId=null): The overarching project goal.
+                       - 2 to 4 Mid-level modules (tier="mid", tempId="node_mid_1", "node_mid_2", ..., parentTempId="node_root"): Core feature domains/milestones.
+                       - 2 to 3 Leaf tasks per Mid module (tier="leaf", tempId="node_leaf_1", ..., parentTempId matching its parent Mid module): Concrete implementation tasks.
+                    4. Ensure total tasks are between 6 and 12 items.
                     
-                    Each array item must be an object with:
-                    - title: Task title (string)
-                    - body: Task goal and description (string)
-                    - changeJson: Object with fields:
-                        - tempId: e.g. "node_1", "node_2", "node_3"
-                        - parentTempId: tempId of parent task (or null for root)
-                        - label: Short display label (string)
-                        - tier: "root" | "mid" | "leaf"
-                        - goal: Detailed goal statement (string)
-                        - assignees: Suggested roles or team members (array of strings)
-                        - aiSummary: AI summary explanation (string)
+                    Each array item must strictly follow this JSON schema:
+                    {
+                      "title": "Task or Module Title",
+                      "body": "Detailed description of scope and expected deliverables",
+                      "changeJson": {
+                        "tempId": "node_root" | "node_mid_X" | "node_leaf_X",
+                        "parentTempId": null | "node_root" | "node_mid_X",
+                        "label": "Concise display label (under 25 chars)",
+                        "tier": "root" | "mid" | "leaf",
+                        "code": "T-101" (unique code formatted T-XXX),
+                        "goal": "Clear, measurable goal for this specific task",
+                        "dueDate": "YYYY-MM-DD" (reasonable milestone dates e.g. within 1-3 months),
+                        "assignees": ["Role/Name", ...], (e.g. ["Frontend", "Backend", "Product", "Designer"]),
+                        "aiSummary": "AI insight or risk warning regarding potential friction, API conflicts, or key validation points"
+                      }
+                    }
                     """;
 
-            String userPrompt = "Spec:\n" + specText + "\n\n" +
-                    (feedback.isBlank() ? "" : "User feedback to reflect:\n" + feedback + "\n\n") +
-                    "Decompose into a structured WBS task array with tempId and parentTempId tree references.";
+            String userPrompt = "Project Specification:\n" + specText + "\n\n" +
+                    (feedback.isBlank() ? "" : "User Feedback to Incorporate:\n" + feedback + "\n\n") +
+                    "Generate the complete 3-tier WBS JSON array with accurate tempId and parentTempId tree references.";
 
             Map<String, Object> body = Map.of(
                     "model", model,
