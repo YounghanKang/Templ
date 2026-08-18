@@ -232,7 +232,7 @@ function RoadmapNode({ node, warn, selected, dimmed, editing, linking, scale, su
   function handlePointerDown(e: React.PointerEvent) {
     e.stopPropagation()
     if (!editing) return
-    ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
+      ; (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
     drag.current = { cx: e.clientX, cy: e.clientY, ox: node.x, oy: node.y, moved: false }
   }
   function handlePointerMove(e: React.PointerEvent) {
@@ -245,7 +245,7 @@ function RoadmapNode({ node, warn, selected, dimmed, editing, linking, scale, su
   function handlePointerUp(e: React.PointerEvent) {
     const d = drag.current
     drag.current = null
-    ;(e.currentTarget as HTMLElement).releasePointerCapture?.(e.pointerId)
+      ; (e.currentTarget as HTMLElement).releasePointerCapture?.(e.pointerId)
     // Only the drag gesture (edit mode) resolves to a click here; plain clicks use onClick.
     if (d && !d.moved) onSelect(node.id)
     else if (d && d.moved) onMoveEnd(node.id, node.x, node.y)
@@ -272,9 +272,9 @@ function RoadmapNode({ node, warn, selected, dimmed, editing, linking, scale, su
           ? '0 0 0 4px rgba(239,68,68,0.18), 0 6px 18px rgba(0,0,0,0.4)'
           : alert === 'warn'
             ? '0 0 0 4px rgba(234,179,8,0.15), 0 6px 18px rgba(0,0,0,0.4)'
-          : selected
-            ? '0 0 0 4px rgba(107,92,246,0.26), 0 10px 24px rgba(0,0,0,0.45)'
-            : isRoot ? '0 10px 30px rgba(107,92,246,0.3)' : '0 2px 10px rgba(0,0,0,0.3)',
+            : selected
+              ? '0 0 0 4px rgba(107,92,246,0.26), 0 10px 24px rgba(0,0,0,0.45)'
+              : isRoot ? '0 10px 30px rgba(107,92,246,0.3)' : '0 2px 10px rgba(0,0,0,0.3)',
         opacity: dimmed ? 0.42 : 1,
         cursor: editing ? 'grab' : 'pointer', userSelect: 'none', touchAction: 'none',
         transition: 'opacity 0.18s, background 0.15s, border-color 0.15s, box-shadow 0.18s',
@@ -493,7 +493,7 @@ function RoadmapCanvas({ nodes, edges, selectedId, editing, linkFrom, suggestion
         const ratio = next / prev
         const nextScrollLeft = (oldScrollLeft + px) * ratio - px
         const nextScrollTop = (oldScrollTop + py) * ratio - py
-        
+
         requestAnimationFrame(() => {
           el.scrollLeft = nextScrollLeft
           el.scrollTop = nextScrollTop
@@ -502,7 +502,7 @@ function RoadmapCanvas({ nodes, edges, selectedId, editing, linkFrom, suggestion
       })
     }
     vp.addEventListener('wheel', onWheel, { passive: false })
-    
+
     // Set initial scroll to the center of the pad
     vp.scrollLeft = CANVAS_PAD * scale - vp.clientWidth / 2 + 300
     vp.scrollTop = CANVAS_PAD * scale - 20
@@ -516,7 +516,7 @@ function RoadmapCanvas({ nodes, edges, selectedId, editing, linkFrom, suggestion
     if (!vp || (e.target as Element).tagName === 'path') return
     pan.current = { x: e.clientX, y: e.clientY, sl: vp.scrollLeft, st: vp.scrollTop }
     setPanning(true)
-    ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
+      ; (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
   }
   function handlePanMove(e: React.PointerEvent) {
     const vp = viewportRef.current
@@ -527,85 +527,85 @@ function RoadmapCanvas({ nodes, edges, selectedId, editing, linkFrom, suggestion
   function handlePanUp(e: React.PointerEvent) {
     pan.current = null
     setPanning(false)
-    ;(e.currentTarget as HTMLElement).releasePointerCapture?.(e.pointerId)
+      ; (e.currentTarget as HTMLElement).releasePointerCapture?.(e.pointerId)
   }
 
   return (
     <div style={{ position: 'relative', height: '100%' }}>
-    <div
-      ref={viewportRef}
-      className="rm-viewport"
-      onPointerDown={handlePanDown}
-      onPointerMove={handlePanMove}
-      onPointerUp={handlePanUp}
-      onPointerCancel={handlePanUp}
-      style={{
-        overflow: 'auto', padding: '18px 0 0',
-        height: '100%', display: 'flex',
-        cursor: panning ? 'grabbing' : 'grab', touchAction: 'none',
-      }}
-    >
-      <div style={{ width: width * scale, height: height * scale, position: 'relative', margin: 'auto', flexShrink: 0 }}>
-      <div style={{
-        position: 'relative', width, height, minWidth: width,
-        transform: `scale(${scale})`, transformOrigin: '0 0',
-      }}>
-        <div style={{ position: 'absolute', inset: 0, transform: `translate(${CANVAS_PAD}px, ${CANVAS_PAD}px)` }}>
-        <svg width={width} height={height} style={{ position: 'absolute', inset: 0, overflow: 'visible' }}>
-          <defs>
-            <marker id="rm-arrow" markerWidth="9" markerHeight="9" refX="6.5" refY="3" orient="auto">
-              <path d="M0,0 L0,6 L7,3 z" fill="#7d7c96" />
-            </marker>
-            <marker id="rm-arrow-on" markerWidth="9" markerHeight="9" refX="6.5" refY="3" orient="auto">
-              <path d="M0,0 L0,6 L7,3 z" fill="#a99bff" />
-            </marker>
-            <marker id="rm-arrow-del" markerWidth="9" markerHeight="9" refX="6.5" refY="3" orient="auto">
-              <path d="M0,0 L0,6 L7,3 z" fill="#ef4444" />
-            </marker>
-          </defs>
+      <div
+        ref={viewportRef}
+        className="rm-viewport"
+        onPointerDown={handlePanDown}
+        onPointerMove={handlePanMove}
+        onPointerUp={handlePanUp}
+        onPointerCancel={handlePanUp}
+        style={{
+          overflow: 'auto', padding: '18px 0 0',
+          height: '100%', display: 'flex',
+          cursor: panning ? 'grabbing' : 'grab', touchAction: 'none',
+        }}
+      >
+        <div style={{ width: width * scale, height: height * scale, position: 'relative', margin: 'auto', flexShrink: 0 }}>
+          <div style={{
+            position: 'relative', width, height, minWidth: width,
+            transform: `scale(${scale})`, transformOrigin: '0 0',
+          }}>
+            <div style={{ position: 'absolute', inset: 0, transform: `translate(${CANVAS_PAD}px, ${CANVAS_PAD}px)` }}>
+              <svg width={width} height={height} style={{ position: 'absolute', inset: 0, overflow: 'visible' }}>
+                <defs>
+                  <marker id="rm-arrow" markerWidth="9" markerHeight="9" refX="6.5" refY="3" orient="auto">
+                    <path d="M0,0 L0,6 L7,3 z" fill="#7d7c96" />
+                  </marker>
+                  <marker id="rm-arrow-on" markerWidth="9" markerHeight="9" refX="6.5" refY="3" orient="auto">
+                    <path d="M0,0 L0,6 L7,3 z" fill="#a99bff" />
+                  </marker>
+                  <marker id="rm-arrow-del" markerWidth="9" markerHeight="9" refX="6.5" refY="3" orient="auto">
+                    <path d="M0,0 L0,6 L7,3 z" fill="#ef4444" />
+                  </marker>
+                </defs>
 
-          {edges.map(e => {
-            const a = byId[e.from], b = byId[e.to]
-            if (!a || !b) return null
-            const d = elbow(a, b)
-            const on = activePath.has(e.from) && activePath.has(e.to)
-            const del = editing && hoverEdge === e.id
-            return (
-              <g key={e.id}>
-                <path d={d} fill="none" stroke={del ? '#ef4444' : on ? '#a99bff' : '#7d7c96'}
-                  strokeWidth={del || on ? 2 : 1.4}
-                  markerEnd={del ? 'url(#rm-arrow-del)' : on ? 'url(#rm-arrow-on)' : 'url(#rm-arrow)'}
-                  opacity={activePath.size > 0 && !on ? 0.45 : 1}
-                  style={{ transition: 'stroke 0.12s' }} />
-                {editing && (
-                  <path d={d} fill="none" stroke="transparent" strokeWidth={14} style={{ cursor: 'pointer' }}
-                    onMouseEnter={() => setHoverEdge(e.id)} onMouseLeave={() => setHoverEdge(null)}
-                    onClick={() => { setHoverEdge(null); onDeleteEdge(e.id) }}>
-                    <title>클릭하면 이 화살표를 삭제합니다</title>
-                  </path>
+                {edges.map(e => {
+                  const a = byId[e.from], b = byId[e.to]
+                  if (!a || !b) return null
+                  const d = elbow(a, b)
+                  const on = activePath.has(e.from) && activePath.has(e.to)
+                  const del = editing && hoverEdge === e.id
+                  return (
+                    <g key={e.id}>
+                      <path d={d} fill="none" stroke={del ? '#ef4444' : on ? '#a99bff' : '#7d7c96'}
+                        strokeWidth={del || on ? 2 : 1.4}
+                        markerEnd={del ? 'url(#rm-arrow-del)' : on ? 'url(#rm-arrow-on)' : 'url(#rm-arrow)'}
+                        opacity={activePath.size > 0 && !on ? 0.45 : 1}
+                        style={{ transition: 'stroke 0.12s' }} />
+                      {editing && (
+                        <path d={d} fill="none" stroke="transparent" strokeWidth={14} style={{ cursor: 'pointer' }}
+                          onMouseEnter={() => setHoverEdge(e.id)} onMouseLeave={() => setHoverEdge(null)}
+                          onClick={() => { setHoverEdge(null); onDeleteEdge(e.id) }}>
+                          <title>클릭하면 이 화살표를 삭제합니다</title>
+                        </path>
+                      )}
+                    </g>
+                  )
+                })}
+
+                {/* Preview Edge for Linking */}
+                {editing && linkFrom && hoverNode && linkFrom !== hoverNode && byId[linkFrom] && byId[hoverNode] && (
+                  <path d={elbow(byId[linkFrom], byId[hoverNode])} fill="none" stroke="#f59e0b" strokeWidth={2} strokeDasharray="5 5" style={{ pointerEvents: 'none' }} />
                 )}
-              </g>
-            )
-          })}
+              </svg>
 
-          {/* Preview Edge for Linking */}
-          {editing && linkFrom && hoverNode && linkFrom !== hoverNode && byId[linkFrom] && byId[hoverNode] && (
-            <path d={elbow(byId[linkFrom], byId[hoverNode])} fill="none" stroke="#f59e0b" strokeWidth={2} strokeDasharray="5 5" style={{ pointerEvents: 'none' }} />
-          )}
-        </svg>
-
-        {positionedNodes.map(n => (
-          <RoadmapNode key={n.id} node={n} warn={warnMap[n.id] ?? null}
-            selected={selectedId === n.id} dimmed={isDim(n.id)}
-            editing={editing} linking={linkFrom === n.id}
-            scale={scale} suggestion={suggestions?.find((s: any) => s.targetId === n.id)}
-            onSelect={onSelect} onDelete={onDeleteNode} onStartLink={onStartLink} onMove={onMove} onMoveEnd={onMoveEnd}
-            onHover={setHoverNode} />
-        ))}
+              {positionedNodes.map(n => (
+                <RoadmapNode key={n.id} node={n} warn={warnMap[n.id] ?? null}
+                  selected={selectedId === n.id} dimmed={isDim(n.id)}
+                  editing={editing} linking={linkFrom === n.id}
+                  scale={scale} suggestion={suggestions?.find((s: any) => s.targetId === n.id)}
+                  onSelect={onSelect} onDelete={onDeleteNode} onStartLink={onStartLink} onMove={onMove} onMoveEnd={onMoveEnd}
+                  onHover={setHoverNode} />
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
-      </div>
-      </div>
-    </div>
 
       {/* Zoom indicator */}
       <div style={{
@@ -616,12 +616,12 @@ function RoadmapCanvas({ nodes, edges, selectedId, editing, linkFrom, suggestion
         <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#b0aec2' }}>
           {Math.round(scale * 100)}%
         </span>
-        <button onClick={() => { 
-          setScale(1); 
-          if (viewportRef.current) { 
-            viewportRef.current.scrollLeft = 4000 - viewportRef.current.clientWidth / 2 + 300; 
-            viewportRef.current.scrollTop = 4000 - 20; 
-          } 
+        <button onClick={() => {
+          setScale(1);
+          if (viewportRef.current) {
+            viewportRef.current.scrollLeft = 4000 - viewportRef.current.clientWidth / 2 + 300;
+            viewportRef.current.scrollTop = 4000 - 20;
+          }
         }}
           style={{
             padding: '3px 9px', borderRadius: 100, border: 'none', background: '#2c2c3a',
@@ -727,7 +727,7 @@ function NodeDetailPanel({ teamId, node, color, suggestion, onChange, onClose, o
   const [draft, setDraft] = useState('')
   const [issueDraft, setIssueDraft] = useState(node.issue || '')
   const [isIssueOpen, setIsIssueOpen] = useState(!!node.issue)
-  useEffect(() => { 
+  useEffect(() => {
     setIssueDraft(node.issue || '')
     setIsIssueOpen(!!node.issue)
   }, [node.id, node.issue])
@@ -795,29 +795,29 @@ function NodeDetailPanel({ teamId, node, color, suggestion, onChange, onClose, o
           />
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-        <button onClick={() => setView(v => (v === 'comments' ? 'info' : 'comments'))}
-          title="댓글"
-          style={{
-            display: 'flex', alignItems: 'center', gap: 6, height: 26, padding: '0 10px', borderRadius: 7,
-            border: `1px solid ${view === 'comments' ? '#ffffff' : '#4a4a5c'}`, flexShrink: 0,
-            background: view === 'comments' ? '#ffffff' : 'transparent',
-            color: view === 'comments' ? '#0f0f14' : '#ffffff', cursor: 'pointer',
-            fontFamily: 'var(--font-display)', fontSize: 11, fontWeight: 600,
+          <button onClick={() => setView(v => (v === 'comments' ? 'info' : 'comments'))}
+            title="댓글"
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6, height: 26, padding: '0 10px', borderRadius: 7,
+              border: `1px solid ${view === 'comments' ? '#ffffff' : '#4a4a5c'}`, flexShrink: 0,
+              background: view === 'comments' ? '#ffffff' : 'transparent',
+              color: view === 'comments' ? '#0f0f14' : '#ffffff', cursor: 'pointer',
+              fontFamily: 'var(--font-display)', fontSize: 11, fontWeight: 600,
+            }}>
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M1.5 2.5h9v6h-5l-2.5 2v-2h-1.5v-6Z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" />
+            </svg>
+            {t('node.comments')}{comments.length > 0 ? ` ${comments.length}` : ''}
+          </button>
+          <button onClick={onClose} style={{
+            width: 26, height: 26, borderRadius: 7, border: '1px solid #33333f', flexShrink: 0,
+            background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'pointer', color: '#a9a8ba',
           }}>
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-            <path d="M1.5 2.5h9v6h-5l-2.5 2v-2h-1.5v-6Z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" />
-          </svg>
-          {t('node.comments')}{comments.length > 0 ? ` ${comments.length}` : ''}
-        </button>
-        <button onClick={onClose} style={{
-          width: 26, height: 26, borderRadius: 7, border: '1px solid #33333f', flexShrink: 0,
-          background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          cursor: 'pointer', color: '#a9a8ba',
-        }}>
-          <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
-            <path d="M1 1L11 11M11 1L1 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-          </svg>
-        </button>
+            <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+              <path d="M1 1L11 11M11 1L1 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+          </button>
         </div>
       </div>
 
@@ -877,318 +877,318 @@ function NodeDetailPanel({ teamId, node, color, suggestion, onChange, onClose, o
           </div>
         </div>
       ) : (
-      <div style={{ padding: 18, display: 'flex', flexDirection: 'column', gap: 22 }}>
-        {/* AI Suggestion */}
-        {suggestion && teamId && (
-          <div style={{
-            borderRadius: 14, border: '1.5px solid var(--color-primary)', background: '#6b5cf60a', padding: '16px 18px',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-              <span style={{
-                width: 20, height: 20, borderRadius: '50%', background: 'var(--color-primary)', flexShrink: 0,
-                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-                  <path d="M12 2L15 9L22 12L15 15L12 22L9 15L2 12L9 9L12 2Z" fill="#fff" />
-                </svg>
-              </span>
-              <span style={{ fontFamily: 'var(--font-display)', fontSize: 13.5, fontWeight: 700, color: 'var(--color-primary)' }}>
-                AI 제안
-              </span>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#6b5cf6', letterSpacing: '0.08em', background: '#6b5cf61a', padding: '2px 6px', borderRadius: 6, marginLeft: 'auto' }}>
-                {suggestion.sourceTool}
-              </span>
-            </div>
-            <div style={{ fontSize: 13, color: 'var(--color-foreground)', fontWeight: 600, marginBottom: 4 }}>
-              {suggestion.title}
-            </div>
-            <div style={{ fontSize: 12.5, color: 'var(--color-muted-foreground)', lineHeight: 1.6, marginBottom: 16 }}>
-              {suggestion.body}
-            </div>
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={() => {
-                fetch(`/api/teams/${teamId}/suggestions/${suggestion.id}/approve`, { method: 'POST', headers: { 'Authorization': `Bearer ${localStorage.getItem('templ_token')}` } })
-                  .then(() => onSuggestionResolved?.())
-                  .catch(console.error)
-              }} style={{
-                flex: 1, padding: '8px 0', borderRadius: 8, background: 'var(--color-primary)', color: '#fff',
-                fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer'
-              }}>
-                승인 적용
-              </button>
-              <button onClick={() => {
-                fetch(`/api/teams/${teamId}/suggestions/${suggestion.id}/reject`, { method: 'POST', headers: { 'Authorization': `Bearer ${localStorage.getItem('templ_token')}` } })
-                  .then(() => onSuggestionResolved?.())
-                  .catch(console.error)
-              }} style={{
-                flex: 1, padding: '8px 0', borderRadius: 8, background: 'transparent', color: 'var(--color-muted-foreground)',
-                fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 600, border: '1px solid var(--color-border)', cursor: 'pointer'
-              }}>
-                무시
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* 문제 발생 */}
-        {isIssueOpen && (
-          <div style={{
-            borderRadius: 14, border: '1.5px solid #ef444440', background: '#ef44440d', padding: '14px 15px',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 9 }}>
-              <span style={{
-                width: 17, height: 17, borderRadius: '50%', background: '#ef4444', flexShrink: 0,
-                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                  <path d="M5 2v3.4M5 7.4v.1" stroke="#fff" strokeWidth="1.7" strokeLinecap="round" />
-                </svg>
-              </span>
-              <span style={{ fontFamily: 'var(--font-display)', fontSize: 12.5, fontWeight: 700, color: '#b91c1c' }}>
-                {t('node.issueOccurred')}
-              </span>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: '#c2504f', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-                Blocked
-              </span>
-              <button onClick={() => onChange({ issue: issueDraft })}
-                style={{
-                  marginLeft: 'auto', padding: '4px 10px', borderRadius: 7, border: '1px solid #ef444440',
-                  background: '#ef4444', color: '#fff', cursor: 'pointer',
-                  fontFamily: 'var(--font-display)', fontSize: 11, fontWeight: 600,
+        <div style={{ padding: 18, display: 'flex', flexDirection: 'column', gap: 22 }}>
+          {/* AI Suggestion */}
+          {suggestion && teamId && (
+            <div style={{
+              borderRadius: 14, border: '1.5px solid var(--color-primary)', background: '#6b5cf60a', padding: '16px 18px',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                <span style={{
+                  width: 20, height: 20, borderRadius: '50%', background: 'var(--color-primary)', flexShrink: 0,
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                 }}>
-                확인
-              </button>
-              <button onClick={() => { setIsIssueOpen(false); setIssueDraft(''); onChange({ issue: '' }) }}
-                style={{
-                  padding: '4px 10px', borderRadius: 7, border: '1px solid #ef444440',
-                  background: 'transparent', color: '#b91c1c', cursor: 'pointer',
-                  fontFamily: 'var(--font-display)', fontSize: 11, fontWeight: 600,
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                    <path d="M12 2L15 9L22 12L15 15L12 22L9 15L2 12L9 9L12 2Z" fill="#fff" />
+                  </svg>
+                </span>
+                <span style={{ fontFamily: 'var(--font-display)', fontSize: 13.5, fontWeight: 700, color: 'var(--color-primary)' }}>
+                  AI 제안
+                </span>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#6b5cf6', letterSpacing: '0.08em', background: '#6b5cf61a', padding: '2px 6px', borderRadius: 6, marginLeft: 'auto' }}>
+                  {suggestion.sourceTool}
+                </span>
+              </div>
+              <div style={{ fontSize: 13, color: 'var(--color-foreground)', fontWeight: 600, marginBottom: 4 }}>
+                {suggestion.title}
+              </div>
+              <div style={{ fontSize: 12.5, color: 'var(--color-muted-foreground)', lineHeight: 1.6, marginBottom: 16 }}>
+                {suggestion.body}
+              </div>
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button onClick={() => {
+                  fetch(`/api/teams/${teamId}/suggestions/${suggestion.id}/approve`, { method: 'POST', headers: { 'Authorization': `Bearer ${localStorage.getItem('templ_token')}` } })
+                    .then(() => onSuggestionResolved?.())
+                    .catch(console.error)
+                }} style={{
+                  flex: 1, padding: '8px 0', borderRadius: 8, background: 'var(--color-primary)', color: '#fff',
+                  fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer'
                 }}>
-                {t('node.resolved')}
-              </button>
+                  승인 적용
+                </button>
+                <button onClick={() => {
+                  fetch(`/api/teams/${teamId}/suggestions/${suggestion.id}/reject`, { method: 'POST', headers: { 'Authorization': `Bearer ${localStorage.getItem('templ_token')}` } })
+                    .then(() => onSuggestionResolved?.())
+                    .catch(console.error)
+                }} style={{
+                  flex: 1, padding: '8px 0', borderRadius: 8, background: 'transparent', color: 'var(--color-muted-foreground)',
+                  fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 600, border: '1px solid var(--color-border)', cursor: 'pointer'
+                }}>
+                  무시
+                </button>
+              </div>
             </div>
-            <textarea value={issueDraft} onChange={e => setIssueDraft(e.target.value)} rows={4}
-              placeholder={t('node.issuePlaceholder')}
-              style={{ ...fieldStyle, background: '#ffffff', border: '1.5px solid #ef444433', fontSize: 12.5 }} />
-          </div>
-        )}
+          )}
 
-        {/* 제출된 파일 */}
-        <div>
-          {section(t('node.files'), 'FILES')}
-          {files.length === 0 ? (
-            <p style={{
-              margin: 0, padding: '14px 0', textAlign: 'center', borderRadius: 10,
-              border: '1.5px dashed var(--color-border)', fontSize: 12,
+          {/* 문제 발생 */}
+          {isIssueOpen && (
+            <div style={{
+              borderRadius: 14, border: '1.5px solid #ef444440', background: '#ef44440d', padding: '14px 15px',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 9 }}>
+                <span style={{
+                  width: 17, height: 17, borderRadius: '50%', background: '#ef4444', flexShrink: 0,
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                    <path d="M5 2v3.4M5 7.4v.1" stroke="#fff" strokeWidth="1.7" strokeLinecap="round" />
+                  </svg>
+                </span>
+                <span style={{ fontFamily: 'var(--font-display)', fontSize: 12.5, fontWeight: 700, color: '#b91c1c' }}>
+                  {t('node.issueOccurred')}
+                </span>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: '#c2504f', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                  Blocked
+                </span>
+                <button onClick={() => onChange({ issue: issueDraft })}
+                  style={{
+                    marginLeft: 'auto', padding: '4px 10px', borderRadius: 7, border: '1px solid #ef444440',
+                    background: '#ef4444', color: '#fff', cursor: 'pointer',
+                    fontFamily: 'var(--font-display)', fontSize: 11, fontWeight: 600,
+                  }}>
+                  확인
+                </button>
+                <button onClick={() => { setIsIssueOpen(false); setIssueDraft(''); onChange({ issue: '' }) }}
+                  style={{
+                    padding: '4px 10px', borderRadius: 7, border: '1px solid #ef444440',
+                    background: 'transparent', color: '#b91c1c', cursor: 'pointer',
+                    fontFamily: 'var(--font-display)', fontSize: 11, fontWeight: 600,
+                  }}>
+                  {t('node.resolved')}
+                </button>
+              </div>
+              <textarea value={issueDraft} onChange={e => setIssueDraft(e.target.value)} rows={4}
+                placeholder={t('node.issuePlaceholder')}
+                style={{ ...fieldStyle, background: '#ffffff', border: '1.5px solid #ef444433', fontSize: 12.5 }} />
+            </div>
+          )}
+
+          {/* 제출된 파일 */}
+          <div>
+            {section(t('node.files'), 'FILES')}
+            {files.length === 0 ? (
+              <p style={{
+                margin: 0, padding: '14px 0', textAlign: 'center', borderRadius: 10,
+                border: '1.5px dashed var(--color-border)', fontSize: 12,
+                color: 'var(--color-muted-foreground)',
+              }}>
+                {t('node.noFiles')}
+              </p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+                {files.map(f => (
+                  <div key={f.id} onClick={() => downloadFile(f)} title={`${f.name} 다운로드`}
+                    onMouseEnter={e => { e.currentTarget.style.background = '#f2f1ec'; e.currentTarget.style.borderColor = `${color}55` }}
+                    onMouseLeave={e => { e.currentTarget.style.background = '#fafaf8'; e.currentTarget.style.borderColor = 'var(--color-border)' }}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 10, padding: '9px 11px',
+                      borderRadius: 10, borderWidth: 1, borderStyle: 'solid', borderColor: 'var(--color-border)',
+                      background: '#fafaf8', cursor: 'pointer', transition: 'background 0.12s, border-color 0.12s',
+                    }}>
+                    <span style={{
+                      width: 30, height: 30, borderRadius: 8, flexShrink: 0,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      background: `${color}14`, color,
+                      fontFamily: 'var(--font-mono)', fontSize: 8.5, fontWeight: 500, letterSpacing: '0.04em',
+                    }}>
+                      {(f.name.split('.').pop() ?? '').slice(0, 4).toUpperCase()}
+                    </span>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div style={{
+                        fontFamily: 'var(--font-display)', fontSize: 12.5, fontWeight: 600,
+                        color: 'var(--color-foreground)',
+                        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                      }}>
+                        {f.name}
+                      </div>
+                      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, color: 'var(--color-muted-foreground)', marginTop: 2 }}>
+                        {f.size} · {f.author} · {f.date}
+                      </div>
+                    </div>
+                    <svg width="13" height="13" viewBox="0 0 12 12" fill="none" style={{ flexShrink: 0, color: 'var(--color-muted-foreground)' }}>
+                      <path d="M6 1.5v6M6 7.5L3.6 5.1M6 7.5l2.4-2.4M1.8 9.6h8.4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    <button onClick={e => { e.stopPropagation(); onChange({ files: files.filter(x => x.id !== f.id) }) }}
+                      title={t('node.deleteFile')}
+                      style={{
+                        border: 'none', background: 'none', padding: 4, cursor: 'pointer',
+                        color: 'var(--color-muted-foreground)', display: 'flex', flexShrink: 0,
+                      }}>
+                      <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                        <path d="M1.5 1.5L8.5 8.5M8.5 1.5L1.5 8.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+                      </svg>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <label style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+              marginTop: 8, padding: '8px 0', borderRadius: 9,
+              border: '1.5px dashed var(--color-border)', cursor: 'pointer',
+              fontFamily: 'var(--font-display)', fontSize: 11.5, fontWeight: 600,
               color: 'var(--color-muted-foreground)',
             }}>
-              {t('node.noFiles')}
-            </p>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
-              {files.map(f => (
-                <div key={f.id} onClick={() => downloadFile(f)} title={`${f.name} 다운로드`}
-                  onMouseEnter={e => { e.currentTarget.style.background = '#f2f1ec'; e.currentTarget.style.borderColor = `${color}55` }}
-                  onMouseLeave={e => { e.currentTarget.style.background = '#fafaf8'; e.currentTarget.style.borderColor = 'var(--color-border)' }}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 10, padding: '9px 11px',
-                    borderRadius: 10, borderWidth: 1, borderStyle: 'solid', borderColor: 'var(--color-border)',
-                    background: '#fafaf8', cursor: 'pointer', transition: 'background 0.12s, border-color 0.12s',
-                  }}>
-                  <span style={{
-                    width: 30, height: 30, borderRadius: 8, flexShrink: 0,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    background: `${color}14`, color,
-                    fontFamily: 'var(--font-mono)', fontSize: 8.5, fontWeight: 500, letterSpacing: '0.04em',
-                  }}>
-                    {(f.name.split('.').pop() ?? '').slice(0, 4).toUpperCase()}
-                  </span>
-                  <div style={{ minWidth: 0, flex: 1 }}>
-                    <div style={{
-                      fontFamily: 'var(--font-display)', fontSize: 12.5, fontWeight: 600,
-                      color: 'var(--color-foreground)',
-                      whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                    }}>
-                      {f.name}
-                    </div>
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, color: 'var(--color-muted-foreground)', marginTop: 2 }}>
-                      {f.size} · {f.author} · {f.date}
-                    </div>
-                  </div>
-                  <svg width="13" height="13" viewBox="0 0 12 12" fill="none" style={{ flexShrink: 0, color: 'var(--color-muted-foreground)' }}>
-                    <path d="M6 1.5v6M6 7.5L3.6 5.1M6 7.5l2.4-2.4M1.8 9.6h8.4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                  <button onClick={e => { e.stopPropagation(); onChange({ files: files.filter(x => x.id !== f.id) }) }}
-                    title={t('node.deleteFile')}
+              <input type="file" multiple style={{ display: 'none' }}
+                onChange={e => {
+                  const picked = Array.from(e.target.files ?? [])
+                  if (picked.length === 0) return
+                  const today = new Date().toISOString().slice(0, 10)
+                  let next = Math.max(0, ...files.map(f => f.id)) + 1
+                  onChange({
+                    files: [...files, ...picked.map(f => ({
+                      id: next++, name: f.name, size: formatBytes(f.size), author: localStorage.getItem('templ_user_nickname') || 'Jordan Kim', date: today,
+                      url: URL.createObjectURL(f),
+                    }))],
+                  })
+                  e.target.value = ''
+                }} />
+              {t('node.submitFile')}
+            </label>
+          </div>
+
+          {/* 진행 상태 */}
+          <div>
+            {section(t('node.status'), 'STATUS')}
+            <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
+              {(['todo', 'active', 'done'] as const).map(k => {
+                const on = node.status === k
+                const m = STATUS_META[k]
+                return (
+                  <button key={k}
+                    onClick={() => onChange({ status: k, progress: k === 'done' ? 100 : k === 'todo' && node.progress === 100 ? 0 : node.progress })}
                     style={{
-                      border: 'none', background: 'none', padding: 4, cursor: 'pointer',
-                      color: 'var(--color-muted-foreground)', display: 'flex', flexShrink: 0,
+                      flex: 1, padding: '9px 0', borderRadius: 9,
+                      border: `1.5px solid ${on ? m.color : 'var(--color-border)'}`,
+                      background: on ? `${m.color}14` : '#ffffff',
+                      color: on ? m.color : 'var(--color-muted-foreground)',
+                      fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: on ? 700 : 500,
+                      cursor: 'pointer', transition: 'all 0.12s',
                     }}>
-                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                      <path d="M1.5 1.5L8.5 8.5M8.5 1.5L1.5 8.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-                    </svg>
+                    {k === 'done' ? t('node.done_checked') : t(`node.${k}`)}
                   </button>
-                </div>
-              ))}
+                )
+              })}
             </div>
-          )}
-          <label style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-            marginTop: 8, padding: '8px 0', borderRadius: 9,
-            border: '1.5px dashed var(--color-border)', cursor: 'pointer',
-            fontFamily: 'var(--font-display)', fontSize: 11.5, fontWeight: 600,
-            color: 'var(--color-muted-foreground)',
-          }}>
-            <input type="file" multiple style={{ display: 'none' }}
-              onChange={e => {
-                const picked = Array.from(e.target.files ?? [])
-                if (picked.length === 0) return
-                const today = new Date().toISOString().slice(0, 10)
-                let next = Math.max(0, ...files.map(f => f.id)) + 1
-                onChange({
-                  files: [...files, ...picked.map(f => ({
-                    id: next++, name: f.name, size: formatBytes(f.size), author: localStorage.getItem('templ_user_nickname') || 'Jordan Kim', date: today,
-                    url: URL.createObjectURL(f),
-                  }))],
-                })
-                e.target.value = ''
-              }} />
-            {t('node.submitFile')}
-          </label>
-        </div>
-
-        {/* 진행 상태 */}
-        <div>
-          {section(t('node.status'), 'STATUS')}
-          <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
-            {(['todo', 'active', 'done'] as const).map(k => {
-              const on = node.status === k
-              const m = STATUS_META[k]
-              return (
-                <button key={k}
-                  onClick={() => onChange({ status: k, progress: k === 'done' ? 100 : k === 'todo' && node.progress === 100 ? 0 : node.progress })}
-                  style={{
-                    flex: 1, padding: '9px 0', borderRadius: 9,
-                    border: `1.5px solid ${on ? m.color : 'var(--color-border)'}`,
-                    background: on ? `${m.color}14` : '#ffffff',
-                    color: on ? m.color : 'var(--color-muted-foreground)',
-                    fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: on ? 700 : 500,
-                    cursor: 'pointer', transition: 'all 0.12s',
-                  }}>
-                  {k === 'done' ? t('node.done_checked') : t(`node.${k}`)}
-                </button>
-              )
-            })}
-          </div>
-          {!isIssueOpen && (
-            <button onClick={() => setIsIssueOpen(true)} style={{
-              width: '100%', marginBottom: 12, padding: '8px 0', borderRadius: 9,
-              border: '1.5px dashed #ef444455', background: 'transparent', color: '#b91c1c',
-              fontFamily: 'var(--font-display)', fontSize: 11.5, fontWeight: 600, cursor: 'pointer',
-            }}>
-              {t('node.markAsIssue')}
-            </button>
-          )}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <input type="range" min={0} max={100} step={5} value={node.progress}
-              onChange={e => onChange({ progress: Number(e.target.value) })}
-              style={{ flex: 1, accentColor: color }} />
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--color-muted-foreground)', width: 34, textAlign: 'right' }}>
-              {node.progress}%
-            </span>
-          </div>
-        </div>
-
-        {/* 목표 */}
-        <div>
-          {section(t('node.objective'), 'OBJECTIVE')}
-          <textarea value={node.goal} onChange={e => onChange({ goal: e.target.value })} rows={3}
-            placeholder={t('node.objectivePlaceholder')}
-            style={{ ...fieldStyle, fontWeight: 500, background: `${color}0a`, border: `1.5px solid ${color}33` }} />
-        </div>
-
-        {/* 시간 제한 */}
-        <div>
-          {section(t('node.deadline'), 'DEADLINE')}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <input type="date" value={node.dueDate} onChange={e => onChange({ dueDate: e.target.value })}
-              style={{ ...fieldStyle, fontFamily: 'var(--font-mono)', flex: 1 }} />
-            <span style={{
-              fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 500, padding: '6px 10px', borderRadius: 7,
-              background: '#0f0f14', color: '#ffffff', letterSpacing: '0.04em', flexShrink: 0,
-            }}>
-              {daysLeft(node.dueDate)}
-            </span>
-          </div>
-        </div>
-
-        {/* 진행 멤버 */}
-        <div>
-          {section(t('node.members'), 'MEMBERS')}
-          {node.assignees.length > 0 && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 10 }}>
-              {node.assignees.map(name => (
-                <div key={name} style={{
-                  display: 'flex', alignItems: 'center', gap: 10,
-                  padding: '8px 11px', borderRadius: 10, border: '1px solid var(--color-border)',
-                }}>
-                  <Avatar name={name} size={24} />
-                  <span style={{ flex: 1, fontSize: 13, fontWeight: 500, color: 'var(--color-foreground)' }}>{name}</span>
-                  <button onClick={() => onChange({ assignees: node.assignees.filter(a => a !== name) })}
-                    style={{ border: 'none', background: 'none', cursor: 'pointer', padding: 0, display: 'flex', opacity: 0.4 }}>
-                    <svg width="11" height="11" viewBox="0 0 10 10" fill="none">
-                      <path d="M1.5 1.5L8.5 8.5M8.5 1.5L1.5 8.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-                    </svg>
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-          <ChipEditor items={[]} color={color} placeholder={t('node.memberPlaceholder')}
-            onChange={next => { if (next[0]) onChange({ assignees: [...node.assignees, next[0]] }) }} />
-        </div>
-
-        {/* 전 단계 할 일 */}
-        <div>
-          {section(t('node.prerequisites'), 'PREREQUISITES')}
-          {node.prerequisites.length === 0 && (
-            <div style={{
-              padding: '9px 12px', borderRadius: 9, border: '1px dashed var(--color-border)',
-              fontSize: 12, color: 'var(--color-muted-foreground)', marginBottom: 8,
-            }}>
-              {t('node.noPrerequisites')}
-            </div>
-          )}
-          <ChipEditor items={node.prerequisites} color={color} placeholder={t('node.prerequisitesPlaceholder')}
-            onChange={next => onChange({ prerequisites: next })} />
-        </div>
-
-        {/* AI 요약 */}
-        <div>
-          {section(t('node.aiSummary'), 'AI SUMMARY')}
-          <div style={{ padding: '14px 15px', borderRadius: 14, background: '#0f0f14', border: '1px solid #2a2a38' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 9 }}>
-              <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
-                <path d="M7 1L8.3 5.2L12.5 6.5L8.3 7.8L7 12L5.7 7.8L1.5 6.5L5.7 5.2L7 1Z" fill="#a99bff" />
-              </svg>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: '#a99bff', letterSpacing: '0.12em' }}>
-                GENERATED
+            {!isIssueOpen && (
+              <button onClick={() => setIsIssueOpen(true)} style={{
+                width: '100%', marginBottom: 12, padding: '8px 0', borderRadius: 9,
+                border: '1.5px dashed #ef444455', background: 'transparent', color: '#b91c1c',
+                fontFamily: 'var(--font-display)', fontSize: 11.5, fontWeight: 600, cursor: 'pointer',
+              }}>
+                {t('node.markAsIssue')}
+              </button>
+            )}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <input type="range" min={0} max={100} step={5} value={node.progress}
+                onChange={e => onChange({ progress: Number(e.target.value) })}
+                style={{ flex: 1, accentColor: color }} />
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--color-muted-foreground)', width: 34, textAlign: 'right' }}>
+                {node.progress}%
               </span>
             </div>
-            <textarea value={node.aiSummary} onChange={e => onChange({ aiSummary: e.target.value })} rows={5}
-              placeholder={t('node.aiSummaryPlaceholder')}
-              style={{
-                width: '100%', background: 'transparent', border: '1.5px solid transparent', borderRadius: 8,
-                padding: '2px 4px', margin: '0 0 0 -4px', outline: 'none', resize: 'none',
-                fontSize: 12.5, lineHeight: 1.8, color: '#d3d2e0', fontFamily: 'var(--font-body)',
-                boxSizing: 'border-box',
-              }}
-              onFocus={e => { e.target.style.borderColor = '#6b5cf6'; e.target.style.background = '#181822' }}
-              onBlur={e => { e.target.style.borderColor = 'transparent'; e.target.style.background = 'transparent' }}
-            />
+          </div>
+
+          {/* 목표 */}
+          <div>
+            {section(t('node.objective'), 'OBJECTIVE')}
+            <textarea value={node.goal} onChange={e => onChange({ goal: e.target.value })} rows={3}
+              placeholder={t('node.objectivePlaceholder')}
+              style={{ ...fieldStyle, fontWeight: 500, background: `${color}0a`, border: `1.5px solid ${color}33` }} />
+          </div>
+
+          {/* 시간 제한 */}
+          <div>
+            {section(t('node.deadline'), 'DEADLINE')}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <input type="date" value={node.dueDate} onChange={e => onChange({ dueDate: e.target.value })}
+                style={{ ...fieldStyle, fontFamily: 'var(--font-mono)', flex: 1 }} />
+              <span style={{
+                fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 500, padding: '6px 10px', borderRadius: 7,
+                background: '#0f0f14', color: '#ffffff', letterSpacing: '0.04em', flexShrink: 0,
+              }}>
+                {daysLeft(node.dueDate)}
+              </span>
+            </div>
+          </div>
+
+          {/* 진행 멤버 */}
+          <div>
+            {section(t('node.members'), 'MEMBERS')}
+            {node.assignees.length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 10 }}>
+                {node.assignees.map(name => (
+                  <div key={name} style={{
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    padding: '8px 11px', borderRadius: 10, border: '1px solid var(--color-border)',
+                  }}>
+                    <Avatar name={name} size={24} />
+                    <span style={{ flex: 1, fontSize: 13, fontWeight: 500, color: 'var(--color-foreground)' }}>{name}</span>
+                    <button onClick={() => onChange({ assignees: node.assignees.filter(a => a !== name) })}
+                      style={{ border: 'none', background: 'none', cursor: 'pointer', padding: 0, display: 'flex', opacity: 0.4 }}>
+                      <svg width="11" height="11" viewBox="0 0 10 10" fill="none">
+                        <path d="M1.5 1.5L8.5 8.5M8.5 1.5L1.5 8.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+                      </svg>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <ChipEditor items={[]} color={color} placeholder={t('node.memberPlaceholder')}
+              onChange={next => { if (next[0]) onChange({ assignees: [...node.assignees, next[0]] }) }} />
+          </div>
+
+          {/* 전 단계 할 일 */}
+          <div>
+            {section(t('node.prerequisites'), 'PREREQUISITES')}
+            {node.prerequisites.length === 0 && (
+              <div style={{
+                padding: '9px 12px', borderRadius: 9, border: '1px dashed var(--color-border)',
+                fontSize: 12, color: 'var(--color-muted-foreground)', marginBottom: 8,
+              }}>
+                {t('node.noPrerequisites')}
+              </div>
+            )}
+            <ChipEditor items={node.prerequisites} color={color} placeholder={t('node.prerequisitesPlaceholder')}
+              onChange={next => onChange({ prerequisites: next })} />
+          </div>
+
+          {/* AI 요약 */}
+          <div>
+            {section(t('node.aiSummary'), 'AI SUMMARY')}
+            <div style={{ padding: '14px 15px', borderRadius: 14, background: '#0f0f14', border: '1px solid #2a2a38' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 9 }}>
+                <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+                  <path d="M7 1L8.3 5.2L12.5 6.5L8.3 7.8L7 12L5.7 7.8L1.5 6.5L5.7 5.2L7 1Z" fill="#a99bff" />
+                </svg>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: '#a99bff', letterSpacing: '0.12em' }}>
+                  GENERATED
+                </span>
+              </div>
+              <textarea value={node.aiSummary} onChange={e => onChange({ aiSummary: e.target.value })} rows={5}
+                placeholder={t('node.aiSummaryPlaceholder')}
+                style={{
+                  width: '100%', background: 'transparent', border: '1.5px solid transparent', borderRadius: 8,
+                  padding: '2px 4px', margin: '0 0 0 -4px', outline: 'none', resize: 'none',
+                  fontSize: 12.5, lineHeight: 1.8, color: '#d3d2e0', fontFamily: 'var(--font-body)',
+                  boxSizing: 'border-box',
+                }}
+                onFocus={e => { e.target.style.borderColor = '#6b5cf6'; e.target.style.background = '#181822' }}
+                onBlur={e => { e.target.style.borderColor = 'transparent'; e.target.style.background = 'transparent' }}
+              />
+            </div>
           </div>
         </div>
-      </div>
       )}
     </div>
   )
@@ -1202,7 +1202,7 @@ function TeamMissionInput({ team, onSave }: { team: TeamType; onSave: (mission: 
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
   const [graph, setGraph] = useState<{ nodes: RNode[]; edges: REdge[] }>({ nodes: [], edges: [] })
   const [suggestions, setSuggestions] = useState<any[]>([])
-  
+
   useEffect(() => {
     let active = true
     const loadRoadmap = async () => {
@@ -1250,7 +1250,7 @@ function TeamMissionInput({ team, onSave }: { team: TeamType; onSave: (mission: 
   const [specOpen, setSpecOpen] = useState(false)
   const [linkFrom, setLinkFrom] = useState<string | null>(null)
   const nextIdRef = useRef(1)
-const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
   const [alertNodeId, setAlertNodeId] = useState<string | null>(null)
   const announcedRef = useRef<Set<string>>(new Set())
 
@@ -1342,10 +1342,10 @@ const textareaRef = useRef<HTMLTextAreaElement>(null)
         if (childNode && childNode.tier !== 'root') {
           const parentIds = nextEdges.filter(e => e.to === childNode.id).map(e => e.from)
           const parents = g.nodes.filter(n => parentIds.includes(n.id))
-          
+
           let newTier: 'mid' | 'leaf' = 'leaf'
           if (parents.some(p => p.tier === 'root')) newTier = 'mid'
-          
+
           if (newTier !== childNode.tier) {
             const newSize = SIZE[newTier]
             nextNodes = g.nodes.map(n => n.id === childNode.id ? { ...n, tier: newTier, ...newSize } : n)
@@ -1443,187 +1443,187 @@ const textareaRef = useRef<HTMLTextAreaElement>(null)
           backgroundImage: 'radial-gradient(#1e1e2a 1px, transparent 1px)',
           backgroundSize: '22px 22px',
         }}>
-            {/* Canvas toolbar */}
-            <div style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16,
-              padding: '16px 22px', borderBottom: '1px solid #1e1e28', background: '#0f0f14',
-            }}>
-              <div>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: '#8b8a9e', letterSpacing: '0.16em', textTransform: 'uppercase', marginBottom: 5 }}>
-                  Roadmap · Auto-generated
-                </div>
-                <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700, color: '#ffffff', margin: 0, letterSpacing: '-0.02em' }}>
-                  {t('roadmap.title')}
-                </h2>
+          {/* Canvas toolbar */}
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16,
+            padding: '16px 22px', borderBottom: '1px solid #1e1e28', background: '#0f0f14',
+          }}>
+            <div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: '#8b8a9e', letterSpacing: '0.16em', textTransform: 'uppercase', marginBottom: 5 }}>
+                Roadmap · Auto-generated
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
-                {!editing && (['done', 'active', 'todo'] as const).map(k => (
-                  <span key={k} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: STATUS_META[k].color }} />
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#9998ad' }}>{t(k === 'done' ? 'roadmap.status_done' : k === 'active' ? 'roadmap.status_in_progress' : 'roadmap.status_pending')}</span>
-                  </span>
-                ))}
-                {editing && (
-                  <button onClick={addNode} style={{
-                    display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 9,
-                    border: '1px solid #3a3a4a', background: '#191922', color: '#e5e4ef',
-                    fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 600, cursor: 'pointer',
-                  }}>
-                    <span style={{ fontSize: 14, lineHeight: 1 }}>+</span> {t('roadmap.toolbar.addNode')}
-                  </button>
-                )}
-
-                <button onClick={() => { setEditing(v => !v); setLinkFrom(null) }} style={{
-                  padding: '7px 16px', borderRadius: 9, border: 'none',
-                  background: editing ? '#10b981' : team.color, color: '#ffffff',
-                  fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 600, cursor: 'pointer',
-                  transition: 'background 0.15s',
-                }}>
-                  {editing ? t('teamInfo.edit') : t('roadmap.edit_roadmap')}
-                </button>
-              </div>
+              <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700, color: '#ffffff', margin: 0, letterSpacing: '-0.02em' }}>
+                {t('roadmap.title')}
+              </h2>
             </div>
-
-            {editing && (
-              <div style={{
-                display: 'flex', alignItems: 'center', gap: 10, padding: '10px 22px',
-                background: linkFrom ? '#f59e0b16' : '#16161e', borderBottom: '1px solid #1e1e28',
-              }}>
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: linkFrom ? '#f5b849' : '#9998ad', letterSpacing: '0.04em', lineHeight: 1.7 }}>
-                  {linkFrom
-                    ? t('roadmap.toolbar.connectingHelp')
-                    : t('roadmap.canvas_help_edit')}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
+              {!editing && (['done', 'active', 'todo'] as const).map(k => (
+                <span key={k} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: STATUS_META[k].color }} />
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#9998ad' }}>{t(k === 'done' ? 'roadmap.status_done' : k === 'active' ? 'roadmap.status_in_progress' : 'roadmap.status_pending')}</span>
                 </span>
+              ))}
+              {editing && (
+                <button onClick={addNode} style={{
+                  display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 9,
+                  border: '1px solid #3a3a4a', background: '#191922', color: '#e5e4ef',
+                  fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                }}>
+                  <span style={{ fontSize: 14, lineHeight: 1 }}>+</span> {t('roadmap.toolbar.addNode')}
+                </button>
+              )}
+
+              <button onClick={() => { setEditing(v => !v); setLinkFrom(null) }} style={{
+                padding: '7px 16px', borderRadius: 9, border: 'none',
+                background: editing ? '#10b981' : team.color, color: '#ffffff',
+                fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                transition: 'background 0.15s',
+              }}>
+                {editing ? t('teamInfo.edit') : t('roadmap.edit_roadmap')}
+              </button>
+            </div>
+          </div>
+
+          {editing && (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 10, padding: '10px 22px',
+              background: linkFrom ? '#f59e0b16' : '#16161e', borderBottom: '1px solid #1e1e28',
+            }}>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: linkFrom ? '#f5b849' : '#9998ad', letterSpacing: '0.04em', lineHeight: 1.7 }}>
+                {linkFrom
+                  ? t('roadmap.toolbar.connectingHelp')
+                  : t('roadmap.canvas_help_edit')}
+              </span>
+            </div>
+          )}
+
+          <div style={{ position: 'relative', flex: 1, minHeight: 0 }}>
+            {specOpen && (
+              <div style={{
+                position: 'absolute', top: 0, left: 0, right: 0, zIndex: 20,
+                padding: '16px 22px', borderBottom: '1px solid #23232f',
+                background: 'rgba(18,18,26,0.96)', backdropFilter: 'blur(6px)',
+                boxShadow: '0 14px 32px rgba(0,0,0,0.45)',
+                animation: 'slideDown 0.16s ease',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, marginBottom: 10 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ width: 7, height: 7, borderRadius: '50%', background: team.color }} />
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#b7abff', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+                      Spec · 최종 목표
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <button onClick={handleEdit} style={{
+                      padding: '6px 14px', borderRadius: 8, border: 'none', background: team.color,
+                      color: '#ffffff', fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                    }}>
+                      재설정하기
+                    </button>
+                    <button onClick={() => setSpecOpen(false)} style={{
+                      width: 26, height: 26, borderRadius: 7, border: '1px solid #33333f',
+                      background: 'transparent', color: '#a9a8ba', cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+                        <path d="M1 1L11 11M11 1L1 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+                <p style={{ margin: 0, fontSize: 14, fontWeight: 500, lineHeight: 1.75, color: '#e5e4ef' }}>
+                  {value}
+                </p>
+                <div style={{ display: 'flex', gap: 20, marginTop: 12, paddingTop: 12, borderTop: '1px solid #23232f' }}>
+                  {[
+                    { k: '노드', v: safeGraph.nodes.length },
+                    { k: '연결', v: safeGraph.edges.length },
+                    { k: '완료', v: safeGraph.nodes.filter(n => n.status === 'done').length },
+                  ].map(m => (
+                    <div key={m.k} style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+                      <span style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 700, color: '#ffffff' }}>{m.v}</span>
+                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#8b8a9e' }}>{m.k}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
+            <RoadmapCanvas
+              nodes={safeGraph.nodes} edges={safeGraph.edges} selectedId={selectedNodeId}
+              editing={editing} linkFrom={linkFrom} suggestions={suggestions}
+              onSelect={handleNodeSelect} onMove={moveNode} onMoveEnd={saveNodePos}
+              onDeleteNode={deleteNode} onDeleteEdge={deleteEdge}
+              onStartLink={id => setLinkFrom(f => (f === id ? null : id))}
+            />
+          </div>
 
-            <div style={{ position: 'relative', flex: 1, minHeight: 0 }}>
-              {specOpen && (
-                <div style={{
-                  position: 'absolute', top: 0, left: 0, right: 0, zIndex: 20,
-                  padding: '16px 22px', borderBottom: '1px solid #23232f',
-                  background: 'rgba(18,18,26,0.96)', backdropFilter: 'blur(6px)',
-                  boxShadow: '0 14px 32px rgba(0,0,0,0.45)',
-                  animation: 'slideDown 0.16s ease',
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, marginBottom: 10 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span style={{ width: 7, height: 7, borderRadius: '50%', background: team.color }} />
-                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#b7abff', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
-                        Spec · 최종 목표
-                      </span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <button onClick={handleEdit} style={{
-                        padding: '6px 14px', borderRadius: 8, border: 'none', background: team.color,
-                        color: '#ffffff', fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 600, cursor: 'pointer',
-                      }}>
-                        재설정하기
-                      </button>
-                      <button onClick={() => setSpecOpen(false)} style={{
-                        width: 26, height: 26, borderRadius: 7, border: '1px solid #33333f',
-                        background: 'transparent', color: '#a9a8ba', cursor: 'pointer',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      }}>
-                        <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
-                          <path d="M1 1L11 11M11 1L1 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-                  <p style={{ margin: 0, fontSize: 14, fontWeight: 500, lineHeight: 1.75, color: '#e5e4ef' }}>
-                    {value}
-                  </p>
-                  <div style={{ display: 'flex', gap: 20, marginTop: 12, paddingTop: 12, borderTop: '1px solid #23232f' }}>
-                    {[
-                      { k: '노드', v: safeGraph.nodes.length },
-                      { k: '연결', v: safeGraph.edges.length },
-                      { k: '완료', v: safeGraph.nodes.filter(n => n.status === 'done').length },
-                    ].map(m => (
-                      <div key={m.k} style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
-                        <span style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 700, color: '#ffffff' }}>{m.v}</span>
-                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#8b8a9e' }}>{m.k}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-              <RoadmapCanvas
-                nodes={safeGraph.nodes} edges={safeGraph.edges} selectedId={selectedNodeId}
-                editing={editing} linkFrom={linkFrom} suggestions={suggestions}
-                onSelect={handleNodeSelect} onMove={moveNode} onMoveEnd={saveNodePos}
-                onDeleteNode={deleteNode} onDeleteEdge={deleteEdge}
-                onStartLink={id => setLinkFrom(f => (f === id ? null : id))}
-              />
-            </div>
-
-            <div style={{
-              marginTop: 'auto', flexShrink: 0,
-              padding: '11px 22px', borderTop: '1px solid #1e1e28', background: '#0f0f14',
-              fontFamily: 'var(--font-mono)', fontSize: 10, color: '#8b8a9e', letterSpacing: '0.04em',
-            }}>
-              {selectedNode
-                ? `SELECTED · ${selectedNode.code} — ${selectedNode.label}`
-                : `${safeGraph.nodes.length} NODES · ${safeGraph.edges.length} LINKS · ${t('roadmap.node_click_hint')}`}
-            </div>
+          <div style={{
+            marginTop: 'auto', flexShrink: 0,
+            padding: '11px 22px', borderTop: '1px solid #1e1e28', background: '#0f0f14',
+            fontFamily: 'var(--font-mono)', fontSize: 10, color: '#8b8a9e', letterSpacing: '0.04em',
+          }}>
+            {selectedNode
+              ? `SELECTED · ${selectedNode.code} — ${selectedNode.label}`
+              : `${safeGraph.nodes.length} NODES · ${safeGraph.edges.length} LINKS · ${t('roadmap.node_click_hint')}`}
+          </div>
         </div>
 
-      {alertNode && (
-        <div onClick={() => setAlertNodeId(null)} style={{
-          position: 'fixed', inset: 0, zIndex: 90, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          background: 'rgba(15,15,20,0.5)', backdropFilter: 'blur(3px)', animation: 'fadeIn 0.14s ease',
-        }}>
-          <div onClick={e => e.stopPropagation()} style={{
-            width: 400, maxWidth: '90vw', borderRadius: 18, background: '#ffffff', overflow: 'hidden',
-            border: '1.5px solid #ef444433', boxShadow: '0 24px 60px rgba(0,0,0,0.32)',
-            animation: 'slideDown 0.16s ease',
+        {alertNode && (
+          <div onClick={() => setAlertNodeId(null)} style={{
+            position: 'fixed', inset: 0, zIndex: 90, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: 'rgba(15,15,20,0.5)', backdropFilter: 'blur(3px)', animation: 'fadeIn 0.14s ease',
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '16px 18px', background: '#ef44440f', borderBottom: '1px solid #ef444426' }}>
-              <span style={{
-                width: 26, height: 26, borderRadius: '50%', background: '#ef4444', flexShrink: 0,
-                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                animation: 'issuePulse 1.6s ease-in-out infinite',
-              }}>
-                <svg width="13" height="13" viewBox="0 0 10 10" fill="none">
-                  <path d="M5 2v3.4M5 7.4v.1" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" />
-                </svg>
-              </span>
-              <div style={{ minWidth: 0 }}>
-                <div style={{ fontFamily: 'var(--font-display)', fontSize: 14.5, fontWeight: 700, color: '#b91c1c' }}>
-                  문제가 발생했습니다
-                </div>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.1em', color: '#c2504f', marginTop: 2 }}>
-                  {alertNode.code} · BLOCKED
+            <div onClick={e => e.stopPropagation()} style={{
+              width: 400, maxWidth: '90vw', borderRadius: 18, background: '#ffffff', overflow: 'hidden',
+              border: '1.5px solid #ef444433', boxShadow: '0 24px 60px rgba(0,0,0,0.32)',
+              animation: 'slideDown 0.16s ease',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '16px 18px', background: '#ef44440f', borderBottom: '1px solid #ef444426' }}>
+                <span style={{
+                  width: 26, height: 26, borderRadius: '50%', background: '#ef4444', flexShrink: 0,
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  animation: 'issuePulse 1.6s ease-in-out infinite',
+                }}>
+                  <svg width="13" height="13" viewBox="0 0 10 10" fill="none">
+                    <path d="M5 2v3.4M5 7.4v.1" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" />
+                  </svg>
+                </span>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontFamily: 'var(--font-display)', fontSize: 14.5, fontWeight: 700, color: '#b91c1c' }}>
+                    문제가 발생했습니다
+                  </div>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.1em', color: '#c2504f', marginTop: 2 }}>
+                    {alertNode.code} · BLOCKED
+                  </div>
                 </div>
               </div>
-            </div>
-            <div style={{ padding: '16px 18px 18px' }}>
-              <p style={{ margin: '0 0 8px', fontFamily: 'var(--font-display)', fontSize: 15, fontWeight: 700, color: 'var(--color-foreground)' }}>
-                {alertNode.label}
-              </p>
-              <p style={{ margin: 0, fontSize: 13, lineHeight: 1.75, color: 'var(--color-muted-foreground)' }}>
-                {alertNode.issue}
-              </p>
-              <div style={{ display: 'flex', gap: 8, marginTop: 18 }}>
-                <button onClick={() => setAlertNodeId(null)} style={{
-                  flex: 1, padding: '10px 0', borderRadius: 10, border: '1.5px solid var(--color-border)',
-                  background: '#ffffff', color: 'var(--color-muted-foreground)', cursor: 'pointer',
-                  fontFamily: 'var(--font-display)', fontSize: 12.5, fontWeight: 600,
-                }}>
-                  닫기
-                </button>
-                <button onClick={() => { setSelectedNodeId(alertNode.id); setAlertNodeId(null) }} style={{
-                  flex: 1.4, padding: '10px 0', borderRadius: 10, border: 'none',
-                  background: '#ef4444', color: '#ffffff', cursor: 'pointer',
-                  fontFamily: 'var(--font-display)', fontSize: 12.5, fontWeight: 700,
-                }}>
-                  해당 노드 보기
-                </button>
+              <div style={{ padding: '16px 18px 18px' }}>
+                <p style={{ margin: '0 0 8px', fontFamily: 'var(--font-display)', fontSize: 15, fontWeight: 700, color: 'var(--color-foreground)' }}>
+                  {alertNode.label}
+                </p>
+                <p style={{ margin: 0, fontSize: 13, lineHeight: 1.75, color: 'var(--color-muted-foreground)' }}>
+                  {alertNode.issue}
+                </p>
+                <div style={{ display: 'flex', gap: 8, marginTop: 18 }}>
+                  <button onClick={() => setAlertNodeId(null)} style={{
+                    flex: 1, padding: '10px 0', borderRadius: 10, border: '1.5px solid var(--color-border)',
+                    background: '#ffffff', color: 'var(--color-muted-foreground)', cursor: 'pointer',
+                    fontFamily: 'var(--font-display)', fontSize: 12.5, fontWeight: 600,
+                  }}>
+                    닫기
+                  </button>
+                  <button onClick={() => { setSelectedNodeId(alertNode.id); setAlertNodeId(null) }} style={{
+                    flex: 1.4, padding: '10px 0', borderRadius: 10, border: 'none',
+                    background: '#ef4444', color: '#ffffff', cursor: 'pointer',
+                    fontFamily: 'var(--font-display)', fontSize: 12.5, fontWeight: 700,
+                  }}>
+                    해당 노드 보기
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
         {/* Right: detail panel */}
         {selectedNode && (
@@ -1639,7 +1639,7 @@ const textareaRef = useRef<HTMLTextAreaElement>(null)
               }).then(r => r.ok ? r.json() : null).then(data => {
                 if (data && data.nodes) setGraph(data)
               }).catch(console.error)
-              
+
               // Re-fetch suggestions
               fetch(`/api/teams/${team.id}/suggestions`, {
                 headers: { 'Authorization': `Bearer ${localStorage.getItem('templ_token')}` }
@@ -1742,7 +1742,7 @@ function TeamInfo({ team }: { team: TeamType }) {
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
       <div style={{ width: '100%', maxWidth: 640, margin: '0 auto', paddingTop: 40, paddingBottom: 40, paddingLeft: 32, paddingRight: 32, boxSizing: 'border-box' }}>
-        
+
         {/* Mission card */}
         <div style={{
           background: '#f4f3ef', borderRadius: 16, border: `1.5px solid ${team.color}33`,
@@ -1823,7 +1823,7 @@ function TeamInfo({ team }: { team: TeamType }) {
             </div>
           ))}
           {team.members > 4 && !membersExpanded && (
-            <button 
+            <button
               onClick={() => setMembersExpanded(true)}
               style={{ width: '100%', padding: '12px 24px', background: '#eae9e4', border: 'none', borderTop: '1px solid var(--color-border)', textAlign: 'left', cursor: 'pointer', transition: 'background 0.15s' }}
               onMouseEnter={e => e.currentTarget.style.background = '#e0dfd9'}
@@ -1996,10 +1996,10 @@ function TeamIntegrations({ team, accounts, onAccountsChange }: {
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
       <div style={{ width: '100%', maxWidth: 720, margin: '0 auto', paddingTop: 40, paddingBottom: 40, paddingLeft: 32, paddingRight: 32, boxSizing: 'border-box' }}>
-        
-        <div style={{ 
-          background: '#f4f3ef', 
-          borderRadius: 16, 
+
+        <div style={{
+          background: '#f4f3ef',
+          borderRadius: 16,
           border: '1px solid var(--color-border)',
           overflow: 'hidden',
           boxShadow: '0 4px 12px rgba(0,0,0,0.03)'
@@ -2022,7 +2022,7 @@ function TeamIntegrations({ team, accounts, onAccountsChange }: {
             <div style={{ padding: '24px 32px 16px' }}>
               {label(t('integrations.team_integrations'), 'Team integrations')}
             </div>
-            
+
             <div style={{ display: 'flex', flexDirection: 'column', borderTop: '1px solid var(--color-border)' }}>
               <AccountRow
                 id="slack" name="Slack" required hint="팀 채팅방 링크를 입력하세요" color={team.color}
@@ -2039,8 +2039,8 @@ function TeamIntegrations({ team, accounts, onAccountsChange }: {
               <AccountRow
                 id="slack" name="Microsoft Teams" required={false} hint="추후 지원 예정입니다" color={team.color}
                 account={teams_ms}
-                onConnect={() => {}}
-                onDisconnect={() => {}}
+                onConnect={() => { }}
+                onDisconnect={() => { }}
                 demo
                 isLast
               />
@@ -2200,27 +2200,35 @@ function AiSpecificationReview({ team, previewGraph, suggestions, onApprove, onR
 
       {/* Feedback input */}
       <div style={{ display: 'flex', gap: 12, marginBottom: 24 }}>
-        <input 
-          type="text" 
-          value={feedback} 
+        <input
+          type="text"
+          value={feedback}
           onChange={e => setFeedback(e.target.value)}
-          placeholder="수정하고 싶은 부분이나 추가 피드백을 입력하세요 (예: 백엔드 API 보안 강화, 배포 파이프라인 추가)..." 
+          onKeyDown={e => {
+            if (e.key === 'Enter' && feedback.trim() && !isRegenerating && !isApproving) {
+              e.preventDefault()
+              const fb = feedback.trim()
+              setFeedback('')
+              onRegenerate(fb)
+            }
+          }}
+          placeholder="수정하고 싶은 부분을 입력하세요"
           style={{ flex: 1, padding: '12px 16px', borderRadius: 10, border: '1.5px solid var(--color-border)', fontSize: 13.5, outline: 'none', background: '#fff', color: 'var(--color-foreground)' }}
         />
-        <button 
+        <button
+          type="button"
           onClick={() => {
             const fb = feedback.trim()
             if (fb) {
-              setAppliedFeedbacks(prev => [...prev, fb])
-              onRegenerate(fb)
               setFeedback('')
+              onRegenerate(fb)
             }
-          }} 
+          }}
           disabled={!feedback.trim() || isRegenerating || isApproving}
-          style={{ 
+          style={{
             padding: '0 22px', borderRadius: 10, background: '#f59e0b', color: '#fff', fontWeight: 600, border: 'none', cursor: (!feedback.trim() || isRegenerating || isApproving) ? 'not-allowed' : 'pointer', opacity: (!feedback.trim() || isRegenerating || isApproving) ? 0.6 : 1, fontSize: 13.5
           }}>
-          {isRegenerating ? '재생성 중...' : '피드백 반영'}
+          {isRegenerating ? '수정 중...' : '수정'}
         </button>
       </div>
 
@@ -2229,13 +2237,13 @@ function AiSpecificationReview({ team, previewGraph, suggestions, onApprove, onR
         <button onClick={onReject} disabled={isApproving} style={{ padding: '11px 22px', borderRadius: 10, background: '#fee2e2', border: '1.5px solid #f87171', color: '#ef4444', fontWeight: 600, cursor: isApproving ? 'not-allowed' : 'pointer', fontSize: 13.5 }}>
           거절 (취소)
         </button>
-        <button 
+        <button
           onClick={async () => {
             setIsApproving(true)
             await onApprove()
-          }} 
+          }}
           disabled={isApproving}
-          style={{ 
+          style={{
             padding: '11px 26px', borderRadius: 10, background: 'var(--color-primary)', color: '#fff', fontWeight: 600, border: 'none', cursor: isApproving ? 'wait' : 'pointer', fontSize: 13.5, display: 'flex', alignItems: 'center', gap: 8, boxShadow: '0 4px 14px rgba(107,92,246,0.3)'
           }}>
           {isApproving ? '로드맵 생성 및 적용 중...' : '승인 (팀 생성 완료)'}
@@ -2257,7 +2265,7 @@ function CreateTeamForm({ teams, onCreated, accounts, onAccountsChange }: {
   const [selectedColor, setSelectedColor] = useState(COLOR_SWATCHES[0])
   const [inviteInput, setInviteInput] = useState('')
   const [invitees, setInvitees] = useState<string[]>([])
-  
+
   const [phase, setPhase] = useState<CreateTeamPhase>('form')
   const [createdTeam, setCreatedTeam] = useState<TeamType | null>(null)
   const [specId, setSpecId] = useState<number | null>(null)
@@ -2354,7 +2362,7 @@ function CreateTeamForm({ teams, onCreated, accounts, onAccountsChange }: {
       if (!specRes.ok) throw new Error('Failed to submit spec')
       const spec = await specRes.json()
       setSpecId(spec.id)
-      
+
       setPhase('generating_ai')
       startPolling(newTeam.id, spec.id)
 
@@ -2402,55 +2410,55 @@ function CreateTeamForm({ teams, onCreated, accounts, onAccountsChange }: {
 
   if (phase === 'review_ai' && previewGraph) {
     return (
-      <AiSpecificationReview 
-        team={createdTeam!} 
-        previewGraph={previewGraph} 
+      <AiSpecificationReview
+        team={createdTeam!}
+        previewGraph={previewGraph}
         suggestions={suggestions}
         isRegenerating={isRegenerating}
         onApprove={async () => {
           try {
-             if (suggestions.length > 0) {
-               const res = await fetch(`/api/teams/${createdTeam!.id}/suggestions/${suggestions[0].id}/approve`, {
-                 method: 'POST',
-                 headers: { 'Authorization': `Bearer ${localStorage.getItem('templ_token')}` }
-               })
-               if (!res.ok) console.error('Approve failed', await res.text())
-             }
-             await new Promise(r => setTimeout(r, 350))
-             onCreated(createdTeam!)
-          } catch(e) { 
+            if (suggestions.length > 0) {
+              const res = await fetch(`/api/teams/${createdTeam!.id}/suggestions/${suggestions[0].id}/approve`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('templ_token')}` }
+              })
+              if (!res.ok) console.error('Approve failed', await res.text())
+            }
+            await new Promise(r => setTimeout(r, 350))
+            onCreated(createdTeam!)
+          } catch (e) {
             console.error(e)
             onCreated(createdTeam!)
           }
         }}
         onRegenerate={async (fb: string) => {
-           setIsRegenerating(true)
-           try {
-             const baseId = suggestions && suggestions.length > 0 ? suggestions[0].id : 1
-             const res = await fetch(`/api/teams/${createdTeam!.id}/suggestions/${baseId}/regenerate`, {
-                 method: 'POST',
-                 headers: {
-                   'Content-Type': 'application/json',
-                   'Authorization': `Bearer ${localStorage.getItem('templ_token')}`
-                 },
-               body: JSON.stringify({ feedback: fb })
-             })
-             if (!res.ok) console.error('Regenerate failed', await res.text())
-             await fetchPreviewAndSuggestions(createdTeam!.id, specId!)
-             setIsRegenerating(false)
-           } catch(e) { 
-             console.error(e)
-             setIsRegenerating(false)
-           }
+          setIsRegenerating(true)
+          try {
+            const baseId = suggestions && suggestions.length > 0 ? suggestions[0].id : 1
+            const res = await fetch(`/api/teams/${createdTeam!.id}/suggestions/${baseId}/regenerate`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('templ_token')}`
+              },
+              body: JSON.stringify({ feedback: fb })
+            })
+            if (!res.ok) console.error('Regenerate failed', await res.text())
+            await fetchPreviewAndSuggestions(createdTeam!.id, specId!)
+          } catch (e) {
+            console.error(e)
+          } finally {
+            setIsRegenerating(false)
+          }
         }}
         onReject={async () => {
-           try {
-             if (suggestions.length > 0) {
-               await fetch(`/api/teams/${createdTeam!.id}/suggestions/${suggestions[0].id}/reject`, { method: 'POST', headers: { 'Authorization': `Bearer ${localStorage.getItem('templ_token')}` } })
-             }
-             alert('팀 생성이 취소되었습니다.')
-             window.location.reload()
-           } catch(e) { console.error(e) }
+          try {
+            if (suggestions.length > 0) {
+              await fetch(`/api/teams/${createdTeam!.id}/suggestions/${suggestions[0].id}/reject`, { method: 'POST', headers: { 'Authorization': `Bearer ${localStorage.getItem('templ_token')}` } })
+            }
+            alert('팀 생성이 취소되었습니다.')
+            window.location.reload()
+          } catch (e) { console.error(e) }
         }}
       />
     )
@@ -2716,12 +2724,12 @@ export default function App() {
       fetch(`/api/teams/${activeTeamId}/integrations`, {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('templ_token')}` }
       })
-      .then(r => r.ok ? r.json() : null)
-      .then(data => {
-        if (data) setAccounts(data)
-        else setAccounts({ slack: { connected: false, handle: '' }, github: { connected: false, handle: '' } })
-      })
-      .catch(console.error)
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+          if (data) setAccounts(data)
+          else setAccounts({ slack: { connected: false, handle: '' }, github: { connected: false, handle: '' } })
+        })
+        .catch(console.error)
     }
   }, [activeTeamId])
 
@@ -2931,49 +2939,49 @@ export default function App() {
           ) : <div />}
 
           <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-          <div style={{ position: 'relative', flexShrink: 0 }}>
-            <button onClick={() => setProfileOpen(o => !o)}
-              style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px 6px 6px', borderRadius: 100, border: '1px solid var(--color-border)', background: 'transparent', cursor: 'pointer', transition: 'background 0.12s' }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#f5f4f0' }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}>
-              <Avatar name={localStorage.getItem('templ_user_nickname') || 'Jordan Kim'} size={28} />
-              <div style={{ textAlign: 'left' }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-foreground)', lineHeight: 1.2 }}>{localStorage.getItem('templ_user_nickname') || 'Jordan Kim'}</div>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--color-muted-foreground)' }}>Admin</div>
-              </div>
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ marginLeft: 2, opacity: 0.4, transform: profileOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}>
-                <path d="M3 5L7 9L11 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-              </svg>
-            </button>
-            {profileOpen && (
-              <div style={{ position: 'absolute', right: 0, top: 'calc(100% + 8px)', background: '#fff', border: '1px solid var(--color-border)', borderRadius: 12, boxShadow: '0 8px 24px rgba(0,0,0,0.08)', width: 200, overflow: 'hidden', zIndex: 50 }}>
-                <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--color-border)' }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-foreground)' }}>{localStorage.getItem('templ_user_nickname') || 'Jordan Kim'}</div>
-                  <div style={{ fontSize: 12, color: 'var(--color-muted-foreground)', marginTop: 2 }}>{localStorage.getItem('templ_user_email') || 'jordan@acmecorp.io'}</div>
+            <div style={{ position: 'relative', flexShrink: 0 }}>
+              <button onClick={() => setProfileOpen(o => !o)}
+                style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px 6px 6px', borderRadius: 100, border: '1px solid var(--color-border)', background: 'transparent', cursor: 'pointer', transition: 'background 0.12s' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#f5f4f0' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}>
+                <Avatar name={localStorage.getItem('templ_user_nickname') || 'Jordan Kim'} size={28} />
+                <div style={{ textAlign: 'left' }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-foreground)', lineHeight: 1.2 }}>{localStorage.getItem('templ_user_nickname') || 'Jordan Kim'}</div>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--color-muted-foreground)' }}>Admin</div>
                 </div>
-                {([
-                  { label: t('userMenu.personalSettings'), danger: false, onSelect: () => setSettingsOpen(true) },
-                  { label: t('userMenu.logout'), danger: true, onSelect: () => { localStorage.removeItem('templ_token'); setIsAuthenticated(false); } },
-                ]).map(item => (
-                  <button key={item.label} onClick={() => { setProfileOpen(false); item.onSelect() }}
-                    style={{ width: '100%', textAlign: 'left', padding: '10px 16px', fontSize: 13, fontWeight: 500, color: item.danger ? '#ef4444' : 'var(--color-foreground)', background: 'transparent', border: 'none', borderTop: item.danger ? '1px solid var(--color-border)' : 'none', cursor: 'pointer', transition: 'background 0.1s' }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#f5f4f0' }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}>
-                    {item.label}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ marginLeft: 2, opacity: 0.4, transform: profileOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}>
+                  <path d="M3 5L7 9L11 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                </svg>
+              </button>
+              {profileOpen && (
+                <div style={{ position: 'absolute', right: 0, top: 'calc(100% + 8px)', background: '#fff', border: '1px solid var(--color-border)', borderRadius: 12, boxShadow: '0 8px 24px rgba(0,0,0,0.08)', width: 200, overflow: 'hidden', zIndex: 50 }}>
+                  <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--color-border)' }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-foreground)' }}>{localStorage.getItem('templ_user_nickname') || 'Jordan Kim'}</div>
+                    <div style={{ fontSize: 12, color: 'var(--color-muted-foreground)', marginTop: 2 }}>{localStorage.getItem('templ_user_email') || 'jordan@acmecorp.io'}</div>
+                  </div>
+                  {([
+                    { label: t('userMenu.personalSettings'), danger: false, onSelect: () => setSettingsOpen(true) },
+                    { label: t('userMenu.logout'), danger: true, onSelect: () => { localStorage.removeItem('templ_token'); setIsAuthenticated(false); } },
+                  ]).map(item => (
+                    <button key={item.label} onClick={() => { setProfileOpen(false); item.onSelect() }}
+                      style={{ width: '100%', textAlign: 'left', padding: '10px 16px', fontSize: 13, fontWeight: 500, color: item.danger ? '#ef4444' : 'var(--color-foreground)', background: 'transparent', border: 'none', borderTop: item.danger ? '1px solid var(--color-border)' : 'none', cursor: 'pointer', transition: 'background 0.1s' }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#f5f4f0' }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}>
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </header>
 
         <main
-          style={{ 
-            flex: 1, overflow: 'hidden', 
-            padding: ((view.kind === 'team' && (tab === 'mission' || tab === 'integrations' || tab === 'info')) || view.kind === 'create') ? '0' : '22px 20px 18px', 
-            background: ((view.kind === 'team' && (tab === 'integrations' || tab === 'info')) || view.kind === 'create') ? '#0f0f14' : 'var(--color-background)', 
-            display: 'flex', flexDirection: 'column' 
+          style={{
+            flex: 1, overflow: 'hidden',
+            padding: ((view.kind === 'team' && (tab === 'mission' || tab === 'integrations' || tab === 'info')) || view.kind === 'create') ? '0' : '22px 20px 18px',
+            background: ((view.kind === 'team' && (tab === 'integrations' || tab === 'info')) || view.kind === 'create') ? '#0f0f14' : 'var(--color-background)',
+            display: 'flex', flexDirection: 'column'
           }}
           onClick={() => profileOpen && setProfileOpen(false)}
         >
