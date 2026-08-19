@@ -49,6 +49,14 @@ type NodeDetail = {
   files?: RFile[]
 }
 
+type Warning = {
+  projectId: string; taskId: string; outcomeType: 'SOFT_WARNING' | 'HARD_WARNING';
+  changeType: string; riskScore: number; confidence: number; sourceTool: string;
+  summary: string; analysisId: string; eventId: string;
+  sourceLocation: string; sourceUrl: string; occurredAt: string; analyzedAt: string;
+}
+
+
 const STATUS_META: Record<Status, { label: string; color: string }> = {
   done: { label: '완료', color: '#10b981' },
   active: { label: '진행중', color: '#6b5cf6' },
@@ -216,8 +224,8 @@ function elbow(from: RNode, to: RNode, r = 12) {
   ].join(' ')
 }
 
-function RoadmapNode({ node, warn, selected, dimmed, editing, linking, scale, suggestion, onSelect, onDelete, onStartLink, onMove, onMoveEnd, onHover }: {
-  node: RNode; warn: string | null; selected: boolean; dimmed: boolean; editing: boolean; linking: boolean; scale: number; suggestion?: any
+function RoadmapNode({ node, warn, warning, selected, dimmed, editing, linking, scale, suggestion, onSelect, onDelete, onStartLink, onMove, onMoveEnd, onHover }: {
+  node: RNode; warn: string | null; warning?: Warning; selected: boolean; dimmed: boolean; editing: boolean; linking: boolean; scale: number; suggestion?: any
   onSelect: (id: string) => void; onDelete: (id: string) => void
   onStartLink: (id: string) => void; onMove: (id: string, x: number, y: number) => void; onMoveEnd: (id: string, x: number, y: number) => void
   onHover?: (id: string | null) => void
@@ -226,7 +234,7 @@ function RoadmapNode({ node, warn, selected, dimmed, editing, linking, scale, su
   const st = STATUS_META[node.status as Status] || { label: '대기', color: '#6b6a72' }
   const isRoot = node.tier === 'root'
   // A node either has its own problem (red) or inherits one from a downstream node (amber).
-  const alert = node.issue ? 'issue' : warn ? 'warn' : null
+  const alert = warning?.outcomeType === 'HARD_WARNING' ? 'issue' : warning?.outcomeType === 'SOFT_WARNING' ? 'warn' : node.issue ? 'issue' : warn ? 'warn' : null
   const drag = useRef<{ cx: number; cy: number; ox: number; oy: number; moved: boolean } | null>(null)
 
   function handlePointerDown(e: React.PointerEvent) {
@@ -364,8 +372,8 @@ function RoadmapNode({ node, warn, selected, dimmed, editing, linking, scale, su
   )
 }
 
-function RoadmapCanvas({ nodes, edges, selectedId, editing, linkFrom, suggestions, onSelect, onMove, onMoveEnd, onDeleteNode, onStartLink, onDeleteEdge }: {
-  nodes: RNode[]; edges: REdge[]; selectedId: string | null; editing: boolean; linkFrom: string | null; suggestions?: any[]
+function RoadmapCanvas({ nodes, edges, selectedId, editing, linkFrom, suggestions, warnings = [], onSelect, onMove, onMoveEnd, onDeleteNode, onStartLink, onDeleteEdge }: {
+  nodes: RNode[]; edges: REdge[]; selectedId: string | null; editing: boolean; linkFrom: string | null; suggestions?: any[]; warnings?: Warning[]
   onSelect: (id: string) => void; onMove: (id: string, x: number, y: number) => void; onMoveEnd: (id: string, x: number, y: number) => void
   onDeleteNode: (id: string) => void; onStartLink: (id: string) => void; onDeleteEdge: (id: string) => void
 }) {
@@ -595,7 +603,7 @@ function RoadmapCanvas({ nodes, edges, selectedId, editing, linkFrom, suggestion
               </svg>
 
               {positionedNodes.map(n => (
-                <RoadmapNode key={n.id} node={n} warn={warnMap[n.id] ?? null}
+                <RoadmapNode key={n.id} node={n} warn={warnMap[n.id] ?? null} warning={warnings.find(w => w.taskId === n.id)}
                   selected={selectedId === n.id} dimmed={isDim(n.id)}
                   editing={editing} linking={linkFrom === n.id}
                   scale={scale} suggestion={suggestions?.find((s: any) => s.targetId === n.id)}
@@ -718,8 +726,8 @@ function ChipEditor({ items, color, placeholder, onChange }: {
   )
 }
 
-function NodeDetailPanel({ teamId, node, color, suggestion, onChange, onClose, onSuggestionResolved }: {
-  teamId?: string; node: RNode; color: string; suggestion?: any; onChange: (patch: Partial<RNode>) => void; onClose: () => void; onSuggestionResolved?: () => void
+function NodeDetailPanel({ teamId, node, warning, color, suggestion, onChange, onClose, onSuggestionResolved }: {
+  teamId?: string; node: RNode; warning?: Warning; color: string; suggestion?: any; onChange: (patch: Partial<RNode>) => void; onClose: () => void; onSuggestionResolved?: () => void
 }) {
   const { t } = useTranslation()
   const st = STATUS_META[node.status]
@@ -878,6 +886,31 @@ function NodeDetailPanel({ teamId, node, color, suggestion, onChange, onClose, o
         </div>
       ) : (
         <div style={{ padding: 18, display: 'flex', flexDirection: 'column', gap: 22 }}>
+          {/* Warning Banner */}
+          {warning && (
+            <div style={{ padding: 14, borderRadius: 10, background: warning.outcomeType === 'HARD_WARNING' ? '#ef444415' : '#f59e0b15', border: `1px solid ${warning.outcomeType === 'HARD_WARNING' ? '#ef444444' : '#f59e0b44'}` }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                <span style={{ fontSize: 14 }}>⚠️</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: warning.outcomeType === 'HARD_WARNING' ? '#ef4444' : '#f59e0b' }}>
+                  AI Analysis Warning (Source: {warning.sourceTool})
+                </span>
+              </div>
+              <div style={{ fontSize: 12.5, color: '#d3d2e0', lineHeight: 1.5, marginBottom: 12 }}>
+                {warning.summary}
+              </div>
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                <span style={{ padding: '3px 8px', borderRadius: 4, background: '#00000044', fontSize: 11, color: '#a1a1aa' }}>
+                  Type: {warning.changeType}
+                </span>
+                <span style={{ padding: '3px 8px', borderRadius: 4, background: '#00000044', fontSize: 11, color: '#a1a1aa' }}>
+                  Risk Score: {warning.riskScore}
+                </span>
+                <span style={{ padding: '3px 8px', borderRadius: 4, background: '#00000044', fontSize: 11, color: '#a1a1aa' }}>
+                  Confidence: {Math.round(warning.confidence * 100)}%
+                </span>
+              </div>
+            </div>
+          )}
           {/* AI Suggestion */}
           {suggestion && teamId && (
             <div style={{
@@ -1227,6 +1260,8 @@ function TeamMissionInput({ team, onSave }: { team: TeamType; onSave: (mission: 
     }
   }, [team.id])
 
+  const [warnings, setWarnings] = useState<Warning[]>([])
+
   useEffect(() => {
     const fetchSuggestions = async () => {
       try {
@@ -1241,8 +1276,22 @@ function TeamMissionInput({ team, onSave }: { team: TeamType; onSave: (mission: 
         console.error(err)
       }
     }
+    const fetchWarnings = async () => {
+      try {
+        const res = await fetch(`/api/v1/projects/${team.id}/warnings`, {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('templ_token')}` }
+        })
+        if (res.ok) {
+          const data = await res.json()
+          setWarnings(Array.isArray(data) ? data : (data.warnings || []))
+        }
+      } catch (err) {
+        console.error(err)
+      }
+    }
     fetchSuggestions()
-    const intv = setInterval(fetchSuggestions, 5000)
+    fetchWarnings()
+    const intv = setInterval(() => { fetchSuggestions(); fetchWarnings(); }, 5000)
     return () => clearInterval(intv)
   }, [team.id])
 
@@ -1550,7 +1599,7 @@ function TeamMissionInput({ team, onSave }: { team: TeamType; onSave: (mission: 
             )}
             <RoadmapCanvas
               nodes={safeGraph.nodes} edges={safeGraph.edges} selectedId={selectedNodeId}
-              editing={editing} linkFrom={linkFrom} suggestions={suggestions}
+              editing={editing} linkFrom={linkFrom} suggestions={suggestions} warnings={warnings}
               onSelect={handleNodeSelect} onMove={moveNode} onMoveEnd={saveNodePos}
               onDeleteNode={deleteNode} onDeleteEdge={deleteEdge}
               onStartLink={id => setLinkFrom(f => (f === id ? null : id))}
@@ -1627,7 +1676,7 @@ function TeamMissionInput({ team, onSave }: { team: TeamType; onSave: (mission: 
 
         {/* Right: detail panel */}
         {selectedNode && (
-          <NodeDetailPanel key={selectedNode.id} node={selectedNode} color={team.color}
+          <NodeDetailPanel key={selectedNode.id} node={selectedNode} warning={warnings.find(w => w.taskId === selectedNode.id)} color={team.color}
             teamId={team.id}
             suggestion={suggestions.find((s: any) => s.targetId === selectedNode.id)}
             onChange={patch => patchNode(selectedNode.id, patch)}
@@ -2763,7 +2812,7 @@ export default function App() {
     if (mappedLang) i18n.changeLanguage(mappedLang)
     try {
       await fetch('/api/users/profile', {
-        method: 'PUT',
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('templ_token')}`
