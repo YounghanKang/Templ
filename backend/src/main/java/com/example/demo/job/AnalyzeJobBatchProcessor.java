@@ -1,10 +1,12 @@
 package com.example.demo.job;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
 
 import java.time.Instant;
 import java.util.List;
 
+@Component
 @RequiredArgsConstructor
 public class AnalyzeJobBatchProcessor {
 

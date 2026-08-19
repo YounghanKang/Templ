@@ -5,9 +5,11 @@ import com.example.demo.analysis.AnalyzeExecutionOutcome;
 import com.example.demo.collaboration.CollaborationEvent;
 import com.example.demo.collaboration.CollaborationEventRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
 
 import java.util.UUID;
 
+@Service
 @RequiredArgsConstructor
 public class AnalyzeJobExecutionService {
 

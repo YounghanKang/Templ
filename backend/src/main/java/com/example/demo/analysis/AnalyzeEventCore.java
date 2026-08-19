@@ -4,7 +4,9 @@ import com.example.demo.collaboration.CollaborationEvent;
 import com.example.demo.matching.NodeMatchingResult;
 import com.example.demo.matching.NodeMatchingService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
 
+@Component
 @RequiredArgsConstructor
 public class AnalyzeEventCore {
 

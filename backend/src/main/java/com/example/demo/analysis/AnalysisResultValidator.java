@@ -1,8 +1,10 @@
 package com.example.demo.analysis;
+import org.springframework.stereotype.Component;
 
 import java.util.Set;
 import java.util.stream.Collectors;
 
+@Component
 public class AnalysisResultValidator {
 
     public void validate(
