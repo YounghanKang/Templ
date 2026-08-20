@@ -511,12 +511,12 @@ function RoadmapCanvas({ nodes, edges, selectedId, editing, linkFrom, suggestion
     }
     vp.addEventListener('wheel', onWheel, { passive: false })
 
-    // Set initial scroll to the center of the pad
-    vp.scrollLeft = CANVAS_PAD * scale - vp.clientWidth / 2 + 300
+    // Set initial scroll to the center of the nodes
+    vp.scrollLeft = (width / 2) * scale - vp.clientWidth / 2
     vp.scrollTop = CANVAS_PAD * scale - 20
 
     return () => vp.removeEventListener('wheel', onWheel)
-  }, [])
+  }, [width, scale])
 
   function handlePanDown(e: React.PointerEvent) {
     const vp = viewportRef.current
@@ -627,8 +627,8 @@ function RoadmapCanvas({ nodes, edges, selectedId, editing, linkFrom, suggestion
         <button onClick={() => {
           setScale(1);
           if (viewportRef.current) {
-            viewportRef.current.scrollLeft = 4000 - viewportRef.current.clientWidth / 2 + 300;
-            viewportRef.current.scrollTop = 4000 - 20;
+            viewportRef.current.scrollLeft = width / 2 - viewportRef.current.clientWidth / 2;
+            viewportRef.current.scrollTop = CANVAS_PAD - 20;
           }
         }}
           style={{
@@ -1815,7 +1815,7 @@ function TeamInfo({ team }: { team: TeamType }) {
               </>
             ) : (
               <p style={{ margin: 0, fontSize: 16, fontWeight: 500, lineHeight: 1.75, color: mission ? 'var(--color-foreground)' : 'var(--color-muted-foreground)', fontStyle: mission ? 'normal' : 'italic' }}>
-                {mission || '아직 팀 미션이 없습니다. 편집 버튼을 눌러 추가해보세요.'}
+                {mission || t('team.noMission')}
               </p>
             )}
           </div>
@@ -1824,9 +1824,9 @@ function TeamInfo({ team }: { team: TeamType }) {
         {/* Stats */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 20 }}>
           {[
-            { label: 'Members', value: team.members },
-            { label: 'Projects', value: Math.floor(team.members * 0.8) },
-            { label: 'Active this week', value: Math.floor(team.members * 0.6) },
+            { label: t('team.members'), value: team.members },
+            { label: t('team.projects'), value: Math.floor(team.members * 0.8) },
+            { label: t('team.active'), value: Math.floor(team.members * 0.6) },
           ].map(stat => (
             <div key={stat.label} style={{ background: '#f4f3ef', borderRadius: 12, border: '1px solid var(--color-border)', padding: '16px 20px' }}>
               <div style={{ fontFamily: 'var(--font-display)', fontSize: 26, fontWeight: 700, color: 'var(--color-foreground)', letterSpacing: '-0.02em' }}>
@@ -1871,15 +1871,15 @@ function TeamInfo({ team }: { team: TeamType }) {
         {/* Danger Zone: Delete Team */}
         <div style={{ marginTop: 24, padding: '20px 24px', background: '#fef2f2', borderRadius: 16, border: '1.5px solid #fecaca', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
-            <h3 style={{ margin: 0, fontSize: 14, fontWeight: 600, color: '#dc2626' }}>팀 삭제 (Danger Zone)</h3>
+            <h3 style={{ margin: 0, fontSize: 14, fontWeight: 600, color: '#dc2626' }}>{t('dangerZone.title')}</h3>
             <p style={{ margin: '6px 0 0 0', fontSize: 13, color: '#991b1b', lineHeight: 1.5 }}>
-              이 팀과 관련된 모든 데이터(로드맵, 목표 등)가 삭제됩니다.<br/>
-              삭제 후에는 복구할 수 없습니다.
+              {t('dangerZone.desc1')}<br/>
+              {t('dangerZone.desc2')}
             </p>
           </div>
           <button 
             onClick={async () => {
-              if (window.confirm('정말 이 팀을 삭제하시겠습니까? (이 작업은 되돌릴 수 없습니다)')) {
+              if (window.confirm(t('dangerZone.confirm'))) {
                 try {
                   await fetch(`/api/teams/${team.id}`, { 
                     method: 'DELETE', 
@@ -1893,7 +1893,7 @@ function TeamInfo({ team }: { team: TeamType }) {
               padding: '10px 18px', borderRadius: 8, background: '#ef4444', color: '#fff', 
               border: 'none', fontWeight: 600, fontSize: 13, cursor: 'pointer', flexShrink: 0 
             }}>
-            팀 삭제하기
+            {t('dangerZone.button')}
           </button>
         </div>
       </div>
@@ -2320,7 +2320,7 @@ function CreateTeamForm({ teams, onCreated, accounts, onAccountsChange }: {
   teams: TeamType[]; onCreated: (team: TeamType) => void
   accounts: Accounts; onAccountsChange: (a: Accounts) => void
 }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [slackHandle, setSlackHandle] = useState('')
   const [githubRepo, setGithubRepo] = useState('')
   const [teamName, setTeamName] = useState('')
@@ -2420,7 +2420,7 @@ function CreateTeamForm({ teams, onCreated, accounts, onAccountsChange }: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('templ_token')}`
         },
-        body: JSON.stringify({ author: accounts.slack.handle, specText: teamDesc.trim() })
+        body: JSON.stringify({ author: accounts.slack.handle, specText: teamDesc.trim(), language: i18n.language })
       })
       if (!specRes.ok) throw new Error('Failed to submit spec')
       const spec = await specRes.json()
@@ -2461,10 +2461,10 @@ function CreateTeamForm({ teams, onCreated, accounts, onAccountsChange }: {
             <path d="M12 2A10 10 0 0 1 22 12" stroke="var(--color-primary)" strokeWidth="3" strokeLinecap="round" fill="none" />
           </svg>
         </div>
-        <h2 style={{ fontFamily: 'var(--font-display)', color: 'var(--color-foreground)', fontSize: 20, marginBottom: 8 }}>
+        <h2 style={{ fontFamily: 'var(--font-display)', color: '#fff', fontSize: 20, marginBottom: 8 }}>
           AI가 명세서를 분석하고 있습니다...
         </h2>
-        <p style={{ color: 'var(--color-muted-foreground)', fontSize: 14 }}>
+        <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 14 }}>
           잠시만 기다려주세요. 미션에 맞는 로드맵 노드들을 자동으로 구성 중입니다.
         </p>
       </div>

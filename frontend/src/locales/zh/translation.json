@@ -298,5 +298,12 @@
   "create_team": "创建团队",
   "ai_analyzing": "AI正在分析说明书...",
   "ai_analyzing_desc": "请稍等。正在根据您的最终目标自动生成路线图。(通常需要10~15秒)",
-  "slack_account": "Slack 聊天室"
+  "slack_account": "Slack 聊天室",
+  "dangerZone": {
+    "title": "删除团队 (Danger Zone)",
+    "desc1": "与该团队相关联的所有数据（路线图、目标等）将被删除。",
+    "desc2": "删除后无法恢复。",
+    "confirm": "您确定要删除此团队吗？（此操作无法撤销）",
+    "button": "删除"
+  }
 }

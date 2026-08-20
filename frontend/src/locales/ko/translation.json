@@ -299,5 +299,12 @@
   "create_team": "팀 생성",
   "ai_analyzing": "AI가 명세서를 분석하고 있습니다...",
   "ai_analyzing_desc": "잠시만 기다려주세요. 미션에 맞는 로드맵을 자동으로 구성 중입니다. (보통 10~15초 정도 소요됩니다)",
-  "slack_account": "SLACK 채팅방"
+  "slack_account": "SLACK 채팅방",
+  "dangerZone": {
+    "title": "팀 삭제 (Danger Zone)",
+    "desc1": "이 팀과 관련된 모든 데이터(로드맵, 목표 등)가 삭제됩니다.",
+    "desc2": "삭제 후에는 복구할 수 없습니다.",
+    "confirm": "정말 이 팀을 삭제하시겠습니까? (이 작업은 되돌릴 수 없습니다)",
+    "button": "삭제"
+  }
 }

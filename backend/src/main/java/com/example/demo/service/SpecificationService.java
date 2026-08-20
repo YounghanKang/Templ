@@ -32,6 +32,7 @@ public class SpecificationService {
                 .teamId(teamId)
                 .author(req.getAuthor() == null ? "anonymous" : req.getAuthor())
                 .specText(req.getSpecText() == null ? "" : req.getSpecText())
+                .language(req.getLanguage() == null ? "en" : req.getLanguage())
                 .status("ANALYZING")
                 .createdAt(Instant.now())
                 .build();

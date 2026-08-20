@@ -14,4 +14,8 @@ public interface AiService {
     default List<SuggestionDto.Create> generateSuggestions(String teamId, Long specId, String specText, String userFeedback, Long baseSuggestionId, String existingNodesContext) {
         return generateSuggestions(teamId, specId, specText);
     }
+
+    default List<SuggestionDto.Create> translateSuggestions(List<SuggestionDto.Create> suggestions, String targetLang) {
+        return suggestions;
+    }
 }

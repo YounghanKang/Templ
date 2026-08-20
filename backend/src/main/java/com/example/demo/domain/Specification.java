@@ -23,6 +23,8 @@ public class Specification {
     @Column(columnDefinition = "TEXT")
     private String specText;
 
+    private String language;
+
     // PENDING / ANALYZING / READY
     private String status;
 

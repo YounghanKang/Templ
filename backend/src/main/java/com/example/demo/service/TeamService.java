@@ -4,6 +4,10 @@ import com.example.demo.domain.Team;
 import com.example.demo.dto.TeamDto;
 import com.example.demo.dto.UserDto;
 import com.example.demo.repository.TeamRepository;
+import com.example.demo.repository.RoadmapNodeRepository;
+import com.example.demo.repository.RoadmapEdgeRepository;
+import com.example.demo.repository.SpecificationRepository;
+import com.example.demo.repository.SuggestionRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -12,12 +16,22 @@ import java.util.List;
 public class TeamService {
 
     private final TeamRepository teamRepository;
+    private final SpecificationRepository specificationRepository;
+    private final SuggestionRepository suggestionRepository;
+    private final RoadmapNodeRepository roadmapNodeRepository;
+    private final RoadmapEdgeRepository roadmapEdgeRepository;
 
-    public TeamService(TeamRepository teamRepository) {
+    public TeamService(TeamRepository teamRepository, 
+                       SpecificationRepository specificationRepository, 
+                       SuggestionRepository suggestionRepository,
+                       RoadmapNodeRepository roadmapNodeRepository,
+                       RoadmapEdgeRepository roadmapEdgeRepository) {
         this.teamRepository = teamRepository;
+        this.specificationRepository = specificationRepository;
+        this.suggestionRepository = suggestionRepository;
+        this.roadmapNodeRepository = roadmapNodeRepository;
+        this.roadmapEdgeRepository = roadmapEdgeRepository;
     }
-
-
 
     public List<TeamDto.TeamResponse> listTeams() {
         return teamRepository.findAllByOrderByIdAsc().stream()
@@ -48,6 +62,13 @@ public class TeamService {
     public void deleteTeam(String teamId) {
         Team team = teamRepository.findByTeamId(teamId)
                 .orElseThrow(() -> new IllegalArgumentException("team not found: " + teamId));
+        
+        // cascade delete
+        roadmapNodeRepository.findAllByTeamIdOrderByIdAsc(teamId).forEach(roadmapNodeRepository::delete);
+        roadmapEdgeRepository.findAllByTeamIdOrderByIdAsc(teamId).forEach(roadmapEdgeRepository::delete);
+        specificationRepository.findAllByTeamIdOrderByIdDesc(teamId).forEach(specificationRepository::delete);
+        suggestionRepository.findAllByTeamIdOrderByIdDesc(teamId).forEach(suggestionRepository::delete);
+        
         teamRepository.delete(team);
     }
 

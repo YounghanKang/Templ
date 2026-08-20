@@ -108,7 +108,7 @@ public class OpenAIService implements AiService {
                     4. STRUCTURE (Strict 3-Tier Hierarchy):
                        - 1 Root Task (tier="root", tempId="node_root", parentTempId=null): Clear single-sentence ultimate product mission.
                        - 3 to 8 Feature Modules (tier="mid", tempId="node_mid_1", ..., parentTempId="node_root"): Specific functional pillars. ALL mid nodes MUST strictly set parentTempId to "node_root".
-                       - Actionable Tasks (tier="leaf", tempId="node_leaf_X", parentTempId matching its parent module's tempId): Concrete implementation units. Generate 0 to 4 leaf nodes per module depending on its complexity. Only break down a module into leaf nodes if it requires detailed technical steps.
+                       - Actionable Tasks (tier="leaf", tempId="node_leaf_X", parentTempId matching its parent module's tempId): Concrete implementation units. YOU MUST GENERATE EXACTLY 2 TO 4 LEAF NODES FOR EVERY SINGLE MID NODE. DO NOT SKIP ANY LEAF NODES, NO MATTER HOW TRIVIAL.
 
                     5. QUALITY STANDARDS & DUE DATE:
                        - dueDate: MUST default to approximately 1 month from today (Today is %s, Target Due Date is %s).
@@ -120,6 +120,7 @@ public class OpenAIService implements AiService {
 
                     6. OUTPUT FORMAT:
                        - Return ONLY a raw JSON array of objects. No markdown backticks, no fences, no commentary.
+                       - For the highest quality WBS breakdown and technical accuracy, it is highly recommended to generate the roadmap text in English. It will be translated later.
 
                     JSON Schema per item:
                     {
@@ -187,6 +188,8 @@ public class OpenAIService implements AiService {
                 String normalized = normalizeJsonResponse(content);
                 try {
                     List<Map<String, Object>> items = objectMapper.readValue(normalized, new TypeReference<>() {});
+                    List<SuggestionDto.Create> outList = new ArrayList<>();
+                    boolean hasLeaf = false;
                     for (Map<String, Object> item : items) {
                         Object titleObj = item.get("title");
                         Object bodyObj = item.get("body");
@@ -227,9 +230,16 @@ public class OpenAIService implements AiService {
                                 .sourceId(String.valueOf(specId))
                                 .changeJson(changeStr)
                                 .build();
-                        out.add(s);
+                        outList.add(s);
+                        if (s.getChangeJson() != null && (s.getChangeJson().contains("\"tier\":\"leaf\"") || s.getChangeJson().contains("\"tier\": \"leaf\""))) {
+                            hasLeaf = true;
+                        }
                     }
-                    if (out.size() >= 3) return out;
+                    if (outList.size() >= 3 && hasLeaf) {
+                        return outList;
+                    } else if (!hasLeaf) {
+                        logger.warn("OpenAI returned {} nodes but ZERO leaf nodes. Falling back to stub.", outList.size());
+                    }
                 } catch (Exception e) {
                     logger.warn("Failed parsing OpenAI JSON output: {}", e.getMessage());
                 }
@@ -241,6 +251,75 @@ public class OpenAIService implements AiService {
 
         // Guardrail: If OpenAI fails or returns < 3 tasks, use stub generator
         return new AIStubService().generateSuggestions(teamId, specId, specText, userFeedback, baseSuggestionId);
+    }
+
+    @Override
+    public List<SuggestionDto.Create> translateSuggestions(List<SuggestionDto.Create> suggestions, String targetLang) {
+        if (targetLang == null || targetLang.isBlank() || suggestions.isEmpty()) return suggestions;
+        
+        int maxRetries = 2;
+        for (int attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                String inputJson = objectMapper.writeValueAsString(suggestions);
+                String prompt = "Translate the 'title', 'body', and 'aiSummary' (inside 'changeJson' object) fields of the following JSON array of objects into the language code: " + targetLang + ".\n"
+                        + "CRITICAL: Do NOT change any other fields (like 'tempId', 'parentTempId', 'tier', 'code', 'dueDate', 'assignees'). Keep the exact same JSON array structure.\n"
+                        + "Return ONLY a raw JSON array. No markdown, no fences.\n\n"
+                        + inputJson;
+
+                Map<String, Object> reqBody = Map.of(
+                        "model", model,
+                        "messages", List.of(
+                                Map.of("role", "system", "content", "You are an expert technical translator. You must return only a valid JSON array."),
+                                Map.of("role", "user", "content", prompt)
+                        ),
+                        "temperature", 0.1,
+                        "max_tokens", 4000
+                );
+
+                String reqJson = objectMapper.writeValueAsString(reqBody);
+                HttpRequest req = HttpRequest.newBuilder()
+                        .uri(URI.create("https://api.openai.com/v1/chat/completions"))
+                        .timeout(Duration.ofSeconds(60))
+                        .header("Content-Type", "application/json")
+                        .header("Authorization", "Bearer " + apiKey)
+                        .POST(HttpRequest.BodyPublishers.ofString(reqJson))
+                        .build();
+
+                HttpResponse<String> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString());
+                if (resp.statusCode() / 100 != 2) {
+                    logger.error("OpenAI API returned non-2xx code {}, body: {} during translation", resp.statusCode(), resp.body());
+                    if (attempt == maxRetries) return suggestions;
+                    continue;
+                }
+
+                JsonNode root = objectMapper.readTree(resp.body());
+                String response = root.path("choices").path(0).path("message").path("content").asText("");
+                String jsonOutput = normalizeJsonResponse(response);
+                
+                List<Map<String, Object>> items = objectMapper.readValue(jsonOutput, new com.fasterxml.jackson.core.type.TypeReference<List<Map<String, Object>>>() {});
+                List<SuggestionDto.Create> out = new java.util.ArrayList<>();
+                for (Map<String, Object> item : items) {
+                    SuggestionDto.Create s = SuggestionDto.Create.builder()
+                            .targetType((String) item.get("targetType"))
+                            .targetId((String) item.get("targetId"))
+                            .title((String) item.get("title"))
+                            .body((String) item.get("body"))
+                            .sourceTool((String) item.get("sourceTool"))
+                            .sourceId((String) item.get("sourceId"))
+                            .changeJson(item.get("changeJson") instanceof String ? (String) item.get("changeJson") : objectMapper.writeValueAsString(item.get("changeJson")))
+                            .build();
+                    out.add(s);
+                }
+                if (out.size() == suggestions.size()) {
+                    return out;
+                } else {
+                    logger.warn("Translated output size {} differs from input size {}", out.size(), suggestions.size());
+                }
+            } catch (Exception e) {
+                logger.error("Failed to translate suggestions (attempt {}/{}): {}", attempt, maxRetries, e.getMessage());
+            }
+        }
+        return suggestions;
     }
 
     private String normalizeJsonResponse(String content) {

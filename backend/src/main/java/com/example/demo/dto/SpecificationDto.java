@@ -16,6 +16,7 @@ public class SpecificationDto {
     public static class Create {
         private String author;
         private String specText;
+        private String language;
     }
 
     @Data

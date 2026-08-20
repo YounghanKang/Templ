@@ -37,7 +37,15 @@ public class AsyncSpecificationProcessor {
         Specification spec = maybe.get();
         try {
             logger.info("Async processing spec {} for team {}", spec.getId(), spec.getTeamId());
+            // 1. Generate optimal WBS without forcing language constraints
             List<SuggestionDto.Create> suggestions = aiService.generateSuggestions(spec.getTeamId(), spec.getId(), spec.getSpecText());
+            
+            // 2. Translate if user preferred language is set
+            if (spec.getLanguage() != null && !spec.getLanguage().isBlank()) {
+                logger.info("Translating spec {} suggestions to language {}", spec.getId(), spec.getLanguage());
+                suggestions = aiService.translateSuggestions(suggestions, spec.getLanguage());
+            }
+
             for (SuggestionDto.Create sreq : suggestions) {
                 // link back to spec
                 if (sreq.getSourceId() == null) sreq.setSourceId(String.valueOf(spec.getId()));
