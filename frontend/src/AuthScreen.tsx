@@ -235,19 +235,117 @@ export default function AuthScreen({ onSuccess }: { onSuccess: () => void }) {
     </div>
   )
 
-  const LeftPanel = ({ welcome, title, subtitle }: { welcome: string; title: string; subtitle: string }) => (
-    <div className="hidden md:flex flex-col justify-between p-8 shrink-0"
-      style={{ width: 220, background: 'linear-gradient(160deg, #1e3a6e 0%, #2d5be3 60%, #4f7fff 100%)' }}>
-      <div>
-        <div className="text-[10px] tracking-[0.2em] uppercase mb-1" style={{ color: 'rgba(255,255,255,0.5)', fontFamily: font }}>{welcome}</div>
-        <div className="text-xl leading-tight font-medium" style={{ fontFamily: font, color: '#fff' }}>{title}</div>
+  const LeftPanel = ({
+  welcome,
+  title,
+  subtitle,
+}: {
+  welcome: string
+  title: string
+  subtitle: string
+}) => (
+  <div
+    className="hidden md:flex flex-col justify-between p-8 shrink-0"
+    style={{
+      width: 250,
+      background:
+        "linear-gradient(160deg, #111321 0%, #191b31 55%, #332b76 100%)",
+    }}
+  >
+    <div>
+      {/* Orchestree 브랜드 영역 */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
+          marginBottom: 30,
+        }}
+      >
+        <img
+          src="/favicon.png"
+          alt=""
+          aria-hidden="true"
+          style={{
+            width: 48,
+            height: 48,
+            borderRadius: 12,
+            objectFit: "contain",
+            flexShrink: 0,
+          }}
+        />
+
+        <div style={{ minWidth: 0 }}>
+          <div
+            style={{
+              color: "#f5f4ff",
+              fontSize: 23,
+              fontWeight: 700,
+              lineHeight: 1.05,
+              letterSpacing: "-0.03em",
+              whiteSpace: "nowrap",
+            }}
+          >
+            Orchestree
+          </div>
+
+          <div
+            style={{
+              color: "rgba(199, 196, 232, 0.7)",
+              fontSize: 8,
+              letterSpacing: "0.16em",
+              marginTop: 7,
+              whiteSpace: "nowrap",
+            }}
+          >
+            ONE TREE · EVERY TOOL
+          </div>
+        </div>
       </div>
-      <div>
-        <div className="w-6 h-px mb-4" style={{ backgroundColor: 'rgba(255,255,255,0.35)' }} />
-        <p className="text-xs leading-relaxed whitespace-pre-line" style={{ color: 'rgba(255,255,255,0.55)', fontFamily: font, fontWeight: 300 }}>{subtitle}</p>
+
+      {/* 기존 화면 안내 */}
+      <div
+        className="text-[10px] tracking-[0.2em] uppercase mb-1"
+        style={{
+          color: "rgba(255,255,255,0.5)",
+          fontFamily: font,
+        }}
+      >
+        {welcome}
+      </div>
+
+      <div
+        className="text-xl leading-tight font-medium"
+        style={{
+          fontFamily: font,
+          color: "#ffffff",
+        }}
+      >
+        {title}
       </div>
     </div>
-  )
+
+    <div>
+      <div
+        className="w-6 h-px mb-4"
+        style={{
+          backgroundColor: "rgba(255,255,255,0.35)",
+        }}
+      />
+
+      <p
+        className="text-xs leading-relaxed whitespace-pre-line"
+        style={{
+          color: "rgba(255,255,255,0.58)",
+          fontFamily: font,
+          fontWeight: 300,
+        }}
+      >
+        {subtitle}
+      </p>
+    </div>
+  </div>
+)
 
   // ── LOGIN ───────────────────────────────────────────────────
   if (page === 'login') {
