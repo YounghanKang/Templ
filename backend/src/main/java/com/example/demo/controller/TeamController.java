@@ -6,6 +6,7 @@ import com.example.demo.service.TeamService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 
 @RestController
@@ -19,13 +20,16 @@ public class TeamController {
     }
 
     @GetMapping("/teams")
-    public ResponseEntity<List<TeamDto.TeamResponse>> getTeams() {
-        return ResponseEntity.ok(teamService.listTeams());
+    public ResponseEntity<List<TeamDto.TeamResponse>> getTeams(HttpServletRequest request) {
+        String username = (String) request.getAttribute("authUser");
+        return ResponseEntity.ok(teamService.listTeams(username));
     }
 
     @PostMapping("/teams")
-    public ResponseEntity<TeamDto.TeamResponse> createTeam(@RequestBody TeamDto.CreateTeamRequest request) {
-        return ResponseEntity.ok(teamService.createTeam(request));
+    public ResponseEntity<TeamDto.TeamResponse> createTeam(@RequestBody TeamDto.CreateTeamRequest request,
+                                                           HttpServletRequest httpRequest) {
+        String username = (String) httpRequest.getAttribute("authUser");
+        return ResponseEntity.ok(teamService.createTeam(username, request));
     }
 
     @GetMapping("/teams/{teamId}")

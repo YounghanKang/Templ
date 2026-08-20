@@ -8,25 +8,40 @@ import com.example.demo.repository.RoadmapNodeRepository;
 import com.example.demo.repository.RoadmapEdgeRepository;
 import com.example.demo.repository.SpecificationRepository;
 import com.example.demo.repository.SuggestionRepository;
+import com.example.demo.domain.TeamMember;
+import com.example.demo.domain.User;
+import com.example.demo.repository.TeamMemberRepository;
+import com.example.demo.repository.UserRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 @Service
 public class TeamService {
 
     private final TeamRepository teamRepository;
+    private final TeamMemberRepository teamMemberRepository;
+    private final UserRepository userRepository;
     private final SpecificationRepository specificationRepository;
     private final SuggestionRepository suggestionRepository;
     private final RoadmapNodeRepository roadmapNodeRepository;
     private final RoadmapEdgeRepository roadmapEdgeRepository;
 
-    public TeamService(TeamRepository teamRepository, 
+    public TeamService(TeamRepository teamRepository,
+                       TeamMemberRepository teamMemberRepository,
+                       UserRepository userRepository,
                        SpecificationRepository specificationRepository, 
                        SuggestionRepository suggestionRepository,
                        RoadmapNodeRepository roadmapNodeRepository,
                        RoadmapEdgeRepository roadmapEdgeRepository) {
         this.teamRepository = teamRepository;
+        this.teamMemberRepository = teamMemberRepository;
+        this.userRepository = userRepository;
         this.specificationRepository = specificationRepository;
         this.suggestionRepository = suggestionRepository;
         this.roadmapNodeRepository = roadmapNodeRepository;
@@ -39,10 +54,43 @@ public class TeamService {
                 .toList();
     }
 
+    public List<TeamDto.TeamResponse> listTeams(String username) {
+        if (username == null || username.isBlank()) {
+            return listTeams();
+        }
+
+        Set<String> teamIds = new LinkedHashSet<>();
+        // 1. Teams where user is an explicit member
+        List<TeamMember> members = teamMemberRepository.findByUsername(username);
+        for (TeamMember m : members) {
+            teamIds.add(m.getTeamId());
+        }
+
+        // 2. Teams where user is owner
+        List<Team> ownedTeams = teamRepository.findAllByOwnerUsernameOrderByIdAsc(username);
+        for (Team t : ownedTeams) {
+            teamIds.add(t.getTeamId());
+        }
+
+        if (teamIds.isEmpty()) {
+            return List.of();
+        }
+
+        return teamRepository.findByTeamIdInOrderByIdAsc(new ArrayList<>(teamIds)).stream()
+                .map(this::toDto)
+                .toList();
+    }
+
     public TeamDto.TeamResponse createTeam(TeamDto.CreateTeamRequest request) {
+        return createTeam(null, request);
+    }
+
+    @Transactional
+    public TeamDto.TeamResponse createTeam(String username, TeamDto.CreateTeamRequest request) {
         String id = generateTeamId();
         Team team = Team.builder()
                 .teamId(id)
+                .ownerUsername(username)
                 .name(request.getName() == null || request.getName().isBlank() ? "New Team" : request.getName())
                 .members(request.getMembers() == null ? 1 : request.getMembers())
                 .color(request.getColor() == null || request.getColor().isBlank() ? "#6b5cf6" : request.getColor())
@@ -50,7 +98,22 @@ public class TeamService {
                 .slackHandle(request.getSlackHandle())
                 .githubRepo(request.getGithubRepo())
                 .build();
-        return toDto(teamRepository.save(team));
+        Team saved = teamRepository.save(team);
+
+        if (username != null && !username.isBlank()) {
+            User user = userRepository.findByUsername(username).orElse(null);
+            TeamMember member = TeamMember.builder()
+                    .teamId(id)
+                    .username(username)
+                    .userEmail(user != null ? user.getEmail() : null)
+                    .nickname(user != null && user.getNickname() != null ? user.getNickname() : username)
+                    .role("OWNER")
+                    .joinedAt(Instant.now())
+                    .build();
+            teamMemberRepository.save(member);
+        }
+
+        return toDto(saved);
     }
 
     public TeamDto.TeamResponse getTeam(String teamId) {
@@ -59,6 +122,7 @@ public class TeamService {
         return toDto(team);
     }
 
+    @Transactional
     public void deleteTeam(String teamId) {
         Team team = teamRepository.findByTeamId(teamId)
                 .orElseThrow(() -> new IllegalArgumentException("team not found: " + teamId));
@@ -68,6 +132,7 @@ public class TeamService {
         roadmapEdgeRepository.findAllByTeamIdOrderByIdAsc(teamId).forEach(roadmapEdgeRepository::delete);
         specificationRepository.findAllByTeamIdOrderByIdDesc(teamId).forEach(specificationRepository::delete);
         suggestionRepository.findAllByTeamIdOrderByIdDesc(teamId).forEach(suggestionRepository::delete);
+        teamMemberRepository.deleteAllByTeamId(teamId);
         
         teamRepository.delete(team);
     }

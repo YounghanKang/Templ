@@ -10,4 +10,6 @@ public interface TeamRepository extends JpaRepository<Team, Long> {
     Optional<Team> findByTeamId(String teamId);
     boolean existsByTeamId(String teamId);
     List<Team> findAllByOrderByIdAsc();
+    List<Team> findAllByOwnerUsernameOrderByIdAsc(String ownerUsername);
+    List<Team> findByTeamIdInOrderByIdAsc(List<String> teamIds);
 }

@@ -29,6 +29,8 @@ public class Team {
     @Column(length = 500)
     private String mission;
 
+    private String ownerUsername;
+
     private String slackHandle;
 
     private String githubRepo;
