@@ -8,8 +8,10 @@ import com.example.demo.util.GoogleTokenVerifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -128,9 +130,27 @@ public class AuthService {
             Object localeObj = payload.get("locale");
             if (localeObj != null) localeStr = localeObj.toString();
         } else {
-            // verification disabled — fallback demo behavior
-            email = "google_" + request.getAccessToken().substring(0, Math.min(8, request.getAccessToken().length())) + "@example.com";
-            givenName = "Google User";
+            // verification disabled — call Google UserInfo API with access_token to get real user identity
+            try {
+                RestTemplate rest = new RestTemplate();
+                @SuppressWarnings("unchecked")
+                Map<String, Object> userInfo = rest.getForObject(
+                    "https://www.googleapis.com/oauth2/v3/userinfo?access_token=" + request.getAccessToken(),
+                    Map.class
+                );
+                if (userInfo == null || !userInfo.containsKey("email")) {
+                    throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "could not retrieve email from google");
+                }
+                email = (String) userInfo.get("email");
+                Object nameObj = userInfo.get("name");
+                if (nameObj != null) givenName = nameObj.toString();
+                Object localeObj = userInfo.get("locale");
+                if (localeObj != null) localeStr = localeObj.toString();
+            } catch (ResponseStatusException rse) {
+                throw rse;
+            } catch (Exception e) {
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "invalid google access_token: " + e.getMessage());
+            }
         }
 
         String googleUsername = email.split("@")[0];

@@ -129,13 +129,12 @@ public class SuggestionService {
                 .orElseThrow(() -> new IllegalArgumentException("spec not found for suggestion regeneration: " + effectiveSpecId));
 
         if (!feedback.isBlank()) {
-            String updatedSpecText = (spec.getSpecText() == null || spec.getSpecText().isBlank())
-                    ? feedback
-                    : spec.getSpecText() + "\n\n[피드백 반영]: " + feedback;
+            // Keep team mission synchronized with original spec + clean feedback note
+            String originalBase = spec.getSpecText() != null ? spec.getSpecText().replaceAll("(?s)\\[피드백.*", "").trim() : "";
+            String updatedSpecText = originalBase.isBlank() ? feedback : originalBase;
             spec.setSpecText(updatedSpecText);
             specificationRepository.save(spec);
 
-            // Keep team mission synchronized with updated spec
             teamRepository.findByTeamId(teamId).ifPresent(t -> {
                 t.setMission(updatedSpecText);
                 teamRepository.save(t);
@@ -172,9 +171,6 @@ public class SuggestionService {
             }
             if (candidate.getBody() == null) {
                 candidate.setBody("");
-            }
-            if (!feedback.isBlank() && !candidate.getBody().contains(feedback)) {
-                candidate.setBody(candidate.getBody() + "\n\n사용자 의견: " + feedback);
             }
             if (candidate.getTargetType() == null || candidate.getTargetType().isBlank()) {
                 candidate.setTargetType("roadmapNode");

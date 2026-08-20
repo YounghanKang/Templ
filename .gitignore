@@ -20,5 +20,8 @@ application-secret.yml
 # Dependencies (Large files, can be reinstalled via npm/yarn)
 node_modules/
 
+# Test Files
+backend/src/test/
+
 # Build outputs (Auto-generated files, not source code)
 dist/

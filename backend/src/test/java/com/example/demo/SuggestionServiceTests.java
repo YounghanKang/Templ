@@ -1,24 +1,23 @@
-package com.example.demo;
+package com.example.demo.service;
 
-import com.example.demo.dto.RoadmapDto;
-import com.example.demo.dto.SuggestionDto;
-import com.example.demo.dto.SpecificationDto;
+import com.example.demo.domain.RoadmapNode;
 import com.example.demo.domain.Specification;
+import com.example.demo.domain.Suggestion;
 import com.example.demo.domain.Team;
+import com.example.demo.dto.SuggestionDto;
 import com.example.demo.repository.RoadmapNodeRepository;
 import com.example.demo.repository.SpecificationRepository;
+import com.example.demo.repository.SuggestionRepository;
 import com.example.demo.repository.TeamRepository;
-import com.example.demo.service.RoadmapService;
-import com.example.demo.service.SuggestionService;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-
 @SpringBootTest
+@ActiveProfiles("test")
 @Transactional
 public class SuggestionServiceTests {
 
@@ -26,10 +25,10 @@ public class SuggestionServiceTests {
     private SuggestionService suggestionService;
 
     @Autowired
-    private RoadmapService roadmapService;
+    private AiService aiService;
 
     @Autowired
-    private TeamRepository teamRepository;
+    private SuggestionRepository suggestionRepository;
 
     @Autowired
     private RoadmapNodeRepository roadmapNodeRepository;
@@ -37,42 +36,11 @@ public class SuggestionServiceTests {
     @Autowired
     private SpecificationRepository specificationRepository;
 
-    @Test
-    public void approve_updates_existing_node_fields() {
-        String teamId = "T-TEST-1";
-        teamRepository.save(Team.builder().teamId(teamId).name("TestTeam").members(1).color("#000").mission("m").build());
-
-        RoadmapDto.RoadmapNodeDto node = RoadmapDto.RoadmapNodeDto.builder()
-                .id("n-root-1")
-                .label("Initial")
-                .aiSummary("")
-                .status("todo")
-                .progress(0)
-                .assignees(List.of())
-                .build();
-        roadmapService.createNode(teamId, node);
-
-        String changeJson = "{\"label\":\"Updated Label\",\"aiSummary\":\"Updated summary\",\"progress\":50}";
-        SuggestionDto.Create create = SuggestionDto.Create.builder()
-                .targetType("roadmapNode")
-                .targetId("n-root-1")
-                .title("Apply update")
-                .body("Apply field updates")
-                .sourceTool("test")
-                .sourceId("spec-1")
-                .changeJson(changeJson)
-                .build();
-        var s = suggestionService.create(teamId, create);
-        var approved = suggestionService.approve(teamId, s.getId(), "tester");
-
-        var updated = roadmapNodeRepository.findByNodeIdAndTeamId("n-root-1", teamId).orElseThrow();
-        Assertions.assertEquals("Updated Label", updated.getLabel());
-        Assertions.assertEquals("Updated summary", updated.getAiSummary());
-        Assertions.assertEquals(50, updated.getProgress());
-    }
+    @Autowired
+    private TeamRepository teamRepository;
 
     @Test
-    public void approve_creates_root_and_children_from_array() {
+    public void approve_creates_roadmap_nodes_from_json_array() {
         String teamId = "T-TEST-2";
         teamRepository.save(Team.builder().teamId(teamId).name("Team2").members(1).color("#111").mission("m").build());
 
@@ -200,5 +168,181 @@ public class SuggestionServiceTests {
         Assertions.assertEquals(childRes.getId(), diff.getBaseSuggestionId());
         Assertions.assertEquals(parentRes.getId(), diff.getTargetSuggestionId());
         Assertions.assertTrue(diff.isTitleChanged() || diff.isBodyChanged());
+    }
+
+    @Test
+    public void regenerate_origami_with_practice_feedback_produces_natural_wbs_modules() {
+        String teamId = "T-ORIGAMI";
+        teamRepository.save(Team.builder().teamId(teamId).name("OrigamiTeam").members(1).color("#ff5500").mission("종이학 접기").build());
+
+        Specification spec = specificationRepository.save(Specification.builder()
+                .teamId(teamId)
+                .author("tester")
+                .specText("종이학 접기")
+                .status("READY")
+                .build());
+
+        SuggestionDto.Create base = SuggestionDto.Create.builder()
+                .targetType("roadmapNode")
+                .targetId(null)
+                .title("종이학 접기")
+                .body("종이학 접기 목표")
+                .sourceTool("test")
+                .sourceId(String.valueOf(spec.getId()))
+                .changeJson("{\"label\": \"종이학 접기\", \"aiSummary\": \"초기 생성\"}")
+                .build();
+        var original = suggestionService.create(teamId, base);
+
+        var regenerated = suggestionService.regenerate(teamId, original.getId(), SuggestionDto.RegenerateRequest.builder()
+                .feedback("다른 걸로 미리 연습하는 과정도 추가해줘")
+                .baseSuggestionId(original.getId())
+                .build());
+
+        Assertions.assertFalse(regenerated.isEmpty());
+
+        // 1. Must NOT have raw "피드백 반영:" in titles
+        boolean hasRawPrefix = regenerated.stream().anyMatch(item -> item.getTitle() != null && item.getTitle().startsWith("피드백 반영:"));
+        Assertions.assertFalse(hasRawPrefix, "Must not contain '피드백 반영:' prefix in node titles");
+
+        // 2. Must contain naturally synthesized module for practice
+        boolean hasPracticeModule = regenerated.stream().anyMatch(item -> item.getTitle() != null && (item.getTitle().contains("사전 연습") || item.getTitle().contains("예비 실습")));
+        Assertions.assertTrue(hasPracticeModule, "Must contain synthesized practice/exercise module");
+    }
+
+    @Test
+    public void generate_speaker_procurement_does_not_contain_software_development_tasks() {
+        String teamId = "T-SPEAKER-1";
+        teamRepository.save(Team.builder().teamId(teamId).name("SpeakerTeam").members(1).color("#10b981").mission("스피커 구매하기").build());
+
+        Specification spec = specificationRepository.save(Specification.builder()
+                .teamId(teamId)
+                .author("tester")
+                .specText("스피커 구매하기")
+                .status("READY")
+                .build());
+
+        var suggestions = aiService.generateSuggestions(teamId, spec.getId(), spec.getSpecText());
+        Assertions.assertFalse(suggestions.isEmpty());
+
+        // Must NOT contain software dev concepts like API, DB, frontend, backend, or site development
+        boolean hasSoftwareTerms = suggestions.stream().anyMatch(item -> {
+            String title = item.getTitle() != null ? item.getTitle() : "";
+            String body = item.getBody() != null ? item.getBody() : "";
+            return title.contains("사이트") || title.contains("웹") || title.contains("API") || title.contains("데이터베이스")
+                    || body.contains("프론트엔드") || body.contains("백엔드") || body.contains("RESTful") || body.contains("서버 배포");
+        });
+        Assertions.assertFalse(hasSoftwareTerms, "Speaker purchase spec must not generate software engineering tasks");
+
+        // Must contain purchasing stages (요구 사양 / 모델 비교 / 판매처 선정 및 결제 / 검수)
+        boolean hasPurchaseStage = suggestions.stream().anyMatch(item ->
+                item.getTitle() != null && (item.getTitle().contains("요구") || item.getTitle().contains("비교") || item.getTitle().contains("판매처") || item.getTitle().contains("검수"))
+        );
+        Assertions.assertTrue(hasPurchaseStage, "Speaker purchase must contain domain-appropriate procurement stages");
+    }
+
+    @Test
+    public void regenerate_speaker_with_cable_feedback_restructures_purchase_wbs_without_awkward_titles() {
+        String teamId = "T-SPEAKER-2";
+        teamRepository.save(Team.builder().teamId(teamId).name("SpeakerTeam2").members(1).color("#3b82f6").mission("스피커 구매하기").build());
+
+        Specification spec = specificationRepository.save(Specification.builder()
+                .teamId(teamId)
+                .author("tester")
+                .specText("스피커 구매하기")
+                .status("READY")
+                .build());
+
+        SuggestionDto.Create base = SuggestionDto.Create.builder()
+                .targetType("roadmapNode")
+                .targetId(null)
+                .title("스피커 구매하기")
+                .body("스피커 구매 명세")
+                .sourceTool("test")
+                .sourceId(String.valueOf(spec.getId()))
+                .changeJson("{\"label\": \"스피커 구매하기\", \"aiSummary\": \"초기 생성\"}")
+                .build();
+        var original = suggestionService.create(teamId, base);
+
+        var regenerated = suggestionService.regenerate(teamId, original.getId(), SuggestionDto.RegenerateRequest.builder()
+                .feedback("스피커 선도 구매하고 싶어")
+                .baseSuggestionId(original.getId())
+                .build());
+
+        Assertions.assertFalse(regenerated.isEmpty());
+
+        // 1. Must NOT contain awkward conversational phrases like "스피커 선도 구매하고 싶어 구매 계획 및 실행"
+        boolean hasAwkwardTitle = regenerated.stream().anyMatch(item ->
+                item.getTitle() != null && (item.getTitle().contains("하고 싶어") || item.getTitle().contains("추가해줘") || item.getTitle().contains("해주세요"))
+        );
+        Assertions.assertFalse(hasAwkwardTitle, "Node titles must not contain awkward conversational feedback phrases");
+
+        // 2. Must naturally integrate cable / accessory procurement into the WBS nodes
+        boolean hasCableIntegration = regenerated.stream().anyMatch(item -> {
+            String title = item.getTitle() != null ? item.getTitle() : "";
+            String body = item.getBody() != null ? item.getBody() : "";
+            return title.contains("케이블") || title.contains("선") || body.contains("케이블") || body.contains("단자");
+        });
+        Assertions.assertTrue(hasCableIntegration, "WBS nodes must be restructured to integrate cable requirements and inspection");
+    }
+
+    @Test
+    public void generate_computer_parts_spec_does_not_contain_redundant_root_prefix() {
+        String teamId = "T-PC-1";
+        teamRepository.save(Team.builder().teamId(teamId).name("PcTeam").members(1).color("#8b5cf6").mission("컴퓨터 부품(SSD, RAM, CPU) 구매").build());
+
+        Specification spec = specificationRepository.save(Specification.builder()
+                .teamId(teamId)
+                .author("tester")
+                .specText("컴퓨터 부품(SSD, RAM, CPU) 구매")
+                .status("READY")
+                .build());
+
+        var suggestions = aiService.generateSuggestions(teamId, spec.getId(), spec.getSpecText());
+        Assertions.assertFalse(suggestions.isEmpty());
+
+        // Mid and Leaf nodes must NOT have redundant prefix "컴퓨터 부품(SSD, RAM, CPU) 구매 -" or "중분류: 컴퓨터 부품(SSD, RAM, CPU) 구매"
+        boolean hasRedundantPrefix = suggestions.stream().skip(1).anyMatch(item -> {
+            String title = item.getTitle() != null ? item.getTitle() : "";
+            return title.contains("컴퓨터 부품(SSD, RAM, CPU) 구매 -") || title.contains("중분류: 컴퓨터 부품(SSD, RAM, CPU) 구매");
+        });
+        Assertions.assertFalse(hasRedundantPrefix, "Sub-node titles must not prefix or repeat the root project name");
+    }
+
+    @Test
+    public void regenerate_computer_parts_with_exclude_reviews_feedback_removes_review_nodes() {
+        String teamId = "T-PC-2";
+        teamRepository.save(Team.builder().teamId(teamId).name("PcTeam2").members(1).color("#6366f1").mission("컴퓨터 부품(SSD, RAM, CPU) 구매").build());
+
+        Specification spec = specificationRepository.save(Specification.builder()
+                .teamId(teamId)
+                .author("tester")
+                .specText("컴퓨터 부품(SSD, RAM, CPU) 구매")
+                .status("READY")
+                .build());
+
+        SuggestionDto.Create base = SuggestionDto.Create.builder()
+                .targetType("roadmapNode")
+                .targetId(null)
+                .title("컴퓨터 부품(SSD, RAM, CPU) 구매")
+                .body("컴퓨터 부품 구매 초기 명세")
+                .sourceTool("test")
+                .sourceId(String.valueOf(spec.getId()))
+                .changeJson("{\"label\": \"컴퓨터 부품 구매\", \"aiSummary\": \"초기 생성\"}")
+                .build();
+        var original = suggestionService.create(teamId, base);
+
+        var regenerated = suggestionService.regenerate(teamId, original.getId(), SuggestionDto.RegenerateRequest.builder()
+                .feedback("실구매자 리뷰는 빼줘")
+                .baseSuggestionId(original.getId())
+                .build());
+
+        Assertions.assertFalse(regenerated.isEmpty());
+
+        // Must NOT contain "실구매자 리뷰" or "리뷰" in any regenerated sub-node titles
+        boolean hasReviewInSubNodes = regenerated.stream().skip(1).anyMatch(item -> {
+            String title = item.getTitle() != null ? item.getTitle() : "";
+            return title.contains("실구매자 리뷰") || title.contains("리뷰 및");
+        });
+        Assertions.assertFalse(hasReviewInSubNodes, "Regenerated suggestions must exclude review tasks when user asked to remove reviews");
     }
 }

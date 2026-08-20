@@ -2414,8 +2414,12 @@ function CreateTeamForm({ teams, onCreated, accounts, onAccountsChange }: {
       setPhase('generating_ai')
       startPolling(newTeam.id, spec.id)
 
-    } catch (err) {
+    } catch (err: any) {
       console.error(err)
+      const token = localStorage.getItem('templ_token')
+      if (token) {
+        alert(err.message || '팀 생성에 실패했습니다. 입력 내용을 확인 후 다시 시도해 주세요.')
+      }
       setPhase('form')
     }
   }
@@ -2731,6 +2735,34 @@ export default function App() {
   const [teams, setTeams] = useState<TeamType[]>([])
   const [view, setView] = useState<View>({ kind: 'create' })
   const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    // 1. Check token expiration on mount
+    const token = localStorage.getItem('templ_token')
+    if (token) {
+      try {
+        const parts = token.split('.')
+        if (parts.length === 3) {
+          const payload = JSON.parse(atob(parts[1]))
+          if (payload.exp && payload.exp * 1000 < Date.now()) {
+            localStorage.removeItem('templ_token')
+            setIsAuthenticated(false)
+            return
+          }
+        }
+      } catch (e) {}
+    }
+
+    // 2. Listen for global session expiration event
+    const handleAuthExpired = (e: Event) => {
+      setIsAuthenticated(false)
+      const customEvent = e as CustomEvent
+      const msg = customEvent.detail?.message || '로그인 세션이 만료되었습니다. 다시 로그인해 주세요.'
+      alert(msg)
+    }
+    window.addEventListener('auth_expired', handleAuthExpired)
+    return () => window.removeEventListener('auth_expired', handleAuthExpired)
+  }, [])
 
   useEffect(() => {
     if (!isAuthenticated) return
