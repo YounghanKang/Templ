@@ -386,22 +386,7 @@ function RoadmapCanvas({ nodes, edges, selectedId, editing, linkFrom, suggestion
   const [scale, setScale] = useState(1)
   // Bubble a downstream node's problem up to every ancestor so parents flag it in amber.
   const warnMap = (() => {
-    const parents: Record<string, string[]> = {}
-    for (const e of edges) (parents[e.to] ??= []).push(e.from)
-    const out: Record<string, string> = {}
-    for (const n of nodes) {
-      if (!n.issue) continue
-      const seen = new Set<string>([n.id])
-      const queue = [...(parents[n.id] ?? [])]
-      while (queue.length) {
-        const id = queue.shift()!
-        if (seen.has(id)) continue
-        seen.add(id)
-        out[id] = out[id] ? `${out[id]}, ${n.label}` : n.label
-        queue.push(...(parents[id] ?? []))
-      }
-    }
-    return out
+    return {}
   })()
 
   // Auto-layout normalization if nodes overlap or lack valid positions
@@ -962,7 +947,7 @@ function NodeDetailPanel({ teamId, node, warning, color, suggestion, onChange, o
                     </svg>
                   </span>
                   <span style={{ fontFamily: 'var(--font-display)', fontSize: 12.5, fontWeight: 700, color: textDark }}>
-                    {isSoft ? '경고 발생' : t('node.issueOccurred')}
+                    {isSoft ? t('node.warningOccurred') : t('node.issueOccurred')}
                   </span>
                   <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: textMuted, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
                     {isSoft ? 'Warning' : 'Blocked'}
@@ -973,7 +958,7 @@ function NodeDetailPanel({ teamId, node, warning, color, suggestion, onChange, o
                       background: baseColor, color: '#fff', cursor: 'pointer',
                       fontFamily: 'var(--font-display)', fontSize: 11, fontWeight: 600,
                     }}>
-                    확인
+                    {t('node.confirm')}
                   </button>
                   <button onClick={() => { setIsIssueOpen(false); setIssueDraft(''); onChange({ issue: '' }) }}
                     style={{

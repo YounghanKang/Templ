@@ -282,7 +282,9 @@
     "aiSummary": "AI SUMMARY",
     "todo": "To Do",
     "active": "Active",
-    "done": "Done"
+    "done": "Done",
+    "warningOccurred": "Warning Occurred",
+    "confirm": "Confirm"
   },
   "new_team": "New team",
   "team_desc_ai": "Create a team and enter a mission, and AI will automatically configure the roadmap for you.",

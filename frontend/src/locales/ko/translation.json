@@ -282,7 +282,9 @@
     "aiSummary": "AI 요약",
     "todo": "대기",
     "active": "진행중",
-    "done": "완료"
+    "done": "완료",
+    "warningOccurred": "경고 발생",
+    "confirm": "확인"
   },
   "new_team": "새로운 팀",
   "team_desc_ai": "팀을 만들고 미션을 입력하시면, AI가 자동으로 로드맵을 구성해 드립니다.",

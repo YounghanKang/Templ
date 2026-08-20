@@ -281,7 +281,9 @@
     "aiSummary": "AI摘要",
     "todo": "待办",
     "active": "进行中",
-    "done": "已完成"
+    "done": "已完成",
+    "warningOccurred": "发出警告",
+    "confirm": "确认"
   },
   "new_team": "新团队",
   "team_desc_ai": "创建团队并输入最终目标后，AI将自动为您生成路线图。",
