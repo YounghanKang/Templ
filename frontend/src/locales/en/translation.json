@@ -284,7 +284,9 @@
     "active": "Active",
     "done": "Done",
     "warningOccurred": "Warning Occurred",
-    "confirm": "Confirm"
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "deleteConfirm": "Are you sure you want to delete this node?"
   },
   "new_team": "New team",
   "team_desc_ai": "Create a team and enter a mission, and AI will automatically configure the roadmap for you.",
@@ -308,5 +310,16 @@
     "desc2": "This action cannot be undone.",
     "confirm": "Are you sure you want to delete this team? (This action cannot be undone)",
     "button": "Delete"
+  },
+  "aiReview": {
+    "title": "Specification Analysis & Roadmap Proposal",
+    "desc": "Based on the specification provided, the AI has structured the top-level goals, core modules, and detailed execution units. Please review and approve.",
+    "totalNodes": "Total {{count}} nodes generated",
+    "modify": "Modify",
+    "modifying": "Modifying...",
+    "modifyPlaceholder": "Enter the part you want to modify",
+    "reject": "Reject (Cancel)",
+    "approve": "Approve (Complete Team Creation)",
+    "approving": "Generating and applying roadmap..."
   }
 }

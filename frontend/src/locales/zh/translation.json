@@ -283,7 +283,9 @@
     "active": "进行中",
     "done": "已完成",
     "warningOccurred": "发出警告",
-    "confirm": "确认"
+    "confirm": "确认",
+    "cancel": "取消",
+    "deleteConfirm": "您确定要删除该节点吗？"
   },
   "new_team": "新团队",
   "team_desc_ai": "创建团队并输入最终目标后，AI将自动为您生成路线图。",
@@ -307,5 +309,16 @@
     "desc2": "删除后无法恢复。",
     "confirm": "您确定要删除此团队吗？（此操作无法撤销）",
     "button": "删除"
+  },
+  "aiReview": {
+    "title": "规格说明分析与路线图建议",
+    "desc": "基于您输入的规格说明，AI 已构建了顶层目标、核心模块和详细执行单元。请审核并批准。",
+    "totalNodes": "共生成 {{count}} 个节点",
+    "modify": "修改",
+    "modifying": "修改中...",
+    "modifyPlaceholder": "请输入想要修改的部分",
+    "reject": "拒绝 (取消)",
+    "approve": "批准 (完成团队创建)",
+    "approving": "正在生成并应用路线图..."
   }
 }

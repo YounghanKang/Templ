@@ -284,7 +284,9 @@
     "active": "진행중",
     "done": "완료",
     "warningOccurred": "경고 발생",
-    "confirm": "확인"
+    "confirm": "확인",
+    "cancel": "취소",
+    "deleteConfirm": "노드를 삭제하시겠습니까?"
   },
   "new_team": "새로운 팀",
   "team_desc_ai": "팀을 만들고 미션을 입력하시면, AI가 자동으로 로드맵을 구성해 드립니다.",
@@ -308,5 +310,16 @@
     "desc2": "삭제 후에는 복구할 수 없습니다.",
     "confirm": "정말 이 팀을 삭제하시겠습니까? (이 작업은 되돌릴 수 없습니다)",
     "button": "삭제"
+  },
+  "aiReview": {
+    "title": "명세서 분석 및 로드맵 제안",
+    "desc": "입력하신 명세서를 바탕으로 AI가 최상위 목표, 핵심 모듈, 세부 실행 단위로 구조화했습니다. 검토 후 승인해주세요.",
+    "totalNodes": "총 {{count}}개 노드 생성됨",
+    "modify": "수정",
+    "modifying": "수정 중...",
+    "modifyPlaceholder": "수정하고 싶은 부분을 입력하세요.",
+    "reject": "거절 (취소)",
+    "approve": "승인 (팀 생성 완료)",
+    "approving": "로드맵 생성 및 적용 중..."
   }
 }

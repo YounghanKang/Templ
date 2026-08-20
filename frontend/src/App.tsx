@@ -1338,10 +1338,24 @@ function TeamMissionInput({ team, onSave }: { team: TeamType; onSave: (mission: 
   }
 
   async function deleteNode(id: string) {
-    setGraph(g => ({
-      nodes: g.nodes.filter(n => n.id !== id),
-      edges: g.edges.filter(e => e.from !== id && e.to !== id),
-    }))
+    if (!window.confirm(t('node.deleteConfirm'))) return;
+    setGraph(g => {
+      const nodesToDelete = new Set<string>([id])
+      const queue = [id]
+      while (queue.length > 0) {
+        const curr = queue.shift()!
+        for (const edge of g.edges) {
+          if (edge.from === curr && !nodesToDelete.has(edge.to)) {
+            nodesToDelete.add(edge.to)
+            queue.push(edge.to)
+          }
+        }
+      }
+      return {
+        nodes: g.nodes.filter(n => !nodesToDelete.has(n.id)),
+        edges: g.edges.filter(e => !nodesToDelete.has(e.from) && !nodesToDelete.has(e.to)),
+      }
+    })
     setLinkFrom(f => (f === id ? null : f))
     setSelectedNodeId(p => (p === id ? null : p))
 
@@ -2140,6 +2154,7 @@ function AiSpecificationReview({ team, previewGraph, suggestions, onApprove, onR
   team: TeamType; previewGraph: any; suggestions: any[];
   onApprove: () => void; onRegenerate: (fb: string) => void; onReject: () => void; isRegenerating: boolean;
 }) {
+  const { t } = useTranslation()
   const [feedback, setFeedback] = useState('')
   const [isApproving, setIsApproving] = useState(false)
 
@@ -2158,15 +2173,15 @@ function AiSpecificationReview({ team, previewGraph, suggestions, onApprove, onR
           </span>
         </div>
         <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--color-muted-foreground)' }}>
-          총 {nodes.length}개 노드 생성됨
+          {t('aiReview.totalNodes', { count: nodes.length })}
         </span>
       </div>
 
       <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 700, marginBottom: 8, color: 'var(--color-foreground)', letterSpacing: '-0.02em' }}>
-        명세서 분석 및 계층적 WBS 로드맵 제안
+        {t('aiReview.title')}
       </h1>
       <p style={{ fontSize: 14, color: 'var(--color-muted-foreground)', marginBottom: 24, lineHeight: 1.6 }}>
-        입력하신 명세서를 바탕으로 AI가 최상위 목표, 핵심 모듈, 세부 실행 단위로 구조화했습니다. 검토 후 승인해주세요.
+        {t('aiReview.desc')}
       </p>
 
       {/* WBS Tree Container */}
@@ -2260,7 +2275,7 @@ function AiSpecificationReview({ team, previewGraph, suggestions, onApprove, onR
               onRegenerate(fb)
             }
           }}
-          placeholder="수정하고 싶은 부분을 입력하세요"
+          placeholder={t('aiReview.modifyPlaceholder')}
           style={{ flex: 1, padding: '12px 16px', borderRadius: 10, border: '1.5px solid var(--color-border)', fontSize: 13.5, outline: 'none', background: '#fff', color: 'var(--color-foreground)' }}
         />
         <button
@@ -2276,14 +2291,14 @@ function AiSpecificationReview({ team, previewGraph, suggestions, onApprove, onR
           style={{
             padding: '0 22px', borderRadius: 10, background: '#f59e0b', color: '#fff', fontWeight: 600, border: 'none', cursor: (!feedback.trim() || isRegenerating || isApproving) ? 'not-allowed' : 'pointer', opacity: (!feedback.trim() || isRegenerating || isApproving) ? 0.6 : 1, fontSize: 13.5
           }}>
-          {isRegenerating ? '수정 중...' : '수정'}
+          {isRegenerating ? t('aiReview.modifying') : t('aiReview.modify')}
         </button>
       </div>
 
       {/* Action buttons */}
       <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', alignItems: 'center' }}>
         <button onClick={onReject} disabled={isApproving} style={{ padding: '11px 22px', borderRadius: 10, background: '#fee2e2', border: '1.5px solid #f87171', color: '#ef4444', fontWeight: 600, cursor: isApproving ? 'not-allowed' : 'pointer', fontSize: 13.5 }}>
-          거절 (취소)
+          {t('aiReview.reject')}
         </button>
         <button
           onClick={async () => {
@@ -2294,7 +2309,7 @@ function AiSpecificationReview({ team, previewGraph, suggestions, onApprove, onR
           style={{
             padding: '11px 26px', borderRadius: 10, background: 'var(--color-primary)', color: '#fff', fontWeight: 600, border: 'none', cursor: isApproving ? 'wait' : 'pointer', fontSize: 13.5, display: 'flex', alignItems: 'center', gap: 8, boxShadow: '0 4px 14px rgba(107,92,246,0.3)'
           }}>
-          {isApproving ? '로드맵 생성 및 적용 중...' : '승인 (팀 생성 완료)'}
+          {isApproving ? t('aiReview.approving') : t('aiReview.approve')}
         </button>
       </div>
     </div>
@@ -2738,19 +2753,32 @@ export default function App() {
 
   useEffect(() => {
     // 1. Check token expiration on mount
-    const token = localStorage.getItem('templ_token')
-    if (token) {
-      try {
-        const parts = token.split('.')
-        if (parts.length === 3) {
-          const payload = JSON.parse(atob(parts[1]))
-          if (payload.exp && payload.exp * 1000 < Date.now()) {
-            localStorage.removeItem('templ_token')
-            setIsAuthenticated(false)
-            return
+    let timeoutId: number | undefined
+    if (isAuthenticated) {
+      const token = localStorage.getItem('templ_token')
+      if (token) {
+        try {
+          const parts = token.split('.')
+          if (parts.length === 3) {
+            const payload = JSON.parse(atob(parts[1]))
+            if (payload.exp) {
+              const expiresIn = payload.exp * 1000 - Date.now()
+              if (expiresIn <= 0) {
+                localStorage.removeItem('templ_token')
+                setIsAuthenticated(false)
+                return
+              } else {
+                timeoutId = window.setTimeout(() => {
+                  localStorage.removeItem('templ_token')
+                  window.dispatchEvent(new CustomEvent('auth_expired', {
+                    detail: { message: '로그인 세션이 만료되었습니다. 다시 로그인해 주세요.' }
+                  }))
+                }, expiresIn)
+              }
+            }
           }
-        }
-      } catch (e) {}
+        } catch (e) {}
+      }
     }
 
     // 2. Listen for global session expiration event
@@ -2761,8 +2789,11 @@ export default function App() {
       alert(msg)
     }
     window.addEventListener('auth_expired', handleAuthExpired)
-    return () => window.removeEventListener('auth_expired', handleAuthExpired)
-  }, [])
+    return () => {
+      window.removeEventListener('auth_expired', handleAuthExpired)
+      if (timeoutId) clearTimeout(timeoutId)
+    }
+  }, [isAuthenticated])
 
   useEffect(() => {
     if (!isAuthenticated) return

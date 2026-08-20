@@ -14,6 +14,10 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.Queue;
+import java.util.Set;
 
 import org.springframework.transaction.annotation.Transactional;
 
@@ -96,10 +100,33 @@ public class RoadmapService {
     }
 
     public void deleteNode(String teamId, String nodeId) {
-        roadmapNodeRepository.deleteByNodeIdAndTeamId(nodeId, teamId);
-        roadmapEdgeRepository.findAllByTeamIdOrderByIdAsc(teamId).stream()
-                .filter(edge -> edge.getFromNodeId().equals(nodeId) || edge.getToNodeId().equals(nodeId))
-                .forEach(edge -> roadmapEdgeRepository.deleteByEdgeIdAndTeamId(edge.getEdgeId(), teamId));
+        List<RoadmapEdge> allEdges = roadmapEdgeRepository.findAllByTeamIdOrderByIdAsc(teamId);
+        
+        Set<String> nodesToDelete = new HashSet<>();
+        nodesToDelete.add(nodeId);
+        
+        Queue<String> queue = new LinkedList<>();
+        queue.add(nodeId);
+        
+        while (!queue.isEmpty()) {
+            String curr = queue.poll();
+            for (RoadmapEdge edge : allEdges) {
+                if (edge.getFromNodeId().equals(curr) && !nodesToDelete.contains(edge.getToNodeId())) {
+                    nodesToDelete.add(edge.getToNodeId());
+                    queue.add(edge.getToNodeId());
+                }
+            }
+        }
+        
+        for (String id : nodesToDelete) {
+            roadmapNodeRepository.deleteByNodeIdAndTeamId(id, teamId);
+        }
+        
+        for (RoadmapEdge edge : allEdges) {
+            if (nodesToDelete.contains(edge.getFromNodeId()) || nodesToDelete.contains(edge.getToNodeId())) {
+                roadmapEdgeRepository.deleteByEdgeIdAndTeamId(edge.getEdgeId(), teamId);
+            }
+        }
     }
 
     public RoadmapDto.RoadmapEdgeDto createEdge(String teamId, RoadmapDto.RoadmapEdgeDto request) {
