@@ -107,8 +107,8 @@ public class OpenAIService implements AiService {
 
                     4. STRUCTURE (Strict 3-Tier Hierarchy):
                        - 1 Root Task (tier="root", tempId="node_root", parentTempId=null): Clear single-sentence ultimate product mission.
-                       - 3 to 4 Feature Modules (tier="mid", tempId="node_mid_1", ..., parentTempId="node_root"): Specific functional pillars directly matching the user's requirements.
-                       - 2 to 3 Actionable Tasks per Module (tier="leaf", tempId="node_leaf_X", parentTempId matching its parent module): Concrete implementation units.
+                       - 3 to 8 Feature Modules (tier="mid", tempId="node_mid_1", ..., parentTempId="node_root"): Specific functional pillars. ALL mid nodes MUST strictly set parentTempId to "node_root".
+                       - Actionable Tasks (tier="leaf", tempId="node_leaf_X", parentTempId matching its parent module's tempId): Concrete implementation units. Generate 0 to 4 leaf nodes per module depending on its complexity. Only break down a module into leaf nodes if it requires detailed technical steps.
 
                     5. QUALITY STANDARDS & DUE DATE:
                        - dueDate: MUST default to approximately 1 month from today (Today is %s, Target Due Date is %s).
@@ -162,7 +162,7 @@ public class OpenAIService implements AiService {
                             Map.of("role", "user", "content", userPrompt)
                     ),
                     "temperature", 0.2,
-                    "max_tokens", 2500
+                    "max_tokens", 4000
             );
 
             String reqJson = objectMapper.writeValueAsString(body);

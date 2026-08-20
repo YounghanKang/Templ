@@ -733,12 +733,14 @@ function NodeDetailPanel({ teamId, node, warning, color, suggestion, onChange, o
   const st = STATUS_META[node.status]
   const [view, setView] = useState<'info' | 'comments'>('info')
   const [draft, setDraft] = useState('')
-  const [issueDraft, setIssueDraft] = useState(node.issue || '')
-  const [isIssueOpen, setIsIssueOpen] = useState(!!node.issue)
+  const initialIssueText = node.issue || (warning ? `[AI Warning: ${warning.changeType}]\nRisk: ${warning.riskScore}\nConfidence: ${Math.round(warning.confidence * 100)}%\n\n${warning.summary}` : '')
+  const [issueDraft, setIssueDraft] = useState(initialIssueText)
+  const [isIssueOpen, setIsIssueOpen] = useState(!!node.issue || !!warning)
   useEffect(() => {
-    setIssueDraft(node.issue || '')
-    setIsIssueOpen(!!node.issue)
-  }, [node.id, node.issue])
+    const text = node.issue || (warning ? `[AI Warning: ${warning.changeType}]\nRisk: ${warning.riskScore}\nConfidence: ${Math.round(warning.confidence * 100)}%\n\n${warning.summary}` : '')
+    setIssueDraft(text)
+    setIsIssueOpen(!!node.issue || !!warning)
+  }, [node.id, node.issue, warning])
   const comments = node.comments ?? []
   const files = node.files ?? []
 
@@ -886,31 +888,6 @@ function NodeDetailPanel({ teamId, node, warning, color, suggestion, onChange, o
         </div>
       ) : (
         <div style={{ padding: 18, display: 'flex', flexDirection: 'column', gap: 22 }}>
-          {/* Warning Banner */}
-          {warning && (
-            <div style={{ padding: 14, borderRadius: 10, background: warning.outcomeType === 'HARD_WARNING' ? '#ef444415' : '#f59e0b15', border: `1px solid ${warning.outcomeType === 'HARD_WARNING' ? '#ef444444' : '#f59e0b44'}` }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-                <span style={{ fontSize: 14 }}>⚠️</span>
-                <span style={{ fontSize: 13, fontWeight: 700, color: warning.outcomeType === 'HARD_WARNING' ? '#ef4444' : '#f59e0b' }}>
-                  AI Analysis Warning (Source: {warning.sourceTool})
-                </span>
-              </div>
-              <div style={{ fontSize: 12.5, color: '#333333', lineHeight: 1.5, marginBottom: 12 }}>
-                {warning.summary}
-              </div>
-              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                <span style={{ padding: '3px 8px', borderRadius: 4, background: '#00000010', fontSize: 11, color: '#333333', fontWeight: 500 }}>
-                  Type: {warning.changeType}
-                </span>
-                <span style={{ padding: '3px 8px', borderRadius: 4, background: '#00000010', fontSize: 11, color: '#333333', fontWeight: 500 }}>
-                  Risk Score: {warning.riskScore}
-                </span>
-                <span style={{ padding: '3px 8px', borderRadius: 4, background: '#00000010', fontSize: 11, color: '#333333', fontWeight: 500 }}>
-                  Confidence: {Math.round(warning.confidence * 100)}%
-                </span>
-              </div>
-            </div>
-          )}
           {/* AI Suggestion */}
           {suggestion && teamId && (
             <div style={{
@@ -964,47 +941,55 @@ function NodeDetailPanel({ teamId, node, warning, color, suggestion, onChange, o
           )}
 
           {/* 문제 발생 */}
-          {isIssueOpen && (
-            <div style={{
-              borderRadius: 14, border: '1.5px solid #ef444440', background: '#ef44440d', padding: '14px 15px',
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 9 }}>
-                <span style={{
-                  width: 17, height: 17, borderRadius: '50%', background: '#ef4444', flexShrink: 0,
-                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                }}>
-                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                    <path d="M5 2v3.4M5 7.4v.1" stroke="#fff" strokeWidth="1.7" strokeLinecap="round" />
-                  </svg>
-                </span>
-                <span style={{ fontFamily: 'var(--font-display)', fontSize: 12.5, fontWeight: 700, color: '#b91c1c' }}>
-                  {t('node.issueOccurred')}
-                </span>
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: '#c2504f', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-                  Blocked
-                </span>
-                <button onClick={() => onChange({ issue: issueDraft })}
-                  style={{
-                    marginLeft: 'auto', padding: '4px 10px', borderRadius: 7, border: '1px solid #ef444440',
-                    background: '#ef4444', color: '#fff', cursor: 'pointer',
-                    fontFamily: 'var(--font-display)', fontSize: 11, fontWeight: 600,
+          {isIssueOpen && (() => {
+            const isSoft = warning?.outcomeType === 'SOFT_WARNING';
+            const baseColor = isSoft ? '#f59e0b' : '#ef4444';
+            const bgLight = isSoft ? '#f59e0b0d' : '#ef44440d';
+            const borderLight = isSoft ? '#f59e0b40' : '#ef444440';
+            const textDark = isSoft ? '#b45309' : '#b91c1c';
+            const textMuted = isSoft ? '#d97706' : '#c2504f';
+            return (
+              <div style={{
+                borderRadius: 14, border: `1.5px solid ${borderLight}`, background: bgLight, padding: '14px 15px',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 9 }}>
+                  <span style={{
+                    width: 17, height: 17, borderRadius: '50%', background: baseColor, flexShrink: 0,
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                   }}>
-                  확인
-                </button>
-                <button onClick={() => { setIsIssueOpen(false); setIssueDraft(''); onChange({ issue: '' }) }}
-                  style={{
-                    padding: '4px 10px', borderRadius: 7, border: '1px solid #ef444440',
-                    background: 'transparent', color: '#b91c1c', cursor: 'pointer',
-                    fontFamily: 'var(--font-display)', fontSize: 11, fontWeight: 600,
-                  }}>
-                  {t('node.resolved')}
-                </button>
+                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                      <path d="M5 2v3.4M5 7.4v.1" stroke="#fff" strokeWidth="1.7" strokeLinecap="round" />
+                    </svg>
+                  </span>
+                  <span style={{ fontFamily: 'var(--font-display)', fontSize: 12.5, fontWeight: 700, color: textDark }}>
+                    {isSoft ? '경고 발생' : t('node.issueOccurred')}
+                  </span>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: textMuted, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                    {isSoft ? 'Warning' : 'Blocked'}
+                  </span>
+                  <button onClick={() => onChange({ issue: issueDraft })}
+                    style={{
+                      marginLeft: 'auto', padding: '4px 10px', borderRadius: 7, border: `1px solid ${borderLight}`,
+                      background: baseColor, color: '#fff', cursor: 'pointer',
+                      fontFamily: 'var(--font-display)', fontSize: 11, fontWeight: 600,
+                    }}>
+                    확인
+                  </button>
+                  <button onClick={() => { setIsIssueOpen(false); setIssueDraft(''); onChange({ issue: '' }) }}
+                    style={{
+                      padding: '4px 10px', borderRadius: 7, border: `1px solid ${borderLight}`,
+                      background: 'transparent', color: textDark, cursor: 'pointer',
+                      fontFamily: 'var(--font-display)', fontSize: 11, fontWeight: 600,
+                    }}>
+                    {t('node.resolved')}
+                  </button>
+                </div>
+                <textarea value={issueDraft} onChange={e => setIssueDraft(e.target.value)} rows={4}
+                  placeholder={t('node.issuePlaceholder')}
+                  style={{ ...fieldStyle, background: '#ffffff', border: `1.5px solid ${baseColor}33`, fontSize: 12.5 }} />
               </div>
-              <textarea value={issueDraft} onChange={e => setIssueDraft(e.target.value)} rows={4}
-                placeholder={t('node.issuePlaceholder')}
-                style={{ ...fieldStyle, background: '#ffffff', border: '1.5px solid #ef444433', fontSize: 12.5 }} />
-            </div>
-          )}
+            )
+          })()}
 
           {/* 제출된 파일 */}
           <div>
