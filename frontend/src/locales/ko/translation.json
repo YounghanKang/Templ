@@ -227,7 +227,10 @@
     "generateRoadmap": "로드맵 생성",
     "aiAnalyzing": "AI가 명세서를 분석중입니다...",
     "aiWaitMsg": "잠시만 기다려주세요. 곧 디렉토리 트리가 생성됩니다.",
-    "submitButton": "팀 만들기"
+    "submitButton": "팀 만들기",
+    "namePlaceholder": "팀 이름을 작성하세요.",
+    "missionPlaceholder": "명세서를 입력하세요.",
+    "slackPlaceholder": "SLACK 채팅방 링크를 입력하세요."
   },
   "settings": {
     "title": "개인 설정",
@@ -296,5 +299,5 @@
   "create_team": "팀 생성",
   "ai_analyzing": "AI가 명세서를 분석하고 있습니다...",
   "ai_analyzing_desc": "잠시만 기다려주세요. 미션에 맞는 로드맵을 자동으로 구성 중입니다. (보통 10~15초 정도 소요됩니다)",
-  "slack_account": "Slack 계정"
+  "slack_account": "SLACK 채팅방"
 }

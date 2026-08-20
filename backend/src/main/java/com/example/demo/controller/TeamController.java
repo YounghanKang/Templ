@@ -49,4 +49,10 @@ public class TeamController {
                                                                             @RequestBody UserDto.IntegrationSettingsDto request) {
         return ResponseEntity.ok(teamService.updateIntegrations(teamId, request));
     }
+
+    @DeleteMapping("/teams/{teamId}")
+    public ResponseEntity<Void> deleteTeam(@PathVariable String teamId) {
+        teamService.deleteTeam(teamId);
+        return ResponseEntity.noContent().build();
+    }
 }

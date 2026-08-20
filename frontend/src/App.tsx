@@ -895,17 +895,17 @@ function NodeDetailPanel({ teamId, node, warning, color, suggestion, onChange, o
                   AI Analysis Warning (Source: {warning.sourceTool})
                 </span>
               </div>
-              <div style={{ fontSize: 12.5, color: '#d3d2e0', lineHeight: 1.5, marginBottom: 12 }}>
+              <div style={{ fontSize: 12.5, color: '#333333', lineHeight: 1.5, marginBottom: 12 }}>
                 {warning.summary}
               </div>
               <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                <span style={{ padding: '3px 8px', borderRadius: 4, background: '#00000044', fontSize: 11, color: '#a1a1aa' }}>
+                <span style={{ padding: '3px 8px', borderRadius: 4, background: '#00000010', fontSize: 11, color: '#333333', fontWeight: 500 }}>
                   Type: {warning.changeType}
                 </span>
-                <span style={{ padding: '3px 8px', borderRadius: 4, background: '#00000044', fontSize: 11, color: '#a1a1aa' }}>
+                <span style={{ padding: '3px 8px', borderRadius: 4, background: '#00000010', fontSize: 11, color: '#333333', fontWeight: 500 }}>
                   Risk Score: {warning.riskScore}
                 </span>
-                <span style={{ padding: '3px 8px', borderRadius: 4, background: '#00000044', fontSize: 11, color: '#a1a1aa' }}>
+                <span style={{ padding: '3px 8px', borderRadius: 4, background: '#00000010', fontSize: 11, color: '#333333', fontWeight: 500 }}>
                   Confidence: {Math.round(warning.confidence * 100)}%
                 </span>
               </div>
@@ -1882,6 +1882,35 @@ function TeamInfo({ team }: { team: TeamType }) {
             </button>
           )}
         </div>
+
+        {/* Danger Zone: Delete Team */}
+        <div style={{ marginTop: 24, padding: '20px 24px', background: '#fef2f2', borderRadius: 16, border: '1.5px solid #fecaca', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div>
+            <h3 style={{ margin: 0, fontSize: 14, fontWeight: 600, color: '#dc2626' }}>팀 삭제 (Danger Zone)</h3>
+            <p style={{ margin: '6px 0 0 0', fontSize: 13, color: '#991b1b', lineHeight: 1.5 }}>
+              이 팀과 관련된 모든 데이터(로드맵, 목표 등)가 삭제됩니다.<br/>
+              삭제 후에는 복구할 수 없습니다.
+            </p>
+          </div>
+          <button 
+            onClick={async () => {
+              if (window.confirm('정말 이 팀을 삭제하시겠습니까? (이 작업은 되돌릴 수 없습니다)')) {
+                try {
+                  await fetch(`/api/teams/${team.id}`, { 
+                    method: 'DELETE', 
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('templ_token')}` } 
+                  })
+                  window.location.reload()
+                } catch(e) { console.error(e) }
+              }
+            }} 
+            style={{ 
+              padding: '10px 18px', borderRadius: 8, background: '#ef4444', color: '#fff', 
+              border: 'none', fontWeight: 600, fontSize: 13, cursor: 'pointer', flexShrink: 0 
+            }}>
+            팀 삭제하기
+          </button>
+        </div>
       </div>
     </div>
   )
@@ -2307,8 +2336,8 @@ function CreateTeamForm({ teams, onCreated, accounts, onAccountsChange }: {
   accounts: Accounts; onAccountsChange: (a: Accounts) => void
 }) {
   const { t } = useTranslation()
-  const [slackHandle, setSlackHandle] = useState(accounts.slack.handle)
-  const [githubRepo, setGithubRepo] = useState(accounts.github.handle)
+  const [slackHandle, setSlackHandle] = useState('')
+  const [githubRepo, setGithubRepo] = useState('')
   const [teamName, setTeamName] = useState('')
   const [teamDesc, setTeamDesc] = useState('')
   const [selectedColor, setSelectedColor] = useState(COLOR_SWATCHES[0])
@@ -2505,6 +2534,8 @@ function CreateTeamForm({ teams, onCreated, accounts, onAccountsChange }: {
             if (suggestions.length > 0) {
               await fetch(`/api/teams/${createdTeam!.id}/suggestions/${suggestions[0].id}/reject`, { method: 'POST', headers: { 'Authorization': `Bearer ${localStorage.getItem('templ_token')}` } })
             }
+            // Add DELETE request to remove the team itself
+            await fetch(`/api/teams/${createdTeam!.id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${localStorage.getItem('templ_token')}` } })
             alert('팀 생성이 취소되었습니다.')
             window.location.reload()
           } catch (e) { console.error(e) }

@@ -226,7 +226,10 @@
     "specPlaceholder": "例如) 构建一致的设计语言，以便所有用户都能直观地使用产品。",
     "generateRoadmap": "生成路线图",
     "aiAnalyzing": "AI正在分析说明书...",
-    "aiWaitMsg": "请稍等，目录树即将生成。"
+    "aiWaitMsg": "请稍等，目录树即将生成。",
+    "namePlaceholder": "请输入团队名称。",
+    "missionPlaceholder": "请输入规格说明。",
+    "slackPlaceholder": "请输入Slack聊天室链接。"
   },
   "settings": {
     "title": "个人设置",
@@ -295,5 +298,5 @@
   "create_team": "创建团队",
   "ai_analyzing": "AI正在分析说明书...",
   "ai_analyzing_desc": "请稍等。正在根据您的最终目标自动生成路线图。(通常需要10~15秒)",
-  "slack_account": "Slack 账号"
+  "slack_account": "Slack 聊天室"
 }

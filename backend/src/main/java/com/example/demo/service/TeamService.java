@@ -45,6 +45,12 @@ public class TeamService {
         return toDto(team);
     }
 
+    public void deleteTeam(String teamId) {
+        Team team = teamRepository.findByTeamId(teamId)
+                .orElseThrow(() -> new IllegalArgumentException("team not found: " + teamId));
+        teamRepository.delete(team);
+    }
+
     public TeamDto.TeamResponse updateTeam(String teamId, TeamDto.UpdateTeamRequest request) {
         Team team = teamRepository.findByTeamId(teamId)
                 .orElseThrow(() -> new IllegalArgumentException("team not found: " + teamId));

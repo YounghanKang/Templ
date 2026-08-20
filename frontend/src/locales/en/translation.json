@@ -227,7 +227,10 @@
     "generateRoadmap": "Generate Roadmap",
     "aiAnalyzing": "AI is analyzing the specification...",
     "aiWaitMsg": "Please wait a moment. The directory tree will be generated soon.",
-    "submitButton": "Create Team"
+    "submitButton": "Create Team",
+    "namePlaceholder": "Please enter team name.",
+    "missionPlaceholder": "Please enter specification.",
+    "slackPlaceholder": "Please enter Slack chat room link."
   },
   "settings": {
     "title": "Personal Settings",
@@ -296,5 +299,5 @@
   "create_team": "Create team",
   "ai_analyzing": "AI is analyzing the specification...",
   "ai_analyzing_desc": "Please wait a moment. We are automatically configuring a roadmap that fits your mission. (Usually takes 10~15 seconds)",
-  "slack_account": "Slack Account"
+  "slack_account": "Slack Chat Room"
 }
