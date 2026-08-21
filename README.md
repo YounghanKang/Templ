@@ -58,12 +58,13 @@ AI가 직접 작업을 변경하지 않습니다.
 
 ## 🛠️ Tech Stack
 
-| 영역            | 기술       |
-| ------------- | -------- |
-| Frontend      | React    |
-| Backend       | Spring Boot |
-| Database      |          |
-| AI            |   |
+| 영역 | 기술 & 라이브러리 | 상세 내용 |
+| :--- | :--- | :--- |
+| **Frontend** | `React 19`, `TypeScript`, `Vite 8`, `TailwindCSS v4` | 계층형 로드맵 Canvas 뷰, 반응형 UI|
+| **Backend** | `Java 17`, `Spring Boot 4 (3.5+)`, `Spring Data JPA` | RESTful API, Springdoc OpenAPI/Swagger UI |
+| **Database** | `H2 Database` (Dev/Test), `PostgreSQL` (Prod) | 인메모리/파일 기반 DB 및 RDBMS 연동 |
+| **AI / LLM** | `OpenAI GPT-4o-mini| 자연어 명세서 기반 계층형 로드맵 생성, 피드백 기반 재생성 |
+| **Security & Auth** | `JWT (jjwt 0.11.5)`, `Google OAuth2 OIDC`, `BCrypt` | 토큰 기반 인증/인가 인터셉터, 소셜 로그인 연동 |
 
 ## 🎯 Core Value
 

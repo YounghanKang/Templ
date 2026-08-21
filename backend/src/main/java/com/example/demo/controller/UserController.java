@@ -2,6 +2,7 @@ package com.example.demo.controller;
 
 import com.example.demo.dto.UserDto;
 import com.example.demo.service.UserService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,13 +17,15 @@ public class UserController {
     }
 
     @GetMapping("/users/profile")
-    public ResponseEntity<UserDto.ProfileDto> getProfile() {
-        return ResponseEntity.ok(userService.getProfile());
+    public ResponseEntity<UserDto.ProfileDto> getProfile(HttpServletRequest request) {
+        String username = (String) request.getAttribute("authUser");
+        return ResponseEntity.ok(userService.getProfile(username));
     }
 
     @PatchMapping("/users/profile")
-    public ResponseEntity<UserDto.ProfileDto> updateProfile(@RequestBody UserDto.ProfileDto request) {
-        return ResponseEntity.ok(userService.updateProfile(request));
+    public ResponseEntity<UserDto.ProfileDto> updateProfile(@RequestBody UserDto.ProfileDto profileRequest,
+                                                            HttpServletRequest request) {
+        String username = (String) request.getAttribute("authUser");
+        return ResponseEntity.ok(userService.updateProfile(username, profileRequest));
     }
-
 }

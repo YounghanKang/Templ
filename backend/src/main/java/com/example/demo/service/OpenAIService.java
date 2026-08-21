@@ -115,49 +115,38 @@ public class OpenAIService implements AiService {
                     You are an expert Project Management Specialist, Agile Coach, and Work Breakdown Structure (WBS) Architect.
                     Your mission is to analyze the user's project specification (명세서) and decompose it into a deeply thoughtful, domain-accurate, highly realistic, and professional Work Breakdown Structure (WBS).
 
-                    CRITICAL DOMAIN FIDELITY RULES:
-                    1. DOMAIN CLASSIFICATION & STRICT ADAPTATION:
-                       - FIRST, detect the true nature and domain of the project:
-                         a) NON-SOFTWARE / REAL-WORLD TASKS (e.g. Purchasing & Procurement like "컴퓨터 부품(SSD, RAM, CPU) 구매", "스피커 구매하기", Equipment/Supplies Purchase, Event/Trip Planning, Marketing Campaign, Office Relocation, Crafting/DIY, Cooking, Study/Certification, Research, Daily Life Goals).
-                         b) SOFTWARE / IT TASKS (e.g. Web App Development, Mobile App, Backend API, Database Design, Cloud Infrastructure, Coding).
-                       - IF THE PROJECT IS NON-SOFTWARE / REAL-WORLD:
-                         * ABSOLUTELY FORBIDDEN: NEVER invent software development, website creation, app development, coding, database, backend/frontend, API endpoints, UI screens, server deployment, or DevOps tasks!
-                         * You MUST decompose the project into authentic, domain-specific execution stages (e.g. for purchasing: 1. 요구 사양 및 호환성/예산 정의, 2. 부품/후보 모델 스펙 및 벤치마크 비교, 3. 최적 판매처 선정 및 주문 결제, 4. 배송 수령, 장착/조립 및 정상 동작 검수).
-                         * ASSIGNEES: Must reflect real-world roles (e.g., ["구매 담당", "하드웨어/장비 담당", "예산 관리자", "검수 담당", "기획자"]). NEVER use ["Frontend", "Backend", "DevOps"] for non-software projects!
-                         * aiSummary: Must describe realistic real-world considerations, procurement risks, compatibility issues, warranty terms, or quality bottlenecks (e.g., "CPU 소켓/메인보드 칩셋 호환성 및 RAM DDR 규격 일치 여부 사전 확인 필수, 초기 불량 A/S 정책 검토").
+                    CRITICAL GENERATION & DECOMPOSITION RULES:
+                    1. DOCUMENT & DOMAIN FIDELITY:
+                       - If the user provides a detailed Software Product Specification / PRD (with sections like 핵심 기능, 사용자 플로우, 파이프라인 등):
+                         * You MUST decompose the WBS based on the SPECIFIC FEATURES & MODULES explicitly outlined in the PRD!
+                         * Map each major functional pillar (e.g., 디렉토리 자동 생성, 할 일 노드 상세화, AI 맥락 분석 및 필터링 파이프라인, 바운더리 침해 감지, 부가 기능) to a dedicated Feature Module (tier="mid").
+                         * DO NOT invent generic dummy tasks when concrete features are provided in the spec!
+                       - If the project is NON-SOFTWARE / REAL-WORLD (e.g., Purchasing/Procurement, Travel, DIY, Cooking):
+                         * NEVER create software/coding/API/database tasks. Decompose into authentic real-world procurement or execution stages.
 
-                    2. NO ROOT PREFIX DUPLICATION IN SUB-NODES (CRITICAL UI REQUIREMENT):
-                       - The root task already contains the full project name.
-                       - Mid and Leaf node labels and titles MUST NEVER prepend or repeat the root project title!
-                       - WRONG: "컴퓨터 부품(SSD, RAM, CPU) 구매 - 요구 사양 및 예산 설정" (REDUNDANT AND UGLY)
-                       - RIGHT: "요구 사양 및 부품 간 호환성 정의" (CLEAN, DIRECT, PROFESSIONAL)
-                       - WRONG: "스피커 구매하기 - 후보 모델 스펙 비교"
-                       - RIGHT: "후보 모델 스펙 및 음질 비교 분석"
+                    2. ROOT NODE LABEL & TITLE CLEANING:
+                       - The root task label MUST NOT contain raw markdown headers, section numbers, or prefixes like "## 1. 서비스 한 줄 정의" or "1. 개요:".
+                       - Extract the pure, concise project/service name (e.g., "협업 오케스트레이터 플랫폼", "가상 디렉토리 협업 시스템").
 
-                    3. USER FEEDBACK COMPLIANCE & STRICT EXCLUSION/REMOVAL (HIGHEST PRIORITY):
-                       - If user feedback requests to remove, exclude, or delete a specific task, topic, or feature (e.g. "실구매자 리뷰 빼줘", "리뷰는 제외해줘", "A 기능 빼줘"):
-                         * You MUST COMPLETELY EXCLUDE AND DELETE that task or topic from all nodes and descriptions!
-                         * Replace with technical specification, benchmark comparison, or warranty checks instead.
-                       - If user asks to add a new requirement (e.g. "스피커 선도 구매하고 싶어", "서멀구리스도 추가"):
-                         * NEVER use raw conversational user phrases (e.g. NEVER title a module "스피커 선도 구매하고 싶어").
-                         * Extract the core requirement (e.g. "호환 케이블 및 소모품 구비") and REORGANIZE/RESTRUCTURE the whole WBS naturally.
+                    3. USER FEEDBACK & REVISION COMPLIANCE (HIGHEST PRIORITY):
+                       - If user feedback requests to change node titles/names (e.g. "노드 제목을 '...'로 바꿔줘", "모듈 이름을 변경해줘"):
+                         * You MUST IMMEDIATELY CHANGE the root or corresponding module's "label" and "title" to match the requested name!
+                       - If user feedback requests to add, split, exclude, or modify tasks:
+                         * Strictly apply the changes to the WBS structure, labels, goals, and assignees.
 
-                    4. STRUCTURE (Strict 3-Tier Hierarchy):
-                       - 1 Root Task (tier="root", tempId="node_root", parentTempId=null): Clear single-sentence ultimate project mission.
-                       - 3 to 6 Feature Modules (tier="mid", tempId="node_mid_1", ..., parentTempId="node_root"): Distinct, non-overlapping pillars. ALL mid nodes MUST strictly set parentTempId to "node_root".
-                       - Actionable Tasks (tier="leaf", tempId="node_leaf_X", parentTempId matching its parent module's tempId): Concrete, practical execution units. YOU MUST GENERATE EXACTLY 2 TO 4 LEAF NODES FOR EVERY SINGLE MID NODE. DO NOT SKIP ANY LEAF NODES.
+                    4. MANDATORY 3-TIER HIERARCHY (ABSOLUTE REQUIREMENT):
+                       - 1 Root Task (tier="root", tempId="node_root", parentTempId=null): Ultimate project vision.
+                       - 4 to 6 Feature Modules (tier="mid", tempId="node_mid_1", ..., parentTempId="node_root"): Distinct functional pillars.
+                       - Actionable Tasks (tier="leaf", tempId="node_leaf_X", parentTempId matching its parent module's tempId): Concrete deliverables.
+                       - CRITICAL: YOU MUST GENERATE EXACTLY 2 TO 4 LEAF NODES (tier="leaf") FOR EVERY SINGLE MID NODE! NEVER return only mid nodes.
 
-                    5. QUALITY STANDARDS & DUE DATE:
-                       - dueDate: MUST default to approximately 1 month from today (Today is %s, Target Due Date is %s).
-                       - label: Concise, clear naming under 25 characters without root prefix.
-                       - goal: Professional, unambiguous deliverable description.
-                       - code: Unique identifiers (e.g. Root: T-001, Modules: M-01, M-02, Tasks: T-101, T-102...).
+                    5. DUE DATE & QUALITY:
+                       - dueDate: Target date around %s.
+                       - label: Under 25 characters, clean and direct. No root prefix in sub-nodes.
+                       - Language: Output all text in Korean if the input is in Korean.
 
-                    6. LANGUAGE:
-                       - Output ALL titles, labels, goals, bodies, and aiSummaries in Korean if the input is in Korean.
-
-                    7. OUTPUT FORMAT:
-                       - Return ONLY a raw JSON array of objects. No markdown backticks, no fences, no commentary.
+                    6. OUTPUT FORMAT:
+                       - Return ONLY a raw JSON array of objects without markdown backticks or commentary.
 
                     JSON Schema per item:
                     {
@@ -172,10 +161,10 @@ public class OpenAIService implements AiService {
                         "goal": "Detailed functional goal",
                         "dueDate": "YYYY-MM-DD" (%s),
                         "assignees": ["Role 1", "Role 2"],
-                        "aiSummary": "Domain-specific risk, technical bottleneck, compatibility notice, or quality checklist"
+                        "aiSummary": "Domain-specific risk, technical bottleneck, or quality checklist"
                       }
                     }
-                    """.formatted(today, defaultDueDate, defaultDueDate);
+                    """.formatted(defaultDueDate, defaultDueDate);
 
             StringBuilder promptBuilder = new StringBuilder();
             promptBuilder.append("Project Specification:\n").append(specText).append("\n\n");
@@ -185,10 +174,10 @@ public class OpenAIService implements AiService {
             }
 
             if (!feedback.isBlank()) {
-                promptBuilder.append("User Feedback / Revision Request (MUST APPLY STRICTLY & RESTRUCTURE WBS):\n").append(feedback).append("\n\n");
-                promptBuilder.append("Please carefully reorganize and restructure the WBS according to this feedback. If asked to remove/exclude a task (like reviews), strictly remove it. Do not prefix mid/leaf titles with root title. Return the refined 3-tier WBS JSON array targeting due date ").append(defaultDueDate).append(".");
+                promptBuilder.append("User Feedback / Revision Request (MUST APPLY STRICTLY - UPDATE NODE LABELS & RESTRUCTURE):\n").append(feedback).append("\n\n");
+                promptBuilder.append("Please carefully reorganize the WBS according to this feedback. If requested to change titles or names, update the node labels and titles directly. Ensure all mid modules have 2~4 leaf tasks. Return the refined 3-tier WBS JSON array targeting due date ").append(defaultDueDate).append(".");
             } else {
-                promptBuilder.append("Decompose this project into a domain-accurate, highly professional 3-tier WBS JSON array. Do not duplicate root prefix in sub-nodes. If non-software, do not create software tasks. Set due dates targeting ").append(defaultDueDate).append(".");
+                promptBuilder.append("Decompose this project into a domain-accurate, highly professional 3-tier WBS JSON array (1 root, 4~6 mid modules, 2~4 leaf tasks per module). Return only the JSON array.");
             }
 
             String userPrompt = promptBuilder.toString();
@@ -206,7 +195,7 @@ public class OpenAIService implements AiService {
             String reqJson = objectMapper.writeValueAsString(body);
             HttpRequest req = HttpRequest.newBuilder()
                     .uri(URI.create("https://api.openai.com/v1/chat/completions"))
-                    .timeout(Duration.ofSeconds(45))
+                    .timeout(Duration.ofSeconds(50))
                     .header("Content-Type", "application/json")
                     .header("Authorization", "Bearer " + apiKey)
                     .POST(HttpRequest.BodyPublishers.ofString(reqJson))
@@ -226,38 +215,71 @@ public class OpenAIService implements AiService {
                 try {
                     List<Map<String, Object>> items = objectMapper.readValue(normalized, new TypeReference<>() {});
                     List<SuggestionDto.Create> outList = new ArrayList<>();
+                    List<Map<String, Object>> midItems = new ArrayList<>();
                     boolean hasLeaf = false;
-                    for (Map<String, Object> item : items) {
+
+                    for (int idx = 0; idx < items.size(); idx++) {
+                        Map<String, Object> item = items.get(idx);
                         Object titleObj = item.get("title");
                         Object bodyObj = item.get("body");
-                        if (titleObj == null || bodyObj == null) continue;
+                        String title = titleObj != null ? titleObj.toString().trim() : "";
+                        String bodyText = bodyObj != null ? bodyObj.toString().trim() : "";
 
-                        String title = titleObj.toString().trim();
-                        String bodyText = bodyObj.toString().trim();
-                        if (title.isBlank() || bodyText.isBlank()) continue;
-
+                        // Handle both nested changeJson and flat structure
+                        Map<String, Object> changeMap = new java.util.LinkedHashMap<>();
                         Object change = item.get("changeJson");
-                        String changeStr;
-                        try {
-                            if (change == null) {
-                                changeStr = objectMapper.writeValueAsString(Map.of("aiSummary", bodyText, "dueDate", defaultDueDate));
-                            } else if (change instanceof Map) {
-                                @SuppressWarnings("unchecked")
-                                Map<String, Object> map = (Map<String, Object>) change;
-                                if (!map.containsKey("dueDate") || map.get("dueDate") == null || map.get("dueDate").toString().isBlank()) {
-                                    map.put("dueDate", defaultDueDate);
-                                }
-                                changeStr = objectMapper.writeValueAsString(map);
-                            } else if (change instanceof String) {
-                                JsonNode parsed = objectMapper.readTree((String) change);
-                                changeStr = objectMapper.writeValueAsString(parsed);
-                            } else {
-                                changeStr = objectMapper.writeValueAsString(change.toString());
-                            }
-                        } catch (Exception ce) {
-                            changeStr = "{\"aiSummary\": \"" + escapeJson(truncateOneLine(bodyText, 200)) + "\", \"dueDate\": \"" + defaultDueDate + "\"}";
+                        if (change instanceof Map) {
+                            @SuppressWarnings("unchecked")
+                            Map<String, Object> m = (Map<String, Object>) change;
+                            changeMap.putAll(m);
+                        } else if (change instanceof String) {
+                            try {
+                                JsonNode p = objectMapper.readTree((String) change);
+                                changeMap = objectMapper.convertValue(p, new TypeReference<Map<String, Object>>() {});
+                            } catch (Exception ignored) {}
                         }
 
+                        // Check flat fields if changeJson missing
+                        if (!changeMap.containsKey("tempId") && item.containsKey("tempId")) changeMap.put("tempId", item.get("tempId"));
+                        if (!changeMap.containsKey("parentTempId") && item.containsKey("parentTempId")) changeMap.put("parentTempId", item.get("parentTempId"));
+                        if (!changeMap.containsKey("tier") && item.containsKey("tier")) changeMap.put("tier", item.get("tier"));
+                        if (!changeMap.containsKey("label") && item.containsKey("label")) changeMap.put("label", item.get("label"));
+                        if (!changeMap.containsKey("code") && item.containsKey("code")) changeMap.put("code", item.get("code"));
+                        if (!changeMap.containsKey("goal") && item.containsKey("goal")) changeMap.put("goal", item.get("goal"));
+                        if (!changeMap.containsKey("assignees") && item.containsKey("assignees")) changeMap.put("assignees", item.get("assignees"));
+                        if (!changeMap.containsKey("aiSummary") && item.containsKey("aiSummary")) changeMap.put("aiSummary", item.get("aiSummary"));
+
+                        // Defaults & cleaning
+                        String tier = changeMap.containsKey("tier") && changeMap.get("tier") != null ? changeMap.get("tier").toString() : (idx == 0 ? "root" : "leaf");
+                        if (idx == 0 && !"root".equalsIgnoreCase(tier)) tier = "root";
+                        changeMap.put("tier", tier);
+
+                        if (!changeMap.containsKey("tempId") || changeMap.get("tempId") == null) {
+                            changeMap.put("tempId", "root".equalsIgnoreCase(tier) ? "node_root" : ("mid".equalsIgnoreCase(tier) ? "node_mid_" + idx : "node_leaf_" + idx));
+                        }
+                        if ("root".equalsIgnoreCase(tier)) {
+                            changeMap.put("parentTempId", null);
+                        }
+
+                        String label = changeMap.containsKey("label") && changeMap.get("label") != null ? changeMap.get("label").toString() : (title.isBlank() ? "작업 " + (idx + 1) : title);
+                        // Clean markdown artifacts from label
+                        label = label.replaceAll("^[#*`>\\s]+", "").replaceAll("^\\d+\\.\\s*", "").trim();
+                        changeMap.put("label", label);
+
+                        if (title.isBlank()) title = label;
+                        if (bodyText.isBlank()) bodyText = changeMap.containsKey("goal") && changeMap.get("goal") != null ? changeMap.get("goal").toString() : label;
+
+                        if (!changeMap.containsKey("dueDate") || changeMap.get("dueDate") == null || changeMap.get("dueDate").toString().isBlank()) {
+                            changeMap.put("dueDate", defaultDueDate);
+                        }
+
+                        if ("leaf".equalsIgnoreCase(tier)) {
+                            hasLeaf = true;
+                        } else if ("mid".equalsIgnoreCase(tier)) {
+                            midItems.add(changeMap);
+                        }
+
+                        String changeStr = objectMapper.writeValueAsString(changeMap);
                         SuggestionDto.Create s = SuggestionDto.Create.builder()
                                 .targetType("roadmapNode")
                                 .targetId(null)
@@ -268,14 +290,69 @@ public class OpenAIService implements AiService {
                                 .changeJson(changeStr)
                                 .build();
                         outList.add(s);
-                        if (s.getChangeJson() != null && (s.getChangeJson().contains("\"tier\":\"leaf\"") || s.getChangeJson().contains("\"tier\": \"leaf\""))) {
-                            hasLeaf = true;
-                        }
                     }
+
+                    // If LLM returned only mid nodes and no leaf nodes, synthesize leaf nodes automatically to prevent fallback
+                    if (!hasLeaf && !midItems.isEmpty()) {
+                        logger.info("OpenAI returned {} mid nodes without leaves. Synthesizing leaf nodes to maintain 3-tier WBS.", midItems.size());
+                        int leafGlobalIdx = 10;
+                        for (Map<String, Object> mid : midItems) {
+                            String midTempId = (String) mid.get("tempId");
+                            String midLabel = (String) mid.get("label");
+                            String midGoal = mid.get("goal") != null ? mid.get("goal").toString() : midLabel;
+
+                            // Create 2 leaf tasks per mid module
+                            String l1Title = midLabel + " 설계 및 세부 요구사항 정의";
+                            String l1Goal = midGoal + " - 아키텍처 및 인터페이스 설계";
+                            Map<String, Object> leaf1Map = Map.of(
+                                    "tempId", midTempId + "_task_1",
+                                    "parentTempId", midTempId,
+                                    "label", truncateOneLine(l1Title, 25),
+                                    "tier", "leaf",
+                                    "code", String.format("T-%03d", leafGlobalIdx++),
+                                    "goal", l1Goal,
+                                    "dueDate", defaultDueDate,
+                                    "assignees", mid.get("assignees") != null ? mid.get("assignees") : List.of("담당자"),
+                                    "aiSummary", "세부 설계 및 사전 검토 필수"
+                            );
+                            outList.add(SuggestionDto.Create.builder()
+                                    .targetType("roadmapNode")
+                                    .targetId(null)
+                                    .title(l1Title)
+                                    .body(l1Goal)
+                                    .sourceTool("openai")
+                                    .sourceId(String.valueOf(specId))
+                                    .changeJson(objectMapper.writeValueAsString(leaf1Map))
+                                    .build());
+
+                            String l2Title = midLabel + " 기능 구현 및 검증";
+                            String l2Goal = midGoal + " - 핵심 로직 구현 및 단위 테스트";
+                            Map<String, Object> leaf2Map = Map.of(
+                                    "tempId", midTempId + "_task_2",
+                                    "parentTempId", midTempId,
+                                    "label", truncateOneLine(l2Title, 25),
+                                    "tier", "leaf",
+                                    "code", String.format("T-%03d", leafGlobalIdx++),
+                                    "goal", l2Goal,
+                                    "dueDate", defaultDueDate,
+                                    "assignees", mid.get("assignees") != null ? mid.get("assignees") : List.of("담당자"),
+                                    "aiSummary", "핵심 플로우 및 예외 처리 검증"
+                            );
+                            outList.add(SuggestionDto.Create.builder()
+                                    .targetType("roadmapNode")
+                                    .targetId(null)
+                                    .title(l2Title)
+                                    .body(l2Goal)
+                                    .sourceTool("openai")
+                                    .sourceId(String.valueOf(specId))
+                                    .changeJson(objectMapper.writeValueAsString(leaf2Map))
+                                    .build());
+                        }
+                        hasLeaf = true;
+                    }
+
                     if (outList.size() >= 3 && hasLeaf) {
                         return outList;
-                    } else if (!hasLeaf) {
-                        logger.warn("OpenAI returned {} nodes but ZERO leaf nodes. Falling back to stub.", outList.size());
                     }
                 } catch (Exception e) {
                     logger.warn("Failed parsing OpenAI JSON output: {}", e.getMessage());

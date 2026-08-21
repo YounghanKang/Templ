@@ -32,7 +32,7 @@ public class AIStubService implements AiService {
         if (rawText.isBlank()) rawText = "프로젝트 핵심 목표 수행";
 
         // 1. Root task (tempId: node_root)
-        String rootLabel = extractRootLabel(rawText);
+        String rootLabel = extractRootLabel(rawText, hasFeedback, trimmedFeedback);
         String rootTitle = hasFeedback ? "AI 재생성: " + rootLabel : "최종 목표: " + rootLabel;
         String defaultDueDate = java.time.LocalDate.now().plusMonths(1).toString();
         String rootGoal = hasFeedback ? rawText + "\n\n[피드백 반영]: " + trimmedFeedback : rawText;
@@ -55,7 +55,7 @@ public class AIStubService implements AiService {
                 .changeJson(rootJson)
                 .build());
 
-        // 2. Derive modules based on domain classification and smart feedback integration
+        // 2. Derive modules based on domain classification, PRD markdown structure, and smart feedback integration
         List<ModuleTemplate> modules = getModuleTemplates(rawText, hasFeedback, trimmedFeedback);
         int leafGlobalIdx = 10;
 
@@ -143,11 +143,14 @@ public class AIStubService implements AiService {
         String lower = text.toLowerCase();
         String fbLower = hasFeedback ? feedback.toLowerCase() : "";
 
-        // Check explicit software request
+        // Check explicit software / IT / platform request
         boolean isExplicitSoftware = lower.contains("웹") || lower.contains("앱") || lower.contains("어플")
-                || lower.contains("서버") || lower.contains("api") || lower.contains("시스템 개발")
+                || lower.contains("서버") || lower.contains("api") || lower.contains("시스템")
                 || lower.contains("소프트웨어") || lower.contains("코딩") || lower.contains("백엔드") || lower.contains("프론트엔드")
-                || (lower.contains("개발") && !lower.contains("자기계발") && !lower.contains("역량개발"))
+                || lower.contains("frontend") || lower.contains("backend") || lower.contains("플랫폼") || lower.contains("platform")
+                || lower.contains("github") || lower.contains("git") || lower.contains("db") || lower.contains("database")
+                || lower.contains("아카이빙") || lower.contains("erp") || lower.contains("블로그") || lower.contains("개발")
+                || lower.contains("동아리") || lower.contains("학회") || lower.contains("리크루팅")
                 || (lower.contains("만들기") && (lower.contains("사이트") || lower.contains("서비스") || lower.contains("홈페이지")));
 
         // Check user feedback removal intents
@@ -284,10 +287,10 @@ public class AIStubService implements AiService {
             }
 
             // =========================================================================
-            // 2. TRIP, EVENT & WORKSHOP DOMAIN
+            // 2. TRIP, EVENT & WORKSHOP DOMAIN (Strictly non-software)
             // =========================================================================
-            if (lower.contains("여행") || lower.contains("휴가") || lower.contains("캠핑") || lower.contains("모임") 
-                    || lower.contains("행사") || lower.contains("파티") || lower.contains("워크샵") || lower.contains("축제")) {
+            if (lower.contains("여행") || lower.contains("휴가") || lower.contains("캠핑") 
+                    || lower.contains("파티") || lower.contains("워크샵") || lower.contains("축제")) {
                 ModuleTemplate m1 = new ModuleTemplate(
                         "일정 및 목적지/장소 확정",
                         "전체 일정, 예산 한도 및 핵심 목적지/장소를 확정합니다.",
@@ -390,41 +393,156 @@ public class AIStubService implements AiService {
         }
 
         // =========================================================================
-        // 4. SOFTWARE APPLICATION DOMAINS (Explicit software requested)
+        // 4. CLUB / COMMUNITY MANAGEMENT & ARCHIVING DOMAIN (e.g., CLUB-IN)
         // =========================================================================
-        if (lower.contains("동아리") || lower.contains("학회") || lower.contains("클럽") || lower.contains("club")) {
+        if (lower.contains("동아리") || lower.contains("학회") || lower.contains("클럽") || lower.contains("club")
+                || lower.contains("리크루팅") || lower.contains("아카이빙") || lower.contains("출결") || lower.contains("회계")) {
+            
             ModuleTemplate m1 = new ModuleTemplate(
-                    "소셜 로그인 및 인증 시스템",
-                    "OAuth2 기반 소셜 로그인 및 세션/토큰 인증 체계를 구축합니다.",
-                    "2026-08-25",
-                    List.of("Backend", "Frontend"),
-                    "카카오/네이버 인가 코드 교환 및 사용자 이메일 정합성을 검증해야 합니다."
+                    "대외 홍보 및 리크루팅 시스템",
+                    "랜딩 페이지, 기수별 프로젝트 쇼케이스 및 지원서 접수/평가 파이프라인을 구축합니다.",
+                    "2026-08-30",
+                    List.of("Frontend", "Design"),
+                    "기수별 커스텀 폼 빌더, 포트폴리오 첨부 및 지원 결과 개별 조회 기능을 구현해야 합니다."
             );
-            m1.leaves.add(new LeafTemplate("카카오/네이버 로그인 연동", "OAuth2 SDK 연동 및 사용자 프로필 조회 API", "2026-08-20", List.of("Backend"), "Redirect URI 및 시크릿 키 관리"));
-            m1.leaves.add(new LeafTemplate("로그인 UI 및 세션 관리", "로그인 버튼 컴포넌트, 자동 로그인 및 로그아웃 처리", "2026-08-25", List.of("Frontend"), "토큰 만료 시 자동 리프레시 처리"));
+            m1.leaves.add(new LeafTemplate("랜딩 페이지 및 프로젝트 쇼케이스", "동아리 소개, 연혁 및 기수별 프로젝트 카드뷰 개발", "2026-08-25", List.of("Frontend"), "GitHub 및 데모 링크 연동"));
+            m1.leaves.add(new LeafTemplate("지원서 폼 빌더 및 지원 결과 조회", "문항 커스텀 폼, 임시저장 및 이메일/전화번호 결과 조회", "2026-08-30", List.of("Fullstack"), "제출 후 수정 방지 로직"));
             list.add(m1);
 
             ModuleTemplate m2 = new ModuleTemplate(
-                    "회원가입 및 부원 관리",
-                    "동아리 회원가입 신청, 부원 프로필 및 권한(운영진/일반부원)을 관리합니다.",
-                    "2026-09-05",
-                    List.of("Fullstack"),
-                    "동아리 가입 승인제 적용 시 운영진 검토 큐 및 상태 변경 트랜잭션을 설계해야 합니다."
+                    "회원 및 권한 체계 관리",
+                    "기수별/파트별 부원 DB 구축 및 상태(활동/수료/휴학)와 역할 권한(Admin/정회원/비회원)을 관리합니다.",
+                    "2026-09-08",
+                    List.of("Backend", "Security"),
+                    "역할 기반 접근 제어(RBAC) 및 기수 교체 시 운영진 권한 인수인계 체계를 설계해야 합니다."
             );
-            m2.leaves.add(new LeafTemplate("동아리 회원가입 폼", "학번/학과/자기소개 입력 및 가입 신청 제출", "2026-08-30", List.of("Frontend"), "입력 폼 유효성 검사"));
-            m2.leaves.add(new LeafTemplate("부원 명단 및 권한 관리 API", "운영진/부원 권한 분기, 부원 목록 조회 및 승인/퇴출 API", "2026-09-05", List.of("Backend"), "역할 기반 접근 제어(RBAC) 적용"));
+            m2.leaves.add(new LeafTemplate("기수/파트별 부원 DB 및 프로필 관리", "부원 명단, 파트(Frontend/Backend/Design 등) 및 상태 관리", "2026-09-05", List.of("Backend"), "부원 상태 트랜잭션"));
+            m2.leaves.add(new LeafTemplate("역할 기반 접근 제어(RBAC) 및 인증", "Admin/정회원/비회원 권한 격리 및 세션/토큰 인증", "2026-09-08", List.of("Backend"), "인가 인터셉터 적용"));
             list.add(m2);
 
             ModuleTemplate m3 = new ModuleTemplate(
-                    "동아리 활동 및 커뮤니티",
-                    "공지사항, 자유게시판 및 활동 갤러리/일정 캘린더를 개발합니다.",
-                    "2026-09-20",
-                    List.of("Frontend", "Backend"),
-                    "대용량 사진 업로드 시 S3 Presigned URL 및 썸네일 생성을 고려해야 합니다."
+                    "실시간 출결 및 행사 관리",
+                    "정기 세션/행사 시 GPS 위치 기반 또는 3분 갱신 OTP/QR 코드를 통한 실시간 출석 체크를 구현합니다.",
+                    "2026-09-18",
+                    List.of("Mobile/Web", "Backend"),
+                    "지각/결석 누적에 따른 경고 자동 카운팅 및 행사 일정 캘린더를 연동해야 합니다."
             );
-            m3.leaves.add(new LeafTemplate("공지사항 및 게시판 CRUD", "게시글 작성/수정, 댓글 및 첨부파일 업로드", "2026-09-15", List.of("Fullstack"), "게시글 권한 확인 및 XSS 방지"));
-            m3.leaves.add(new LeafTemplate("동아리 일정 캘린더 & 갤러리", "정기 모임 일정 등록, D-Day 카운트다운 및 활동 사진 뷰", "2026-09-20", List.of("Frontend"), "반응형 캘린더 컴포넌트"));
+            m3.leaves.add(new LeafTemplate("GPS/OTP/QR 실시간 출석 체크", "3분 갱신 OTP/QR 발급 및 위치 기반 출결 검증", "2026-09-12", List.of("Fullstack"), "출결 부정행위 방지"));
+            m3.leaves.add(new LeafTemplate("출결 통계 및 경고 자동 카운팅", "지각/결석 누적 집계, 패널티 자동 부과 및 알림", "2026-09-18", List.of("Backend"), "자동 카운팅 트리거"));
             list.add(m3);
+
+            ModuleTemplate m4 = new ModuleTemplate(
+                    "동아리 회계 및 장부 관리 (ERP)",
+                    "회비 수입/지출 내역을 투명하게 공개하고, 항목별 영수증 증빙 첨부 및 실시간 잔액을 계산합니다.",
+                    "2026-09-25",
+                    List.of("Fullstack", "DBA"),
+                    "영수증 이미지 첨부 및 예산 대비 잔액 계산 트랜잭션의 정합성을 보장해야 합니다."
+            );
+            m4.leaves.add(new LeafTemplate("회비 수입/지출 장부 및 실시간 잔액 계산", "회비 납부 현황, 지출 내역 기록 및 예산 잔액 집계", "2026-09-20", List.of("Backend"), "금액 정합성 검증"));
+            m4.leaves.add(new LeafTemplate("지출 영수증 증빙 첨부 및 투명 공개 UI", "영수증 이미지 업로드, 승인 내역 및 공개 장부 뷰", "2026-09-25", List.of("Frontend"), "S3 이미지 업로드 연동"));
+            list.add(m4);
+
+            ModuleTemplate m5 = new ModuleTemplate(
+                    "학술 스터디 및 기술 블로그 아카이빙",
+                    "스터디 개설/승인/과제 제출 파이프라인과 Markdown 기반 동아리 기술 블로그를 개발합니다.",
+                    "2026-09-30",
+                    List.of("Frontend", "Backend"),
+                    "Markdown 에디터(코드 하이라이팅) 및 태그/기수별 아카이빙 검색을 지원해야 합니다."
+            );
+            m5.leaves.add(new LeafTemplate("스터디 개설/모집 및 주차별 과제 제출", "스터디 승인 플로우, 부원 모집 및 과제 제출/피드백", "2026-09-28", List.of("Fullstack"), "주차별 과제 트래킹"));
+            m5.leaves.add(new LeafTemplate("Markdown 기술 블로그 및 태그 검색", "코드 하이라이팅 에디터, 태그/기수별 필터링 아카이빙", "2026-09-30", List.of("Frontend"), "기술 자산 아카이빙"));
+            list.add(m5);
+
+            return list;
+        }
+
+        // =========================================================================
+        // 4. COLLABORATION ORCHESTRATOR / DIRECTORY / PIPELINE DOMAIN
+        // =========================================================================
+        boolean isOrchestrator = lower.contains("오케스트레이터") || lower.contains("디렉토리") || lower.contains("가상 디렉토리")
+                || (lower.contains("slack") && lower.contains("github")) || lower.contains("맥락 분석") || lower.contains("충돌 감지")
+                || lower.contains("human-in-the-loop");
+
+        if (isOrchestrator) {
+            ModuleTemplate m1 = new ModuleTemplate(
+                    "명세서 기반 디렉토리 자동 생성",
+                    "자연어 프로젝트 명세서를 분석하여 계층적 가상 디렉토리(WBS 트리) 구조를 자동으로 분해 및 형성합니다.",
+                    "2026-08-30",
+                    List.of("AI/Backend", "PM"),
+                    "자연어 요구사항을 실현 가능한 작업 단위로 계층화하고, 프롬프트 기반 재생성 및 직접 편집 기능을 제공해야 합니다."
+            );
+            m1.leaves.add(new LeafTemplate("자연어 명세서 파싱 및 WBS 분해 엔진", "LLM 기반 자연어 분석 및 3계층 디렉토리 트리 구조화", "2026-08-25", List.of("AI/Backend"), "모듈 및 세부 작업 계층 매핑 검증"));
+            m1.leaves.add(new LeafTemplate("디렉토리 트리 프리뷰 및 피드백 재생성 UI", "미리보기 그래프 렌더링 및 사용자 수정 프롬프트 처리", "2026-08-30", List.of("Frontend"), "직관적인 계층형 노드 시각화"));
+            list.add(m1);
+
+            ModuleTemplate m2 = new ModuleTemplate(
+                    "할 일(Task) 노드 상세 및 메타데이터 관리",
+                    "각 디렉토리/할 일 노드의 목표, 마감일, 담당자, 선행 의존 작업 및 AI 요약 정보를 관리합니다.",
+                    "2026-09-10",
+                    List.of("Fullstack"),
+                    "노드별 결과물 업로드 공간과 진행 상태(Todo/InProgress/Done) 트래킹을 연동해야 합니다."
+            );
+            m2.leaves.add(new LeafTemplate("노드 상세 속성 및 선행 작업 의존성 설정", "목표, 기한, 담당자 R&R 및 그래프 엣지 연결 관리", "2026-09-05", List.of("Backend"), "순환 참조 방지 및 상태 동기화"));
+            m2.leaves.add(new LeafTemplate("결과물 업로드 및 AI 진행상황 자동 요약", "산출물 파일/링크 첨부 및 LLM 기반 작업 진행도 요약", "2026-09-10", List.of("AI/Frontend"), "산출물 변경 시 자동 요약 갱신"));
+            list.add(m2);
+
+            boolean splitIntegrations = fbLower.contains("분리") || fbLower.contains("webhook") || fbLower.contains("봇");
+            if (splitIntegrations) {
+                ModuleTemplate mSlack = new ModuleTemplate(
+                        "Slack 봇 연동 및 실시간 대화 수집",
+                        "Slack Socket Mode/Bot 연동을 통해 팀 채널의 실시간 대화 및 논의 사항을 수집합니다.",
+                        "2026-09-15",
+                        List.of("Integration", "Backend"),
+                        "Slack 권한 토큰 관리 및 채널별 이벤트 필터링이 필요합니다."
+                );
+                mSlack.leaves.add(new LeafTemplate("Slack Bot Token & Socket Mode 연동", "채널 메시지 수신 및 알림 발송 봇 구성", "2026-09-12", List.of("Integration"), "웹소켓 재연결 및 누락 방지"));
+                mSlack.leaves.add(new LeafTemplate("메시지 정제 및 1차 규칙 기반 필터링", "오타/사소한 변경 필터링 및 키워드 매칭", "2026-09-15", List.of("Backend"), "불필요한 LLM 호출 최소화"));
+                list.add(mSlack);
+
+                ModuleTemplate mGithub = new ModuleTemplate(
+                        "GitHub Webhook 및 이슈/PR 이벤트 수집",
+                        "GitHub Webhook을 통해 커밋, PR, 이슈 생성/변경 이벤트를 실시간으로 감지합니다.",
+                        "2026-09-18",
+                        List.of("DevOps", "Backend"),
+                        "Webhook Secret 검증 및 페이로드 변경 diff 추출을 수행합니다."
+                );
+                mGithub.leaves.add(new LeafTemplate("GitHub Webhook 엔드포인트 및 서명 검증", "HMAC SHA-256 서명 검증 및 이벤트 디스패처", "2026-09-15", List.of("Backend"), "보안 검증 및 비동기 큐잉"));
+                mGithub.leaves.add(new LeafTemplate("코드 변경 Diff 및 이슈 내용 추출", "커밋/PR diff 파싱 및 핵심 변경 사항 추출", "2026-09-18", List.of("Backend"), "이벤트 메타데이터 표준화"));
+                list.add(mGithub);
+            } else {
+                ModuleTemplate m3 = new ModuleTemplate(
+                        "AI 맥락 분석 및 필터링 파이프라인 (Slack/GitHub)",
+                        "Slack 메시지와 GitHub 이벤트를 1차 규칙 기반으로 필터링하고, 중요한 맥락 변화만 LLM에 전달합니다.",
+                        "2026-09-18",
+                        List.of("Backend", "AI"),
+                        "모든 이벤트를 LLM에 보내지 않고 diff/키워드 필터링을 거쳐 토큰 비용을 최적화해야 합니다."
+                );
+                m3.leaves.add(new LeafTemplate("Slack/GitHub 이벤트 수신 및 1차 규칙 필터링", "편집거리(diff) 및 키워드 기반 노이즈 제거", "2026-09-12", List.of("Backend"), "미미한 변경 1차 차단"));
+                m3.leaves.add(new LeafTemplate("LLM 맥락 분석 및 디렉토리 매칭 파이프라인", "이벤트를 특정 디렉토리 노드에 매핑하고 맥락 평가", "2026-09-18", List.of("AI/Backend"), "정확한 노드 스코프 타겟팅"));
+                list.add(m3);
+            }
+
+            ModuleTemplate m4 = new ModuleTemplate(
+                    "바운더리(역할) 침해 감지 및 Human-in-the-loop 조율",
+                    "담당자 간 작업 충돌 및 목표 이탈을 감지하여 해당 디렉토리에 한정한 제안 카드를 발행하고 사람의 승인 하에 조율합니다.",
+                    "2026-09-25",
+                    List.of("AI", "Frontend"),
+                    "AI가 독단적으로 변경하지 않고, 담당자 승인 시에만 로드맵에 실제 반영되는 안전장치를 구현해야 합니다."
+            );
+            m4.leaves.add(new LeafTemplate("역할 충돌 감지 및 디렉토리 한정 경고 생성", "R&R 중복 및 방향성 이탈 시 국소 경고 카드 발행", "2026-09-20", List.of("AI/Backend"), "전체 알림 공해 방지"));
+            m4.leaves.add(new LeafTemplate("Human-in-the-loop 승인/반려 인터랙션", "제안 카드 리뷰, 승인 시 자동 조율 및 히스토리 아카이빙", "2026-09-25", List.of("Frontend"), "투명한 승인 트랜잭션"));
+            list.add(m4);
+
+            ModuleTemplate m5 = new ModuleTemplate(
+                    "부가 기능 및 디렉토리 도식도 시각화",
+                    "팀 프로필 공유, 전체 계층 구조 도식도 인터랙션 및 진행 상황 요약 대시보드를 제공합니다.",
+                    "2026-09-30",
+                    List.of("Frontend", "Design"),
+                    "노드 클릭 시 상세 이동 및 완료 항목 시각적 구분을 지원합니다."
+            );
+            m5.leaves.add(new LeafTemplate("디렉토리 도식도 시각화 및 인터랙션", "캔버스 기반 계층 구조 줌/패닝 및 노드 네비게이션", "2026-09-28", List.of("Frontend"), "매끄러운 인터랙션 구현"));
+            m5.leaves.add(new LeafTemplate("팀 프로필 및 외부 협업 링크 공유", "Slack, GitHub, Notion 등 연동 상태 및 프로필 공유", "2026-09-30", List.of("Fullstack"), "통합 프로필 관리"));
+            list.add(m5);
 
             return list;
         }
@@ -477,11 +595,52 @@ public class AIStubService implements AiService {
         return list;
     }
 
-    private String extractRootLabel(String specText) {
+    private String extractRootLabel(String specText, boolean hasFeedback, String feedback) {
+        if (hasFeedback && feedback != null && !feedback.isBlank()) {
+            // Check if user specified a title in quotes e.g. '제목' or "제목"
+            java.util.regex.Matcher m = java.util.regex.Pattern.compile("['\"]([^'\"]+)['\"]").matcher(feedback);
+            if (m.find()) {
+                String candidate = m.group(1).trim();
+                if (!candidate.isBlank()) return truncateOneLine(candidate, 35);
+            }
+            // Check "X로 바꿔줘" or "X로 변경"
+            java.util.regex.Matcher m2 = java.util.regex.Pattern.compile("(?:제목|이름|노드|목표)[을를]?\\s*([가-힣a-zA-Z0-9_\\s]+?)(?:[으]로|으로)").matcher(feedback);
+            if (m2.find()) {
+                String candidate = m2.group(1).trim();
+                if (!candidate.isBlank() && candidate.length() < 30) return truncateOneLine(candidate, 35);
+            }
+        }
+
         if (specText == null || specText.isBlank()) return "핵심 프로젝트 목표";
-        String firstLine = specText.split("\n")[0].replaceAll("[#*`>]", "").trim();
-        if (firstLine.isBlank()) firstLine = specText;
-        return truncateOneLine(firstLine, 35);
+
+        // 1. Check for explicit "프로젝트명: ...", "서비스명: ...", "앱 이름: ..."
+        java.util.regex.Matcher nameMatcher = java.util.regex.Pattern.compile("(?:프로젝트명|서비스명|앱\\s*이름|플랫폼명|주제)[:：]\\s*([^\\n]+)").matcher(specText);
+        if (nameMatcher.find()) {
+            String found = nameMatcher.group(1).replaceAll("[#*`>]", "").trim();
+            if (!found.isBlank()) return truncateOneLine(found, 35);
+        }
+
+        // 2. Check if specText has a natural project title line
+        for (String line : specText.split("\n")) {
+            String trimmed = line.replaceAll("^[#*`>\\s]+", "").replaceAll("^\\d+\\.\\s*", "").trim();
+            if (trimmed.isBlank() || trimmed.startsWith("---") || trimmed.contains("목차") 
+                    || trimmed.contains("프로젝트 개요") || trimmed.contains("서비스 한 줄 정의") 
+                    || trimmed.contains("핵심 가치") || trimmed.contains("문제 정의") || trimmed.contains("요구사항")) {
+                continue;
+            }
+            if (trimmed.length() >= 4) {
+                if (trimmed.contains("오케스트레이터")) {
+                    return "협업 오케스트레이터 플랫폼";
+                }
+                if (trimmed.contains("동아리") && trimmed.contains("플랫폼")) {
+                    return "대학 동아리 관리 플랫폼 CLUB-IN";
+                }
+                return truncateOneLine(trimmed, 35);
+            }
+        }
+
+        String firstLine = specText.split("\n")[0].replaceAll("[#*`>]", "").replaceAll("^\\d+\\.\\s*", "").trim();
+        return truncateOneLine(firstLine.isBlank() ? "핵심 프로젝트 목표" : firstLine, 35);
     }
 
     private String toJsonArray(List<String> list) {

@@ -35,15 +35,15 @@ public class RoadmapNode {
     private Integer w;
     private Integer h;
 
-    @Column(length = 1000)
+    @Column(columnDefinition = "TEXT")
     private String assigneesJson;
 
-    @Column(length = 1000)
+    @Column(columnDefinition = "TEXT")
     private String prerequisitesJson;
 
-    @Column(length = 4000)
+    @Column(columnDefinition = "TEXT")
     private String filesJson;
 
-    @Column(length = 4000)
+    @Column(columnDefinition = "TEXT")
     private String commentsJson;
 }

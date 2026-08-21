@@ -26,7 +26,7 @@ public class Team {
     @Column(nullable = false)
     private String color;
 
-    @Column(length = 500)
+    @Column(columnDefinition = "TEXT")
     private String mission;
 
     private String ownerUsername;
